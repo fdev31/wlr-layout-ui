@@ -111,7 +111,11 @@ class GuiScreen:
         if not self.screen.mode:
             label = "N/A"
         else:
-            label = "%dx%d" % (self.screen.mode.width, self.screen.mode.height)
+            label = "%dx%d @%.2d" % (
+                self.screen.mode.width,
+                self.screen.mode.height,
+                self.screen.mode.freq,
+            )
         text2 = shared["font"].render(label, True, (0, 0, 0))
         label_rect = text2.get_rect()
         label_rect.center = self.rect.center

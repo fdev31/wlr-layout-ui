@@ -15,13 +15,16 @@ MARGIN = 5
 def save_layout(screens: list[GuiScreen]):
     min_x = UI_RATIO * min([screen.rect.x for screen in screens])
     min_y = UI_RATIO * min([screen.rect.y for screen in screens])
+    print("# Screens layout:")
     for screen in screens:
         x: int = screen.rect.x * UI_RATIO - min_x
         y: int = screen.rect.y * UI_RATIO - min_y
         if LEGACY:
-            os.system(f"xrandr --output {screen.screen.uid} --pos {x}x{y}")
+            command = f"xrandr --output {screen.screen.uid} --pos {x}x{y} --mode {screen.screen.mode.width}x{screen.screen.mode.height}"
         else:
-            os.system(f"wlr-randr --output {screen.screen.uid} --pos {x},{y}")
+            command = f"wlr-randr --output {screen.screen.uid} --pos {x},{y} --mode {screen.screen.mode.width}x{screen.screen.mode.height}"
+        print(command)
+        os.system(command)
 
 
 def gui():
