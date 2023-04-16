@@ -56,6 +56,17 @@ class GuiButton:
 
 
 class GuiScreen:
+    all_colors: tuple[tuple[int, int, int], ...] = (
+        (172, 65, 66),
+        (126, 141, 80),
+        (229, 181, 102),
+        (108, 153, 186),
+        (158, 78, 133),
+        (125, 213, 207),
+        (208, 208, 208),
+    )
+    cur_color = 0
+
     def __init__(
         self,
         screen: Screen,
@@ -68,11 +79,15 @@ class GuiScreen:
         self.hovering = False
 
     def genColor(self):
-        self.color = (
-            random.randint(100, 200),
-            random.randint(100, 200),
-            random.randint(100, 200),
-        )
+        if self.cur_color >= len(self.all_colors):
+            self.color = (
+                random.randint(100, 200),
+                random.randint(100, 200),
+                random.randint(100, 200),
+            )
+        else:
+            self.color = self.all_colors[self.cur_color]
+            GuiScreen.cur_color += 1
 
     @property
     def statusInfo(self):

@@ -192,7 +192,7 @@ def gui():
                     status_bar = wid.statusInfo
 
         # Draw the rectangles on the Pygame display surface with a neutral grey
-        display.fill((150, 150, 150))
+        display.fill((30, 30, 30))
 
         for wid in chain(gui_screens, gui_buttons):
             wid.draw(display)
