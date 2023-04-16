@@ -194,6 +194,9 @@ def gui():
         # Draw the rectangles on the Pygame display surface with a neutral grey
         display.fill((150, 150, 150))
 
+        for wid in chain(gui_screens, gui_buttons):
+            wid.draw(display)
+
         # Grey status bar with white text showing the screen name when mouse is hovering over it
         status_bar_rect = pygame.Rect(display.get_rect())
         status_bar_rect.height = STATUS_HEIGHT
@@ -205,12 +208,6 @@ def gui():
         status_text_rect.center = status_bar_rect.center
         status_text_rect.x = MARGIN
         display.blit(status_text, status_text_rect)
-
-        for wid in gui_screens:
-            wid.draw(display)
-
-        for but in gui_buttons:
-            but.draw(display)
 
         # Update the Pygame display surface
         pygame.display.flip()
