@@ -1,3 +1,4 @@
+#!/bin/env python
 import pygame
 import random
 from typing import Tuple
@@ -91,9 +92,10 @@ class GuiScreen:
         )
 
     def draw(self, surface: pygame.Surface):
+        # draw the background
         pygame.draw.rect(surface, self.color, self.rect, border_radius=5)
 
-        # Render the screen name as text
+        # Render the screen uid as text
         text = self.font.render(self.screen.uid, True, (0, 0, 0))
 
         # Calculate the position to blit the text onto the rectangle
