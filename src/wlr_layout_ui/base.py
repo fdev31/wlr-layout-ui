@@ -8,6 +8,8 @@ class Mode:
         self.height = height
         self.freq = freq
 
+    def __repr__(self):
+        return "<Mode %dx%d @ %.2f>" % (self.width, self.height, self.freq)
 
 class Screen:
     def __init__(
@@ -24,6 +26,9 @@ class Screen:
         self.position = position
         self.mode: Mode | None = mode
         self.available: list[Mode] = []
+
+    def __repr__(self):
+        return "<Screen%s %s [%s]>" % ('*' if self.active else '', self.name, self.mode)
 
 
 displayInfo: list[Screen] = []

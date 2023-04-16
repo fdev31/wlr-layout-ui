@@ -3,6 +3,7 @@ import pygame
 import random
 from .base import Screen, displayInfo, load as loadDisplayInfo
 
+
 class GuiScreen:
     def __init__(
         self,
@@ -17,14 +18,15 @@ class GuiScreen:
 
     def genColor(self):
         self.color = (
-            random.randint(0, 255),
-            random.randint(0, 255),
-            random.randint(0, 255),
+            random.randint(100, 200),
+            random.randint(100, 200),
+            random.randint(100, 200),
         )
 
     def draw(self, surface: pygame.Surface):
         # draw the background
-        pygame.draw.rect(surface, self.color, self.rect, border_radius=5)
+        pygame.draw.rect(surface, self.color, self.rect)
+        pygame.draw.rect(surface, (50, 50, 50), self.rect, width=3)
 
         # Render the screen uid as text
         text = self.font.render(self.screen.uid, True, (0, 0, 0))
@@ -32,14 +34,24 @@ class GuiScreen:
         # Calculate the position to blit the text onto the rectangle
         text_rect = text.get_rect()
         text_rect.center = self.rect.center
-
         # Blit the text onto the rectangle
         surface.blit(text, text_rect)
+
+        # Second caption line
+        if not self.screen.mode:
+            label = "N/A"
+        else:
+            label = "%dx%d" % (self.screen.mode.width, self.screen.mode.height)
+        text2 = self.font.render(label, True, (0, 0, 0))
+        label_rect = text2.get_rect()
+        label_rect.center = self.rect.center
+        label_rect.y += text_rect.height + 10
+        surface.blit(text2, label_rect)
 
 
 def gui():
     # Define a scale factor for the display surface
-    scale_factor = 10
+    scale_factor = 8
 
     # Get the maximum mode width and height for each available screen
     max_width = int(
@@ -65,15 +77,23 @@ def gui():
     for screen in displayInfo:
         # Get the position and mode width and height for this screen
         x, y = screen.position
-        width = max(screen.available, key=lambda mode: mode.width).width
-        height = max(screen.available, key=lambda mode: mode.height).height
+        max_width = max(screen.available, key=lambda mode: mode.width).width
+        max_height = max(screen.available, key=lambda mode: mode.height).height
 
-        rect = pygame.Rect(
-            int(x / scale_factor),
-            y / scale_factor,
-            width / scale_factor,
-            height / scale_factor,
-        )
+        if screen.mode:
+            rect = pygame.Rect(
+                int(x / scale_factor),
+                int(y / scale_factor),
+                int(screen.mode.width / scale_factor),
+                int(screen.mode.height / scale_factor),
+            )
+        else:
+            rect = pygame.Rect(
+                int(x / scale_factor),
+                int(y / scale_factor),
+                int(max_width / scale_factor),
+                int(max_height / scale_factor),
+            )
         gs = GuiScreen(screen, rect)
         gs.genColor()
         gui_screens.append(gs)
@@ -119,9 +139,13 @@ def gui():
         pygame.display.flip()
 
 
-if __name__ == "__main__":
-    loadDisplayInfo()()
+def main():
+    loadDisplayInfo()
     # Initialize Pygame
     pygame.init()
     gui()
     pygame.quit()
+
+
+if __name__ == "__main__":
+    main()
