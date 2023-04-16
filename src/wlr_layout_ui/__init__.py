@@ -54,15 +54,6 @@ class GuiScreen:
         label_rect.y += text_rect.height + 10
         surface.blit(text2, label_rect)
 
-#       # Grey status bar with white text showing the screen name when mouse is hovering over it
-#        if self.hovering:
-#            status_bar_rect = pygame.Rect(self.rect.left, self.rect.bottom, self.rect.width, 20)
-#            pygame.draw.rect(surface, (150, 150, 150), status_bar_rect)
-#            status_text = shared['font'].render(self.screen.name, True, (255, 255, 255))
-#            status_text_rect = status_text.get_rect()
-#            status_text_rect.center = status_bar_rect.center
-#            surface.blit(status_text, status_text_rect)
-
     def handle_event(self, event):
         if event.type == pygame.MOUSEMOTION:
             self.hovering = self.rect.collidepoint(event.pos)
@@ -145,16 +136,35 @@ def gui():
                 active_screen = gui_screens[-1]
                 for gui_screen in gui_screens[:-1]:
                     if gui_screen.rect.colliderect(active_screen.rect):
-                        # detect if active_screen is more north, west, est or west of gui_screen
-                        if active_screen.rect.x < gui_screen.rect.x:
-                            active_screen.rect.x = gui_screen.rect.x - active_screen.rect.width
-                        elif active_screen.rect.x > gui_screen.rect.x:
-                           active_screen.rect.x = gui_screen.rect.x + gui_screen.rect.width
-#                        if active_screen.rect.y < gui_screen.rect.y:
-#                            active_screen.rect.y = gui_screen.rect.y - active_screen.rect.height
-#                        elif active_screen.rect.y > gui_screen.rect.y:
-#                            active_screen.rect.y = gui_screen.rect.y + gui_screen.rect.height
-                        break
+                        # find the pair of corners (one from gui_screen & one from active_screen) which are closest
+                        gui_screen_coords = [
+                            (gui_screen.rect.x, gui_screen.rect.y),
+                            (gui_screen.rect.x, gui_screen.rect.y + gui_screen.rect.width),
+                            (gui_screen.rect.x + gui_screen.rect.width, gui_screen.rect.y),
+                            (gui_screen.rect.x + gui_screen.rect.width, gui_screen.rect.y + gui_screen.rect.height),
+                        ]
+                        active_screen_coords = [
+                            (active_screen.rect.x, active_screen.rect.y),
+                            (active_screen.rect.x, active_screen.rect.y + active_screen.rect.width),
+                            (active_screen.rect.x + active_screen.rect.width, active_screen.rect.y),
+                            (active_screen.rect.x + active_screen.rect.width, active_screen.rect.y + active_screen.rect.height),
+                        ]
+                        def distance(point1: tuple[int, int], point2: tuple[int,int]):
+                            return math.sqrt(
+                                (point1[0] - point2[0])**2 + (point1[1] - point2[1])**2
+                            )
+                        # find which coordinates from active_screen & gui_screen are closest
+                        min_distance = None
+                        closest_gui_screen_coord = None
+                        for coord in active_screen_coords:
+                            for gui_screen_coord in gui_screen_coords:
+                                if  min_distance is None or distance(coord, gui_screen_coord) < min_distance:
+                                    min_distance = distance(coord, gui_screen_coord)
+                                    closest_gui_screen_coord = gui_screen_coord, coord
+                        active_screen.rect.x -= (closest_gui_screen_coord[1][0] - closest_gui_screen_coord[0][0])
+                        active_screen.rect.y -= (closest_gui_screen_coord[1][1] - closest_gui_screen_coord[0][1])
+
+
 
             # Handle dragging events
             elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
