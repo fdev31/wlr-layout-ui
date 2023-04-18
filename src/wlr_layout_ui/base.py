@@ -1,9 +1,11 @@
 import os
+import re
 from typing import Tuple
 
 __all__ = ["Mode", "Screen", "load", "LEGACY"]
 
 LEGACY = not os.environ.get("WAYLAND_DISPLAY", False)
+MODE_RE = re.compile(r'^(?P<width>\d+)x(?P<height>\d+)(?P<x>[+-]\d+)(?P<y>[+-]\d+)$')
 
 
 class Mode:
@@ -46,9 +48,17 @@ def load():
     current_screen: None | Screen = None
     mode_mode = False
     for line in out.splitlines():
+
+        if LEGACY and ('disconnected' in line or line.startswith('Screen')):
+            continue
         if line[0] != " ":
             uid, name = line.split(None, 1)
             current_screen = Screen(uid=uid, name=name)
+            chim = name.split('(', 1)[0].strip().rsplit(None, 1)[1]
+            mode_re = MODE_RE.match(chim)
+            if mode_re:
+                current_screen.position = (int(mode_re.group("x")), int(mode_re.group("y")))
+
             displayInfo.append(current_screen)
             mode_mode = False
         else:
@@ -57,13 +67,14 @@ def load():
             assert current_screen
             sline = line.strip()
             if LEGACY:
-                res, freq = sline.split(None)
-                res = tuple(int(x) for x in res.split("x"))
-                current = "*" in freq
-                freq = freq.rstrip("*=")
-                if current:
+                res, freq = sline.split(None, 1)
+                if not res.endswith('i'):
+                    res = tuple(int(x) for x in res.split("x"))
+                    current = "*" in freq
+                    freq = freq.split(None, 1)[0].rstrip("*+")
                     current_screen.available.append(Mode(res[0], res[1], float(freq)))
-
+                    if current:
+                        current_screen.mode = current_screen.available[-1]
             else:
                 if mode_mode:
                     res, freq = sline.split(",", 1)
