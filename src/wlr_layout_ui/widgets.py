@@ -15,6 +15,10 @@ class GuiButton:
         caption: str,
         clicked,
         description=None,
+        icon=None,
+        icon_size=0,
+        icon_align="l",
+        padding=5,
     ):
         self.rect = rect
         self.color = color
@@ -23,6 +27,11 @@ class GuiButton:
         self.hovering = False
         self.statusInfo = description or caption
         self._clicked = False
+        self.icon = icon
+        self.icon_shape = None
+        self.icon_align = icon_align
+        self.icon_size = icon_size
+        self.padding = padding
 
     def draw(self, surface: pygame.Surface):
         pygame.draw.rect(surface, self.color, self.rect, border_radius=10)
@@ -35,12 +44,55 @@ class GuiButton:
                 border_radius=10,
             )
 
-        # Render the screen uid as text
+        if self.icon_align == "c":  # icon only
+            assert self.icon
+            pygame.draw.polygon(
+                surface,
+                (0, 0, 0),
+                self.icon(
+                    position=(
+                        self.rect.center[0],
+                        self.rect.center[1],
+                    ),
+                    size=self.icon_size,
+                ),
+            )
+            return
+
         text = shared["bigfont"].render(self.caption, True, (0, 0, 0))
 
         # Calculate the position to blit the text onto the rectangle
-        text_rect = text.get_rect()
+        text_rect: pygame.Rect = text.get_rect()
         text_rect.center = self.rect.center
+
+        if self.icon:
+            if not self.icon_align or self.icon_align[0] == "l":
+                pygame.draw.polygon(
+                    surface,
+                    (255, 0, 0),
+                    self.icon(
+                        position=(
+                            text_rect.left - self.padding,
+                            text_rect.center[1],
+                        ),
+                        size=self.icon_size,
+                    ),
+                )
+                text_rect.left += self.icon_size // 2
+            else:
+                pygame.draw.polygon(
+                    surface,
+                    (0, 0, 255),
+                    self.icon(
+                        position=(
+                            text_rect.right + self.padding,
+                            text_rect.center[1],
+                        ),
+                        size=self.icon_size,
+                    ),
+                )
+                text_rect.left -= self.icon_size // 2
+        #                 pygame.draw.polygon(surface, (0,0,0), self.icon(position=(self.rect.x + text_rect.x, self.rect.y), size=self.icon_size))
         # Blit the text onto the rectangle
         surface.blit(text, text_rect)
 
