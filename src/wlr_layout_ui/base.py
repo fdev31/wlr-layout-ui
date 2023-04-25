@@ -44,6 +44,9 @@ displayInfo: list[Screen] = []
 def load():
     import subprocess
 
+    if displayInfo:
+        displayInfo.clear()
+
     out = subprocess.getoutput("xrandr" if LEGACY else "wlr-randr")
     current_screen: None | Screen = None
     mode_mode = False
