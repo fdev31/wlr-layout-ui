@@ -53,13 +53,17 @@ def load():
         if line[0] != " ":
             uid, name = line.split(None, 1)
             current_screen = Screen(uid=uid, name=name)
-            chim = name.split("(", 1)[0].strip().rsplit(None, 1)[1]
-            mode_re = MODE_RE.match(chim)
-            if mode_re:
-                current_screen.position = (
-                    int(mode_re.group("x")),
-                    int(mode_re.group("y")),
-                )
+            try:
+                chim = name.split("(", 1)[0].strip().rsplit(None, 1)[1]
+            except IndexError:
+                current_screen.active = False
+            else:
+                mode_re = MODE_RE.match(chim)
+                if mode_re:
+                    current_screen.position = (
+                        int(mode_re.group("x")),
+                        int(mode_re.group("y")),
+                    )
 
             displayInfo.append(current_screen)
             mode_mode = False
