@@ -42,17 +42,19 @@ def save_layout(screens: list[GuiScreen]):
     min_x = UI_RATIO * min([screen.rect.x for screen in screens])
     min_y = UI_RATIO * min([screen.rect.y for screen in screens])
     print("# Screens layout:")
+    command = ["xrandr" if LEGACY else "wlr-randr"]
     for gs in screens:
         if not gs.screen.mode:
+            command.append(f"--output {gs.screen.uid} --off")
             continue
         x: int = gs.rect.x * UI_RATIO - min_x
         y: int = gs.rect.y * UI_RATIO - min_y
-        if LEGACY:
-            command = f"xrandr --output {gs.screen.uid} --pos {x}x{y} --mode {gs.screen.mode.width}x{gs.screen.mode.height}"
-        else:
-            command = f"wlr-randr --output {gs.screen.uid} --pos {x},{y} --mode {gs.screen.mode.width}x{gs.screen.mode.height}"
-        print(command)
-        os.system(command)
+        command.append(
+            f"--output {gs.screen.uid} --pos {x}{'x' if LEGACY else ','}{y} --mode {gs.screen.mode.width}x{gs.screen.mode.height}"
+        )
+    cmd = " ".join(command)
+    print(cmd)
+    os.system(cmd)
 
 
 def draw_layout_mode(gui_screens: list[GuiScreen], display: pygame.Surface):
