@@ -16,6 +16,13 @@ class Ctx:
     available = []
 
     @classmethod
+    def toggleActive(cls):
+        if cls.screen.screen.mode is None:
+            cls.screen.screen.mode = cls.available[0]
+        else:
+            cls.screen.screen.mode = None
+
+    @classmethod
     def getMode(cls):
         return (cls.resolutions[cls.cur_res], cls.frequencies[cls.cur_freq])
 
@@ -47,6 +54,20 @@ class Ctx:
 
     @classmethod
     def exit(cls):
+        ref_mode, ref_freq = cls.getMode()
+        gui_screen = cls.screen
+        for mode in gui_screen.screen.available:
+            if (
+                mode.width == ref_mode[0]
+                and mode.height == ref_mode[1]
+                and mode.freq == ref_freq
+            ):
+                if gui_screen.screen.mode != mode:
+                    gui_screen.screen.mode = mode
+                    gui_screen.rect.width = mode.width / UI_RATIO
+                    gui_screen.rect.height = mode.height / UI_RATIO
+            break
+
         cls.exit_requested = True
 
 
@@ -59,12 +80,24 @@ gui_buttons = []
 def init(screen_rect, *a):
     Ctx.screen_rect = screen_rect
 
-    but_w = 30
+    but_w = 200
     but_h = 30
 
     icon_w = 40
 
     gui_buttons[:] = [
+        GuiButton(
+            pygame.Rect(
+                screen_rect.width - 200 - MARGIN - but_w,
+                screen_rect.height - but_h - MARGIN,
+                but_w,
+                but_h,
+            ),
+            (100, 200, 100),
+            "Toggle",
+            lambda: Ctx.toggleActive(),
+            description="Switch screen ON or OFF",
+        ),
         GuiButton(
             pygame.Rect(
                 screen_rect.width - 200 - MARGIN,
@@ -152,44 +185,42 @@ def draw_settings_mode(gui_screen: GuiScreen, surface: pygame.Surface):
     screen_name_rect.center = (Ctx.screen_rect.center[0], screen_name_rect.size[1] // 2)
     surface.blit(screen_name, screen_name_rect)
 
-    res_name = shared["bigfont"].render(
-        Ctx.currentResolutionName, True, (255, 255, 255)
-    )
-    res_name_rect = res_name.get_rect()
-    res_name_rect.center = (Ctx.screen_rect.center[0], 60)
-    surface.blit(res_name, res_name_rect)
+    if gui_screen.screen.mode:
+        res_name = shared["bigfont"].render(
+            Ctx.currentResolutionName, True, (255, 255, 255)
+        )
+        res_name_rect = res_name.get_rect()
+        res_name_rect.center = (Ctx.screen_rect.center[0], 60)
+        surface.blit(res_name, res_name_rect)
 
-    freq_name = shared["bigfont"].render(
-        "%.2dHz" % Ctx.frequencies[Ctx.cur_freq], True, (255, 255, 255)
-    )
-    freq_name_rect = freq_name.get_rect()
-    freq_name_rect.center = (Ctx.screen_rect.center[0], 160)
-    surface.blit(freq_name, freq_name_rect)
+        freq_name = shared["bigfont"].render(
+            "%.2dHz" % Ctx.frequencies[Ctx.cur_freq], True, (255, 255, 255)
+        )
+        freq_name_rect = freq_name.get_rect()
+        freq_name_rect.center = (Ctx.screen_rect.center[0], 160)
+        surface.blit(freq_name, freq_name_rect)
+    else:
+        caption = shared["bigfont"].render("OFF", True, (255, 255, 255))
+        rect = caption.get_rect()
+        rect.center = (Ctx.screen_rect.center[0], 160)
+        surface.blit(caption, rect)
 
 
 def run_settings_mode(gui_screen: GuiScreen, event):
     Ctx.available = gui_screen.screen.available
     Ctx.screen = gui_screen
 
-    ref = (gui_screen.screen.mode.width, gui_screen.screen.mode.height)
-    Ctx.cur_res = Ctx.resolutions.index(ref)
-    Ctx.cur_freq = Ctx.frequencies.index(gui_screen.screen.mode.freq)
+    try:
+        ref = (gui_screen.screen.mode.width, gui_screen.screen.mode.height)
+    except AttributeError:
+        Ctx.cur_freq = 0
+        Ctx.cur_res = 0
+    else:
+        Ctx.cur_res = Ctx.resolutions.index(ref)
+        Ctx.cur_freq = Ctx.frequencies.index(gui_screen.screen.mode.freq)
 
     for wid in gui_buttons:
         wid.handle_event(event)
-
-    ref_mode, ref_freq = Ctx.getMode()
-    for mode in gui_screen.screen.available:
-        if (
-            mode.width == ref_mode[0]
-            and mode.height == ref_mode[1]
-            and mode.freq == ref_freq
-        ):
-            if gui_screen.screen.mode != mode:
-                gui_screen.screen.mode = mode
-                gui_screen.rect.width = mode.width / UI_RATIO
-                gui_screen.rect.height = mode.height / UI_RATIO
-            break
 
     if Ctx.exit_requested:
         Ctx.exit_requested = False
