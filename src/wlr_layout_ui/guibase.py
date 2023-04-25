@@ -57,6 +57,19 @@ def gui():
         gs.genColor()
         gui_screens.append(gs)
 
+    max_x = max(s.rect.right for s in gui_screens)
+    min_x = min(s.rect.left for s in gui_screens)
+    min_y = min(s.rect.top for s in gui_screens)
+    max_y = min(s.rect.bottom for s in gui_screens)
+
+    offsetX = (display.get_width() - (max_x - min_x)) //2 
+    offsetY = (display.get_height() - (max_y  - min_y))//2
+
+    for screen in gui_screens:
+        screen.rect.x += offsetX
+        screen.rect.y += offsetY
+
+
     init_layout_mode(screen_rect, gui_screens)
     init_settings_mode(screen_rect, gui_screens)
     # Main loop for the Pygame application
