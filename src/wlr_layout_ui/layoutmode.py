@@ -19,15 +19,15 @@ class Ctx:
 
 
 def init(screen_rect, gui_screens):
-    but_w = 200
-    but_h = 80
+    but_w = 100
+    but_h = 40
 
     gui_buttons[:] = [
         GuiButton(
             pygame.Rect(
                 screen_rect.width / 2 - but_w / 2,
                 screen_rect.height - but_h - STATUS_HEIGHT - MARGIN,
-                200,
+                but_w,
                 but_h,
             ),
             (100, 200, 100),
