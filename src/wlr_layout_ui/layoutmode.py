@@ -102,25 +102,16 @@ def run_layout_mode(gui_screens: list[GuiScreen], event):
             if wid.rect.colliderect(active_screen.rect):
                 # find the pair of corners (one from gui_screen & one from active_screen) which are closest
                 other_screen_coords: list[tuple[int, int]] = [
-                    (wid.rect.x, wid.rect.y),
-                    (wid.rect.x, wid.rect.y + wid.rect.width),
-                    (wid.rect.x + wid.rect.width, wid.rect.y),
-                    (wid.rect.x + wid.rect.width, wid.rect.y + wid.rect.height),
+                    wid.rect.topleft,
+                    wid.rect.topright,
+                    wid.rect.bottomright,
+                    wid.rect.bottomleft,
                 ]
                 active_screen_coords: list[tuple[int, int]] = [
-                    (active_screen.rect.x, active_screen.rect.y),
-                    (
-                        active_screen.rect.x,
-                        active_screen.rect.y + active_screen.rect.width,
-                    ),
-                    (
-                        active_screen.rect.x + active_screen.rect.width,
-                        active_screen.rect.y,
-                    ),
-                    (
-                        active_screen.rect.x + active_screen.rect.width,
-                        active_screen.rect.y + active_screen.rect.height,
-                    ),
+                    active_screen.rect.topleft,
+                    active_screen.rect.topright,
+                    active_screen.rect.bottomright,
+                    active_screen.rect.bottomleft,
                 ]
 
                 def distance(point1: tuple[int, int], point2: tuple[int, int]):
