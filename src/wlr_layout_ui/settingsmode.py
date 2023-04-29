@@ -47,6 +47,7 @@ class Ctx:
     @classmethod
     def changeResolution(cls, direction):
         cls.cur_res = (cls.cur_res + direction) % len(cls.resolutions)
+        cls.cur_freq = len(cls.frequencies) - 1
 
     @classmethod
     def changeFreq(cls, direction):
