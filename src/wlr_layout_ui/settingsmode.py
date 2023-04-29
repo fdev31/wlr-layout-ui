@@ -17,10 +17,10 @@ class Ctx:
 
     @classmethod
     def toggleActive(cls):
+        cls.screen.screen.active = not cls.screen.screen.active
+
         if cls.screen.screen.mode is None:
             cls.screen.screen.mode = cls.available[0]
-        else:
-            cls.screen.screen.mode = None
 
     @classmethod
     def getMode(cls):
@@ -188,7 +188,7 @@ def draw_settings_mode(gui_screen: GuiScreen, surface: pygame.Surface):
     screen_name_rect.center = (Ctx.screen_rect.center[0], screen_name_rect.size[1] // 2)
     surface.blit(screen_name, screen_name_rect)
 
-    if gui_screen.screen.mode:
+    if gui_screen.screen.active:
         res_name = shared["bigfont"].render(
             Ctx.currentResolutionName, True, (255, 255, 255)
         )

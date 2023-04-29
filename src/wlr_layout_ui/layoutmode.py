@@ -44,7 +44,7 @@ def save_layout(screens: list[GuiScreen]):
     print("# Screens layout:")
     command = ["xrandr" if LEGACY else "wlr-randr"]
     for gs in screens:
-        if not gs.screen.mode:
+        if not gs.screen.active:
             command.append(f"--output {gs.screen.uid} --off")
             continue
         x: int = gs.rect.x * UI_RATIO - min_x

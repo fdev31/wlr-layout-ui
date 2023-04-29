@@ -160,8 +160,8 @@ class GuiScreen:
         surface.blit(text, text_rect)
 
         # Second caption line
-        if not self.screen.mode:
-            label = "N/A"
+        if not self.screen.active:
+            label = "OFF"
         else:
             label = "%dx%d @%.2d" % (
                 self.screen.mode.width,
