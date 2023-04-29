@@ -54,7 +54,6 @@ class Ctx:
 
     @classmethod
     def exit(cls, save=True):
-        cls.available = []
         if save:
             ref_mode, ref_freq = cls.getMode()
             gui_screen = cls.screen
@@ -68,9 +67,11 @@ class Ctx:
                         gui_screen.screen.mode = mode
                         gui_screen.rect.width = mode.width / UI_RATIO
                         gui_screen.rect.height = mode.height / UI_RATIO
-                break
+                        print("Changed mode to", mode)
+                    break
 
         cls.exit_requested = True
+        cls.available = []
 
 
 MARGIN = 5
@@ -209,17 +210,19 @@ def draw_settings_mode(gui_screen: GuiScreen, surface: pygame.Surface):
 
 
 def run_settings_mode(gui_screen: GuiScreen, event):
-    Ctx.available = gui_screen.screen.available
-    Ctx.screen = gui_screen
+    new_init = not bool(Ctx.available)
 
-    try:
-        ref = (gui_screen.screen.mode.width, gui_screen.screen.mode.height)
-    except AttributeError:
-        Ctx.cur_freq = 0
-        Ctx.cur_res = 0
-    else:
-        Ctx.cur_res = Ctx.resolutions.index(ref)
-        Ctx.cur_freq = Ctx.frequencies.index(gui_screen.screen.mode.freq)
+    if new_init:
+        Ctx.available = gui_screen.screen.available
+        Ctx.screen = gui_screen
+        try:
+            ref = (gui_screen.screen.mode.width, gui_screen.screen.mode.height)
+        except AttributeError:
+            Ctx.cur_freq = 0
+            Ctx.cur_res = 0
+        else:
+            Ctx.cur_res = Ctx.resolutions.index(ref)
+            Ctx.cur_freq = Ctx.frequencies.index(gui_screen.screen.mode.freq)
 
     for wid in gui_buttons:
         wid.handle_event(event)
