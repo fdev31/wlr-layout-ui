@@ -28,18 +28,18 @@ class Ctx:
 
     @classmethod
     @property
-    def currentResolutionName(cls):
+    def currentResolutionName(cls) -> str:
         return "%dx%d" % tuple(cls.resolutions[cls.cur_res])
 
     @classmethod
     @property
-    def resolutions(cls):
+    def resolutions(cls) -> list[tuple[int, int]]:
         res = set((r.width, r.height) for r in cls.available)
         return list(sorted(res))
 
     @classmethod
     @property
-    def frequencies(cls):
+    def frequencies(cls) -> list[float]:
         ref = tuple(cls.resolutions[cls.cur_res])
         res = set(r.freq for r in cls.available if (r.width, r.height) == ref)
         return list(sorted(res))
@@ -53,20 +53,22 @@ class Ctx:
         cls.cur_freq = (cls.cur_freq + direction) % len(cls.frequencies)
 
     @classmethod
-    def exit(cls):
-        ref_mode, ref_freq = cls.getMode()
-        gui_screen = cls.screen
-        for mode in gui_screen.screen.available:
-            if (
-                mode.width == ref_mode[0]
-                and mode.height == ref_mode[1]
-                and mode.freq == ref_freq
-            ):
-                if gui_screen.screen.mode != mode:
-                    gui_screen.screen.mode = mode
-                    gui_screen.rect.width = mode.width / UI_RATIO
-                    gui_screen.rect.height = mode.height / UI_RATIO
-            break
+    def exit(cls, save=True):
+        cls.available = []
+        if save:
+            ref_mode, ref_freq = cls.getMode()
+            gui_screen = cls.screen
+            for mode in gui_screen.screen.available:
+                if (
+                    mode.width == ref_mode[0]
+                    and mode.height == ref_mode[1]
+                    and mode.freq == ref_freq
+                ):
+                    if gui_screen.screen.mode != mode:
+                        gui_screen.screen.mode = mode
+                        gui_screen.rect.width = mode.width / UI_RATIO
+                        gui_screen.rect.height = mode.height / UI_RATIO
+                break
 
         cls.exit_requested = True
 
@@ -221,6 +223,10 @@ def run_settings_mode(gui_screen: GuiScreen, event):
 
     for wid in gui_buttons:
         wid.handle_event(event)
+
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE:
+            Ctx.exit(False)
 
     if Ctx.exit_requested:
         Ctx.exit_requested = False
