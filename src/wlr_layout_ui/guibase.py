@@ -27,9 +27,27 @@ def gui():
         )
         / UI_RATIO
     )
+    average_width = int(
+        sum(
+            max(screen.available, key=lambda mode: mode.width).width
+            for screen in displayInfo
+        )
+        / UI_RATIO
+        / len(displayInfo)
+    )
+    average_height = int(
+        sum(
+            max(screen.available, key=lambda mode: mode.height).height
+            for screen in displayInfo
+        )
+        / UI_RATIO
+        / len(displayInfo)
+    )
 
     # Create a Pygame display surface with the maximum size
-    display = pygame.display.set_mode((max_width * 2, max_height * 2))
+    display = pygame.display.set_mode(
+        (max_width + average_width * 2, max_height + average_height * 2)
+    )
     screen_rect = display.get_rect()
     gui_screens: list[GuiScreen] = []
     # Loop over each screen in the displayInfo list
