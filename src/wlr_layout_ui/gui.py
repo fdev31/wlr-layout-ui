@@ -293,6 +293,7 @@ class UI(pyglet.window.Window):
     def update_screen_spec(self):
         self._update_frequencies(self.selected_item, self.resolutions.get_value())
         self._update_mode()
+        self.center_layout()
 
     def _update_mode(self):
         assert self.selected_item
