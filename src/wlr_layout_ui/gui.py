@@ -159,7 +159,7 @@ class UI(pyglet.window.Window):
         pyglet.window.Window.on_resize(self, width, height)
         for wid in self.widgets:
             # wid.rect.y = WINDOW_MARGIN
-            wid.rect.y = height - WINDOW_MARGIN - wid.height
+            wid.rect.y = height - WINDOW_MARGIN - wid.rect.height
         self.center_layout()
 
     def on_mouse_release(self, x, y, button, modifiers):

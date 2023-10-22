@@ -117,16 +117,14 @@ class SimpleDropdown:
         self.radius = WIDGETS_RADIUS
 
         # Dimensions
-        self.width = rect.width
-        self.height = rect.height
         self.triangle_size = int(rect.height * 0.5)
 
     def get_triangle(self):
-        triangle_x = self.rect.x + self.width - self.triangle_size - 4
+        triangle_x = self.rect.x + self.rect.width - self.triangle_size - 4
         if not self.expanded:
-            margin = self.height - self.triangle_size
+            margin = self.rect.height - self.triangle_size
             triangle_y = (
-                self.rect.y + (self.height // 2) - int(0.5 * self.triangle_size)
+                self.rect.y + (self.rect.height // 2) - int(0.5 * self.triangle_size)
             )
             return shapes.Triangle(
                 triangle_x,
@@ -138,8 +136,8 @@ class SimpleDropdown:
                 color=self.style.text_color,
             )
         else:
-            margin = (self.height - self.triangle_size) // 2
-            triangle_y = self.rect.y + self.height - margin
+            margin = (self.rect.height - self.triangle_size) // 2
+            triangle_y = self.rect.y + self.rect.height - margin
             return shapes.Triangle(
                 triangle_x,
                 triangle_y - self.triangle_size,
@@ -208,8 +206,6 @@ class SimpleDropdown:
                 color=color,
             ).draw()
 
-        # shapes.Rectangle(self.rect.x, self.rect.y, self.width, self.height, color=color).draw()
-
         if not self.options or self.selected_index < 0:
             text = self.label
         else:
@@ -219,7 +215,7 @@ class SimpleDropdown:
         pyglet.text.Label(
             text,
             x=self.rect.x + 10,
-            y=self.rect.y + self.height // 2,
+            y=self.rect.y + self.rect.height // 2,
             anchor_x="left",
             anchor_y="center",
             color=self.style.text_color,
@@ -228,23 +224,23 @@ class SimpleDropdown:
         # Triangle button
         self.get_triangle().draw()
 
-        x_match = self.rect.x < cursor[0] < self.rect.x + self.width
+        x_match = self.rect.x < cursor[0] < self.rect.x + self.rect.width
 
         # Expanded options
         if self.expanded:
             for i, option in enumerate(self.options):
                 option_x = self.rect.x
                 if self.invert:
-                    option_y = self.rect.y + i * self.height
+                    option_y = self.rect.y + i * self.rect.height
                 else:
-                    option_y = self.rect.y - (i + 1) * self.height
-                option_height = self.height
+                    option_y = self.rect.y - (i + 1) * self.rect.height
+                option_height = self.rect.height
                 if x_match and option_y < cursor[1] < option_y + option_height:
                     color = self.style.highlight
                 else:
                     color = self.style.color
                 shapes.Rectangle(
-                    option_x, option_y, self.width, option_height, color=color
+                    option_x, option_y, self.rect.width, option_height, color=color
                 ).draw()
 
                 label = option["name"]
@@ -264,30 +260,32 @@ class SimpleDropdown:
         self.expanded = False
 
     def on_mouse_press(self, x, y, button, modifiers):
-        menu_height = self.height * (len(self.options) + 1) if self.expanded else 0
+        menu_height = 0
+        if self.expanded:
+            menu_height = self.rect.height * (len(self.options) + 1)
         # FIXME: fix inverted mode
         if self.invert:
             menu_height *= -1
 
         if (
-            self.rect.x < x < self.rect.x + self.width
-            and self.rect.y - menu_height < y < self.rect.y + self.height
+            self.rect.x < x < self.rect.x + self.rect.width
+            and self.rect.y - menu_height < y < self.rect.y + self.rect.height
         ):
             old_index = self.selected_index
             # Dropdown button clicked
             if (
-                self.rect.x < x < self.rect.x + self.width
-                and self.rect.y < y < self.rect.y + self.height
+                self.rect.x < x < self.rect.x + self.rect.width
+                and self.rect.y < y < self.rect.y + self.rect.height
             ):
                 self.expanded = not self.expanded
             else:
                 # Check which option is clicked
                 for i, option in enumerate(self.options):
                     if self.invert:
-                        option_y = self.rect.y + (i + 1) * self.height
+                        option_y = self.rect.y + (i + 1) * self.rect.height
                     else:
-                        option_y = self.rect.y - (i + 1) * self.height
-                    if option_y < y < option_y + self.height:
+                        option_y = self.rect.y - (i + 1) * self.rect.height
+                    if option_y < y < option_y + self.rect.height:
                         self.selected_index = i
                         self.expanded = False
                         break
@@ -316,8 +314,6 @@ class Button:
         self.toggled = False
         self.rect = rect
         self.style = style
-        self.width = rect.width
-        self.height = rect.height
         self.label = label
         self.radius = WIDGETS_RADIUS
 
