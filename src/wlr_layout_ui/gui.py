@@ -17,21 +17,18 @@ class UI(pyglet.window.Window):
         self.scale_factor = 1
         but_w = 120
         but_h = 25
+        self.cursor_coords = (0, 0)
+
+        gui_screens: list[GuiScreen] = []
+        self.gui_screens = gui_screens
+
         box = HBox(WINDOW_MARGIN, WINDOW_MARGIN, but_h)
         apply_but = Button(
             box.add(but_w),
-            "Apply",
+            "Confirm",
             action=self.save_layout,
-            style=Style(color=(120, 145, 210), bold=True),
+            style=Style(color=(120, 165, 240), bold=True),
         )
-        self.on_off_but = Button(
-            box.add(but_w),
-            "On/Off",
-            action=self.toggle_screen,
-            style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
-            togglable=True,
-        )
-        self.buttons = [apply_but, self.on_off_but]
         self.resolutions = SimpleDropdown(
             box.add(but_w),
             "Resolution",
@@ -46,10 +43,13 @@ class UI(pyglet.window.Window):
             onchange=self._update_mode,
             # invert=True,
         )
-        self.cursor_coords = (0, 0)
-
-        gui_screens: list[GuiScreen] = []
-        self.gui_screens = gui_screens
+        self.on_off_but = Button(
+            box.add(but_w),
+            "On/Off",
+            action=self.toggle_screen_power,
+            style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
+            togglable=True,
+        )
 
         # Loop over each screen in the displayInfo list
         for screen in displayInfo:
@@ -90,7 +90,8 @@ class UI(pyglet.window.Window):
             screen.rect.x += offsetX
             screen.rect.y += offsetY
         self.center_layout()
-        self.widgets = self.buttons + [self.resolutions, self.freqs]
+
+        self.widgets = [apply_but, self.on_off_but, self.resolutions, self.freqs]
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_coords = (x, y)
@@ -136,13 +137,6 @@ class UI(pyglet.window.Window):
             cur_mode = screen.screen.mode.width, screen.screen.mode.height
         else:
             cur_mode = mode
-        assert self.selected_item
-        res = sorted_resolutions(self.selected_item.screen.available)
-        # Update frequency
-        i = -1
-        for i, r in enumerate(res):
-            if r[0] == cur_mode[0] and r[1] == cur_mode[1]:
-                break
         freqs = sorted_frequencies(screen.screen.available, cur_mode[0], cur_mode[1])
         self.freqs.options = [{"name": f"{r:.2f} Hz", "value": r} for r in freqs]
         if mode is None:
@@ -158,7 +152,6 @@ class UI(pyglet.window.Window):
     def on_resize(self, width, height):
         pyglet.window.Window.on_resize(self, width, height)
         for wid in self.widgets:
-            # wid.rect.y = WINDOW_MARGIN
             wid.rect.y = height - WINDOW_MARGIN - wid.rect.height
         self.center_layout()
 
@@ -271,7 +264,7 @@ class UI(pyglet.window.Window):
                 arect.x -= closest_match[1][0] - closest_match[0][0]
                 arect.y -= closest_match[1][1] - closest_match[0][1]
 
-    def toggle_screen(self):
+    def toggle_screen_power(self):
         if self.selected_item:
             self.selected_item.screen.active = not self.selected_item.screen.active
 
