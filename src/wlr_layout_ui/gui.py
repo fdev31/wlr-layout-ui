@@ -56,8 +56,9 @@ class UI(pyglet.window.Window):
             # Get the position and mode width and height for this screen
             x, y = screen.position
             y = height - y
-            max_width = max(screen.available, key=lambda mode: mode.width).width
-            max_height = max(screen.available, key=lambda mode: mode.height).height
+
+            max_width = max(m.width for m in screen.available)
+            max_height = max(m.height for m in screen.available)
 
             if screen.mode:
                 rect = Rect(
