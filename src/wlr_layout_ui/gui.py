@@ -221,7 +221,7 @@ class UI(pyglet.window.Window):
             assert gs.screen.mode
             sep = "x" if LEGACY else ","
             uid = gs.screen.uid
-            mode = gs.screen.mode.width + "x" + gs.screen.mode.height
+            mode = f"{gs.screen.mode.width}x{gs.screen.mode.height}"
             command.append(f"--output {uid} --pos {x}{sep}{y} --mode {mode}")
         cmd = " ".join(command)
         print(cmd)
