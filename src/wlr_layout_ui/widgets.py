@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pyglet
 from pyglet import shapes
 
-from .settings import FONT
+from .settings import FONT, WIDGETS_RADIUS
 from .utils import collidepoint
 
 
@@ -113,6 +113,7 @@ class SimpleDropdown:
         self.label = label
         self.onchange = onchange
         self.rect = rect
+        self.radius = WIDGETS_RADIUS
 
         # Dimensions
         self.width = rect.width
@@ -150,9 +151,63 @@ class SimpleDropdown:
 
     def draw(self, cursor):
         # Dropdown box
+
+        is_hovered = self.rect.contains(*cursor)
+
+        color = list(self.style.color)
+
+        if is_hovered:
+            color = [min(255, c + 20) for c in color]
+
+        rect = self.rect
+
+        coordinates = [
+            (rect.x, rect.y + rect.height - 2 * self.radius),
+            (
+                rect.x + rect.width - 2 * self.radius,
+                rect.y + rect.height - 2 * self.radius,
+            ),
+        ]
+        if not self.expanded:
+            coordinates.extend(
+                [
+                    (rect.x, rect.y),
+                    (rect.x + rect.width - 2 * self.radius, rect.y),
+                ]
+            )
+
+        for corner_x, corner_y in coordinates:
+            shapes.Circle(
+                corner_x + self.radius,
+                corner_y + self.radius,
+                self.radius,
+                color=color,
+            ).draw()
+
         shapes.Rectangle(
-            self.rect.x, self.rect.y, self.width, self.height, color=(200, 200, 200)
+            rect.x + self.radius,
+            rect.y,
+            rect.width - 2 * self.radius,
+            rect.height,
+            color=color,
         ).draw()
+        shapes.Rectangle(
+            rect.x,
+            rect.y + self.radius,
+            rect.width,
+            rect.height - 2 * self.radius,
+            color=color,
+        ).draw()
+        if self.expanded:
+            shapes.Rectangle(
+                rect.x,
+                rect.y,
+                rect.width,
+                self.radius,
+                color=color,
+            ).draw()
+
+        # shapes.Rectangle(self.rect.x, self.rect.y, self.width, self.height, color=color).draw()
 
         if not self.options or self.selected_index < 0:
             text = self.label
@@ -263,6 +318,7 @@ class Button:
         self.width = rect.width
         self.height = rect.height
         self.label = label
+        self.radius = WIDGETS_RADIUS
 
     @property
     def ex(self):
@@ -272,7 +328,7 @@ class Button:
     def ey(self):
         return self.rect.y + self.rect.height
 
-    def is_hovered(self, x, y):
+    def contains(self, x, y):
         return self.rect.x < x < self.ex and self.rect.y < y < self.ey
 
     def unfocus(self):
@@ -290,6 +346,17 @@ class Button:
             color=style.text_color,
             font_name=FONT,
         )
+
+        is_hovered = self.contains(*cursor)
+
+        if self.togglable and self.toggled:
+            color = list(style.highlight)
+        else:
+            color = list(style.color)
+
+        if is_hovered:
+            color = [min(255, c + 20) for c in color]
+
         if self.togglable:
             self.toggled_rectangle = shapes.Rectangle(
                 self.rect.x,
@@ -317,19 +384,78 @@ class Button:
         )
 
         if self.togglable and self.toggled:
-            if self.is_hovered(*cursor):
+            if self.contains(*cursor):
                 self.hovered_toggled_rectangle.draw()
             else:
                 self.toggled_rectangle.draw()
         else:
-            if self.is_hovered(*cursor):
+            if self.contains(*cursor):
                 self.hovered_rectangle.draw()
             else:
                 self.rectangle.draw()
         self.text.draw()
 
+    def draw(self, cursor):
+        # Draw rounded borders using circles and rectangles
+        rect = self.rect
+        style = self.style
+        self.text = pyglet.text.Label(
+            self.label,
+            x=rect.x + rect.width // 2,
+            y=rect.y + rect.height // 2,
+            anchor_x="center",
+            anchor_y="center",
+            color=style.text_color,
+            font_name=FONT,
+        )
+        contains = self.contains(*cursor)
+
+        if self.togglable and self.toggled:
+            color = list(style.highlight)
+        else:
+            color = list(style.color)
+
+        if contains:
+            color = [min(255, c + 20) for c in color]
+
+        # Draw rounded corners using circles
+        coordinates = [
+            (rect.x, rect.y),
+            (rect.x + rect.width - 2 * self.radius, rect.y),
+            (rect.x, rect.y + rect.height - 2 * self.radius),
+            (
+                rect.x + rect.width - 2 * self.radius,
+                rect.y + rect.height - 2 * self.radius,
+            ),
+        ]
+        for corner_x, corner_y in coordinates:
+            shapes.Circle(
+                corner_x + self.radius,
+                corner_y + self.radius,
+                self.radius,
+                color=color,
+            ).draw()
+
+        # Draw rectangles to fill the gaps inside the rounded borders
+        shapes.Rectangle(
+            rect.x + self.radius,
+            rect.y,
+            rect.width - 2 * self.radius,
+            rect.height,
+            color=color,
+        ).draw()
+        shapes.Rectangle(
+            rect.x,
+            rect.y + self.radius,
+            rect.width,
+            rect.height - 2 * self.radius,
+            color=color,
+        ).draw()
+
+        self.text.draw()
+
     def on_mouse_press(self, x, y, button, modifiers):
-        if self.action and self.is_hovered(x, y):
+        if self.action and self.contains(x, y):
             self.toggled = not self.toggled
             self.action()
             return True
