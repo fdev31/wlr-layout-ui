@@ -1,5 +1,6 @@
 import math
 import os
+import re
 
 import pyglet
 
@@ -8,6 +9,8 @@ from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
 from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
 from .utils import compute_bounding_box
+
+hex_re = re.compile("^[0-9x]+$")
 
 
 class UI(pyglet.window.Window):
@@ -205,9 +208,13 @@ class UI(pyglet.window.Window):
 
     def get_status_text(self):
         if self.selected_item:
-            return self.selected_item.screen.name
+            words = []
+            for word in self.selected_item.screen.name.split():
+                if not hex_re.match(word):
+                    words.append(word)
+            return " ".join(words)
         else:
-            return "Hi!"
+            return "Select a monitor"
 
     def save_layout(self):
         screens = self.gui_screens
