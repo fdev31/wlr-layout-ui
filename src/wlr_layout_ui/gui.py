@@ -55,7 +55,7 @@ class UI(pyglet.window.Window):
         )
 
         # Loop over each screen in the displayInfo list
-        for screen in displayInfo:
+        for screen in sorted(displayInfo, key=lambda s: s.uid):
             # Get the position and mode width and height for this screen
             x, y = screen.position
             y = height - y
