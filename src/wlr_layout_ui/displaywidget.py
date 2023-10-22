@@ -29,6 +29,7 @@ class GuiScreen:
     ):
         self.screen = screen
         self.rect = rect
+        self.target_rect = rect.copy()
         self.color = color
         self.dragging = False
         self.highlighted = False
@@ -59,7 +60,31 @@ class GuiScreen:
     def statusInfo(self):
         return "Screen identifier: " + self.screen.name
 
+    def _animation_step(self, speed=1):
+        r = self.rect
+        t = self.target_rect
+        for var in ("x", "y", "width", "height"):
+            cv = getattr(r, var)
+            tv = getattr(t, var)
+            if cv != tv:
+                if abs(tv - cv) <= 1:
+                    setattr(r, var, tv)
+                else:
+                    if cv < tv:
+                        setattr(r, var, min(tv, (cv + tv) / 2))
+                    elif cv > tv:
+                        setattr(r, var, max(tv, (cv + tv) / 2))
+
+    def set_position(self, x, y):
+        self.rect.x = x
+        self.target_rect.x = x
+        self.rect.y = y
+        self.target_rect.y = y
+
     def draw(self):
+        if self.rect != self.target_rect:
+            self._animation_step()
+
         txt_color = (0, 0, 0, 200) if self.screen.active else (255, 255, 255, 120)
         border_color = (100, 100, 155)
         if not self.screen.active:

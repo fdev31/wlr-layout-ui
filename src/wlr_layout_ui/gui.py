@@ -90,9 +90,8 @@ class UI(pyglet.window.Window):
         offsetY = (height - (max_y - min_y)) // 2
 
         for screen in gui_screens:
-            screen.rect.x += offsetX
-            screen.rect.y += offsetY
-        self.center_layout()
+            screen.set_position(screen.rect.x + offsetX, screen.rect.y + offsetY)
+        self.center_layout(immediate=True)
 
         self.widgets: list[SimpleDropdown | Button] = [
             apply_but,
@@ -155,14 +154,15 @@ class UI(pyglet.window.Window):
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if self.selected_item and self.selected_item.dragging:
-            self.selected_item.rect.x += dx
-            self.selected_item.rect.y += dy
+            self.selected_item.set_position(
+                self.selected_item.rect.x + dx, self.selected_item.rect.y + dy
+            )
 
     def on_resize(self, width, height):
         pyglet.window.Window.on_resize(self, width, height)
         for wid in self.widgets:
             wid.rect.y = height - WINDOW_MARGIN - wid.rect.height
-        self.center_layout()
+        self.center_layout(immediate=True)
 
     def on_mouse_release(self, x, y, button, modifiers):
         if self.selected_item and self.selected_item.dragging:
@@ -196,16 +196,21 @@ class UI(pyglet.window.Window):
         )
         status_label.draw()
 
-    def center_layout(self):
-        all_rects = [screen.rect for screen in self.gui_screens]
+    def center_layout(self, immediate=False):
+        all_rects = [screen.target_rect for screen in self.gui_screens]
         avg_x, avg_y = Rect(*compute_bounding_box(all_rects)).center
         win_res = self.get_size()
         offX = (win_res[0] // 2) - avg_x
         offY = (win_res[1] // 2) - avg_y
         self.gui_screens = list(self.gui_screens)
         for screen in self.gui_screens:
-            screen.rect.x += offX
-            screen.rect.y += offY
+            if immediate:
+                screen.set_position(
+                    screen.target_rect.x + offX, screen.target_rect.y + offY
+                )
+            else:
+                screen.target_rect.x = screen.target_rect.x + offX
+                screen.target_rect.y = screen.target_rect.y + offY
 
     def get_status_text(self):
         if self.selected_item:
@@ -278,8 +283,8 @@ class UI(pyglet.window.Window):
                             min_distance = distance(coord, other_screen_coord)
                             closest_match = other_screen_coord, coord
                 assert closest_match is not None
-                arect.x -= closest_match[1][0] - closest_match[0][0]
-                arect.y -= closest_match[1][1] - closest_match[0][1]
+                active_screen.target_rect.x -= closest_match[1][0] - closest_match[0][0]
+                active_screen.target_rect.y -= closest_match[1][1] - closest_match[0][1]
 
     def toggle_screen_power(self):
         if self.selected_item:

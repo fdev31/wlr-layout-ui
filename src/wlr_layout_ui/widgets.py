@@ -67,6 +67,9 @@ class Rect:
             return False
         return True
 
+    def copy(self):
+        return Rect(self.x, self.y, self.width, self.height)
+
 
 @dataclass
 class HBox:
