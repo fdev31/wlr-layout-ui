@@ -11,6 +11,7 @@ class GuiScreen:
         return "<Screen %s (%s) - %s>" % (self.rect, self.color, self.screen.name)
 
     all_colors: tuple[tuple[int, int, int], ...] = (
+        (108, 158, 208),
         (172, 65, 66),
         (126, 141, 80),
         (229, 181, 102),
@@ -110,7 +111,7 @@ class GuiScreen:
             x=tx,
             y=ty,
             font_size=16,
-            color=(200, 200, 200, 255),
+            color=(240, 240, 240, 255),
         ).draw()
 
         # Second caption line
