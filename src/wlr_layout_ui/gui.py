@@ -300,5 +300,5 @@ class UI(pyglet.window.Window):
         screen.mode = find_matching_mode(
             screen.available, self.resolutions.get_value(), self.freqs.get_value()
         )
-        self.selected_item.rect.width = screen.mode.width // UI_RATIO
-        self.selected_item.rect.height = screen.mode.height // UI_RATIO
+        self.selected_item.target_rect.width = screen.mode.width // UI_RATIO
+        self.selected_item.target_rect.height = screen.mode.height // UI_RATIO
