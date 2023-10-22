@@ -27,20 +27,20 @@ class UI(pyglet.window.Window):
 
         box = HBox(WINDOW_MARGIN, WINDOW_MARGIN, but_h)
         apply_but = Button(
-            box.add(but_w),
+            box.add(but_w * 0.7),
             "Confirm",
             action=self.save_layout,
             style=Style(color=(120, 165, 240), bold=True),
         )
         self.resolutions = SimpleDropdown(
-            box.add(but_w),
+            box.add(but_w * 1.1),
             "Resolution",
             [],
             onchange=self.update_screen_spec,
             # invert=True,
         )
         self.freqs = SimpleDropdown(
-            box.add(but_w),
+            box.add(but_w * 0.9),
             "Rate",
             [],
             onchange=self._update_mode,
@@ -133,7 +133,9 @@ class UI(pyglet.window.Window):
         cur_mode = screen.screen.mode
         # Update resolution
         res = sorted_resolutions(screen.screen.available)
-        self.resolutions.options = [{"name": f"{r[0]}x{r[1]}", "value": r} for r in res]
+        self.resolutions.options = [
+            {"name": f"{r[0]} x {r[1]}", "value": r} for r in res
+        ]
         i = -1
         for i, r in enumerate(res):
             if r[0] == cur_mode.width and r[1] == cur_mode.height:
