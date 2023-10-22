@@ -1,179 +1,335 @@
-import random
-import pygame
-from .base import Screen
+from dataclasses import dataclass
 
-__all__ = ["GuiButton", "GuiScreen", "shared"]
+import pyglet
+from pyglet import shapes
 
-shared = {}
-
-
-class GuiButton:
-    def __init__(
-        self,
-        rect: pygame.Rect,
-        color: tuple[int, int, int],
-        caption: str,
-        clicked,
-        description=None,
-        icon=None,
-        icon_size=0,
-        icon_align="l",
-        padding=5,
-    ):
-        self.rect = rect
-        self.color = color
-        self.caption = caption
-        self.clicked = clicked
-        self.hovering = False
-        self.statusInfo = description or caption
-        self._clicked = False
-        self.icon = icon
-        self.icon_shape = None
-        self.icon_align = icon_align
-        self.icon_size = icon_size
-        self.padding = padding
-
-    def draw(self, surface: pygame.Surface):
-        pygame.draw.rect(surface, self.color, self.rect, border_radius=10)
-        if self.hovering:
-            pygame.draw.rect(
-                surface,
-                [x / 2 for x in self.color],
-                self.rect,
-                width=5,
-                border_radius=10,
-            )
-
-        if self.icon_align == "c":  # icon only
-            assert self.icon
-            pygame.draw.polygon(
-                surface,
-                (0, 0, 0),
-                self.icon(
-                    position=(
-                        self.rect.center[0],
-                        self.rect.center[1],
-                    ),
-                    size=self.icon_size,
-                ),
-            )
-            return
-
-        text = shared["bigfont"].render(self.caption, True, (0, 0, 0))
-
-        # Calculate the position to blit the text onto the rectangle
-        text_rect: pygame.Rect = text.get_rect()
-        text_rect.center = self.rect.center
-
-        if self.icon:
-            if not self.icon_align or self.icon_align[0] == "l":
-                pygame.draw.polygon(
-                    surface,
-                    (255, 0, 0),
-                    self.icon(
-                        position=(
-                            text_rect.left - self.padding,
-                            text_rect.center[1],
-                        ),
-                        size=self.icon_size,
-                    ),
-                )
-                text_rect.left += self.icon_size // 2
-            else:
-                pygame.draw.polygon(
-                    surface,
-                    (0, 0, 255),
-                    self.icon(
-                        position=(
-                            text_rect.right + self.padding,
-                            text_rect.center[1],
-                        ),
-                        size=self.icon_size,
-                    ),
-                )
-                text_rect.left -= self.icon_size // 2
-        #                 pygame.draw.polygon(surface, (0,0,0), self.icon(position=(self.rect.x + text_rect.x, self.rect.y), size=self.icon_size))
-        # Blit the text onto the rectangle
-        surface.blit(text, text_rect)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEMOTION:
-            self.hovering = self.rect.collidepoint(event.pos)
-        elif event.type == pygame.MOUSEBUTTONUP:
-            self._clicked = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if not self._clicked and self.hovering:
-                self._clicked = True
-                self.clicked()
+from .settings import FONT
+from .utils import collidepoint
 
 
-class GuiScreen:
-    all_colors: tuple[tuple[int, int, int], ...] = (
-        (172, 65, 66),
-        (126, 141, 80),
-        (229, 181, 102),
-        (108, 153, 186),
-        (158, 78, 133),
-        (125, 213, 207),
-        (208, 208, 208),
-    )
-    cur_color = 0
-
-    def __init__(
-        self,
-        screen: Screen,
-        rect: pygame.Rect,
-        color: tuple[int, int, int] = (100, 100, 100),
-    ):
-        self.screen = screen
-        self.rect = rect
-        self.color = color
-        self.hovering = False
-
-    def genColor(self):
-        if self.cur_color >= len(self.all_colors):
-            self.color = (
-                random.randint(100, 200),
-                random.randint(100, 200),
-                random.randint(100, 200),
-            )
-        else:
-            self.color = self.all_colors[self.cur_color]
-            GuiScreen.cur_color += 1
+@dataclass
+class Rect:
+    x: int
+    y: int
+    width: int
+    height: int
 
     @property
-    def statusInfo(self):
-        return "Screen identifier: " + self.screen.name
+    def topleft(self):
+        return (self.left, self.top)
 
-    def draw(self, surface: pygame.Surface):
-        # draw the background
-        pygame.draw.rect(surface, self.color, self.rect)
-        pygame.draw.rect(surface, (50, 50, 50), self.rect, width=3)
+    @property
+    def topright(self):
+        return (self.right, self.top)
 
-        # Render the screen uid as text
-        text = shared["font"].render(self.screen.uid, True, (0, 0, 0))
+    @property
+    def bottomleft(self):
+        return (self.left, self.bottom)
 
-        # Calculate the position to blit the text onto the rectangle
-        text_rect = text.get_rect()
-        text_rect.center = self.rect.center
-        # Blit the text onto the rectangle
-        surface.blit(text, text_rect)
+    @property
+    def bottomright(self):
+        return (self.right, self.bottom)
 
-        # Second caption line
-        if not self.screen.active:
-            label = "OFF"
-        else:
-            label = "%dx%d @%.2d" % (
-                self.screen.mode.width,
-                self.screen.mode.height,
-                self.screen.mode.freq,
+    @property
+    def left(self):
+        return self.x
+
+    @property
+    def right(self):
+        return self.x + self.width
+
+    @property
+    def top(self):
+        return self.y + self.height
+
+    @property
+    def bottom(self):
+        return self.y
+
+    @property
+    def center(self):
+        return self.x + self.width // 2, self.y + self.height // 2
+
+    def contains(self, x, y):
+        return collidepoint(
+            self.x, self.y, self.x + self.width, self.y + self.height, x, y
+        )
+
+    def collide(self, rect):
+        # return true if the two rectangles are overlapping in any way
+        if rect.left >= self.right:
+            return False
+        if rect.right <= self.left:
+            return False
+        if rect.top <= self.bottom:
+            return False
+        if rect.bottom >= self.top:
+            return False
+        return True
+
+
+@dataclass
+class HBox:
+    x: int
+    y: int
+    height: int
+    padding: int = 4
+
+    def add(self, width):
+        r = Rect(self.x, self.y, width, self.height)
+        self.x += width + self.padding
+        return r
+
+
+@dataclass
+class VBox:
+    x: int
+    y: int
+    width: int
+    padding: int = 4
+
+    def add(self, height):
+        r = Rect(self.x, self.y, self.width, height)
+        self.y -= height + self.padding
+        return r
+
+
+@dataclass
+class Style:
+    text_color: tuple[int, int, int, int] = (50, 50, 50, 255)
+    color: tuple[int, int, int] = (200, 200, 200)
+    highlight: tuple[int, int, int] = (200, 255, 200)
+
+
+class SimpleDropdown:
+    def __init__(
+        self, rect, label, options, onchange=None, style=Style(), invert=False
+    ):
+        self.invert = invert
+        self.options = options
+        self.selected_index = 0
+        self.expanded = False
+        self.style = style
+        self.label = label
+        self.onchange = onchange
+        self.rect = rect
+
+        # Dimensions
+        self.width = rect.width
+        self.height = rect.height
+        self.triangle_size = int(rect.height * 0.5)
+
+    def get_triangle(self):
+        triangle_x = self.rect.x + self.width - self.triangle_size - 4
+        if not self.expanded:
+            margin = self.height - self.triangle_size
+            triangle_y = (
+                self.rect.y + (self.height // 2) - int(0.5 * self.triangle_size)
             )
-        text2 = shared["font"].render(label, True, (0, 0, 0))
-        label_rect = text2.get_rect()
-        label_rect.center = self.rect.center
-        label_rect.y += text_rect.height + 10
-        surface.blit(text2, label_rect)
+            return shapes.Triangle(
+                triangle_x,
+                triangle_y + self.triangle_size,
+                triangle_x + self.triangle_size,
+                triangle_y + self.triangle_size,
+                triangle_x + self.triangle_size / 2,
+                triangle_y,
+                color=self.style.text_color,
+            )
+        else:
+            margin = (self.height - self.triangle_size) // 2
+            triangle_y = self.rect.y + self.height - margin
+            return shapes.Triangle(
+                triangle_x,
+                triangle_y - self.triangle_size,
+                triangle_x + self.triangle_size,
+                triangle_y - self.triangle_size,
+                triangle_x + self.triangle_size / 2,
+                triangle_y,
+                color=self.style.text_color,
+            )
 
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEMOTION:
-            self.hovering = self.rect.collidepoint(event.pos)
+    def draw(self, cursor):
+        # Dropdown box
+        shapes.Rectangle(
+            self.rect.x, self.rect.y, self.width, self.height, color=(200, 200, 200)
+        ).draw()
+
+        if not self.options or self.selected_index < 0:
+            text = self.label
+        else:
+            text = self.options[self.selected_index]["name"]
+
+        # Selected option
+        pyglet.text.Label(
+            text,
+            x=self.rect.x + 10,
+            y=self.rect.y + self.height // 2,
+            anchor_x="left",
+            anchor_y="center",
+            color=self.style.text_color,
+        ).draw()
+
+        # Triangle button
+        self.get_triangle().draw()
+
+        x_match = self.rect.x < cursor[0] < self.rect.x + self.width
+
+        # Expanded options
+        if self.expanded:
+            for i, option in enumerate(self.options):
+                option_x = self.rect.x
+                if self.invert:
+                    option_y = self.rect.y + i * self.height
+                else:
+                    option_y = self.rect.y - (i + 1) * self.height
+                option_height = self.height
+                if x_match and option_y < cursor[1] < option_y + option_height:
+                    color = self.style.highlight
+                else:
+                    color = self.style.color
+                shapes.Rectangle(
+                    option_x, option_y, self.width, option_height, color=color
+                ).draw()
+
+                label = option["name"]
+
+                pyglet.text.Label(
+                    label,
+                    x=option_x + 10,
+                    y=option_y + option_height // 2,
+                    color=self.style.text_color,
+                    anchor_x="left",
+                    anchor_y="center",
+                    bold=i == self.selected_index,
+                    font_name=FONT,
+                ).draw()
+
+    def unfocus(self):
+        self.expanded = False
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        menu_height = self.height * (len(self.options) + 1) if self.expanded else 0
+        # FIXME: fix inverted mode
+        if self.invert:
+            menu_height *= -1
+
+        if (
+            self.rect.x < x < self.rect.x + self.width
+            and self.rect.y - menu_height < y < self.rect.y + self.height
+        ):
+            old_index = self.selected_index
+            # Dropdown button clicked
+            if (
+                self.rect.x < x < self.rect.x + self.width
+                and self.rect.y < y < self.rect.y + self.height
+            ):
+                self.expanded = not self.expanded
+            else:
+                # Check which option is clicked
+                for i, option in enumerate(self.options):
+                    if self.invert:
+                        option_y = self.rect.y + (i + 1) * self.height
+                    else:
+                        option_y = self.rect.y - (i + 1) * self.height
+                    if option_y < y < option_y + self.height:
+                        self.selected_index = i
+                        self.expanded = False
+                        break
+            if old_index != self.selected_index:
+                if self.onchange:
+                    self.onchange()
+            return True
+
+    def get_value(self):
+        return self.get_selected_option()["value"]
+
+    def get_selected_option(self):
+        return self.options[self.selected_index]
+
+    def get_selected_index(self):
+        return self.selected_index
+
+
+class Button:
+    def __init__(
+        self, rect, label, action=lambda: None, style=Style(), togglable=False
+    ):
+        self.style = style
+        self.action = action
+        self.togglable = togglable
+        self.toggled = False
+        self.rect = rect
+        self.style = style
+        self.width = rect.width
+        self.height = rect.height
+        self.label = label
+
+    @property
+    def ex(self):
+        return self.rect.x + self.rect.width
+
+    @property
+    def ey(self):
+        return self.rect.y + self.rect.height
+
+    def is_hovered(self, x, y):
+        return self.rect.x < x < self.ex and self.rect.y < y < self.ey
+
+    def unfocus(self):
+        return
+
+    def draw(self, cursor):
+        rect = self.rect
+        style = self.style
+        self.text = pyglet.text.Label(
+            self.label,
+            x=rect.x + rect.width // 2,
+            y=rect.y + rect.height // 2,
+            anchor_x="center",
+            anchor_y="center",
+            color=style.text_color,
+            font_name=FONT,
+        )
+        if self.togglable:
+            self.toggled_rectangle = shapes.Rectangle(
+                self.rect.x,
+                self.rect.y,
+                rect.width,
+                rect.height,
+                color=style.highlight,
+            )
+            self.hovered_toggled_rectangle = shapes.Rectangle(
+                self.rect.x,
+                self.rect.y,
+                rect.width,
+                rect.height,
+                color=[min(255, c + 20) for c in style.highlight],
+            )
+        self.rectangle = shapes.Rectangle(
+            self.rect.x, self.rect.y, rect.width, rect.height, color=style.color
+        )
+        self.hovered_rectangle = shapes.Rectangle(
+            self.rect.x,
+            self.rect.y,
+            rect.width,
+            rect.height,
+            color=[min(255, c + 20) for c in style.color],
+        )
+
+        if self.togglable and self.toggled:
+            if self.is_hovered(*cursor):
+                self.hovered_toggled_rectangle.draw()
+            else:
+                self.toggled_rectangle.draw()
+        else:
+            if self.is_hovered(*cursor):
+                self.hovered_rectangle.draw()
+            else:
+                self.rectangle.draw()
+        self.text.draw()
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        if self.action and self.is_hovered(x, y):
+            self.toggled = not self.toggled
+            self.action()
+            return True

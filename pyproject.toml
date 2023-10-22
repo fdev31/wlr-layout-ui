@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wlr-layout-ui"
-version = "0.3.0"
+version = "1.0.0"
 description = "A tiny GUI to configure screen layouts on wayland"
 authors = ["fdev31 <fdev31@gmail.com>"]
 readme = "README.md"
@@ -11,8 +11,8 @@ packages = [{include = "wlr_layout_ui", from = "src"}]
 wlrlui = 'wlr_layout_ui:main'
 
 [tool.poetry.dependencies]
-python = "^3.10"
-pygame = "^2.3.0"
+python = "^3.8"
+pyglet = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.2.0"

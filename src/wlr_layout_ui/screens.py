@@ -15,7 +15,7 @@ class Mode:
         self.freq = freq
 
     def __repr__(self):
-        return "<Mode %dx%d @ %.2f>" % (self.width, self.height, self.freq)
+        return "%dx%d@ %.2f" % (self.width, self.height, self.freq)
 
 
 class Screen:
@@ -55,7 +55,7 @@ def load():
             continue
         if line[0] != " ":
             uid, name = line.split(None, 1)
-            current_screen = Screen(uid=uid, name=name)
+            current_screen = Screen(uid=uid, name=name.strip('"'))
             try:
                 chim = name.split("(", 1)[0].strip().rsplit(None, 1)[1]
             except IndexError:
