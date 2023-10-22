@@ -207,8 +207,8 @@ class SimpleDropdown:
                 color=color,
             ).draw()
 
-        if not self.options or self.selected_index < 0:
-            text = self.label
+        if self.expanded or not self.options or self.selected_index < 0:
+            text = self.label + ":"
         else:
             text = self.options[self.selected_index]["name"]
 

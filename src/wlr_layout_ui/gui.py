@@ -41,7 +41,7 @@ class UI(pyglet.window.Window):
         )
         self.freqs = SimpleDropdown(
             box.add(but_w),
-            "Refresh",
+            "Rate",
             [],
             onchange=self._update_mode,
             # invert=True,
@@ -115,12 +115,13 @@ class UI(pyglet.window.Window):
                 if screen.rect.contains(x, y):
                     self.select_screen(screen)
                     break
-            else:
-                # NOTE: uncomment to be able to reset the screen focus
-                # self.selected_item = None
-                for wid in self.widgets:
-                    if wid != active_widget:
-                        wid.unfocus()
+            # else:
+            # NOTE: enables screen unfocusing:
+            #     self.selected_item = None
+
+        for wid in self.widgets:
+            if wid != active_widget:
+                wid.unfocus()
 
     def select_screen(self, screen):
         self.selected_item = screen
