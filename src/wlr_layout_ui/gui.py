@@ -47,8 +47,9 @@ class UI(pyglet.window.Window):
             # invert=True,
         )
         self.on_off_but = Button(
-            box.add(but_w),
-            "On/Off",
+            box.add(but_w / 3),
+            "On",
+            toggled_label="Off",
             action=self.toggle_screen_power,
             style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
             togglable=True,

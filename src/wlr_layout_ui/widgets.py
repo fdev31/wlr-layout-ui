@@ -305,7 +305,13 @@ class SimpleDropdown:
 
 class Button:
     def __init__(
-        self, rect, label, action=lambda: None, style=Style(), togglable=False
+        self,
+        rect,
+        label,
+        action=lambda: None,
+        style=Style(),
+        togglable=False,
+        toggled_label=None,
     ):
         self.style = style
         self.action = action
@@ -315,6 +321,7 @@ class Button:
         self.style = style
         self.label = label
         self.radius = WIDGETS_RADIUS
+        self.toggled_label = toggled_label
 
     @property
     def ex(self):
@@ -335,7 +342,7 @@ class Button:
         rect = self.rect
         style = self.style
         self.text = pyglet.text.Label(
-            self.label,
+            self.toggled_label if self.toggled_label and self.toggled else self.label,
             x=rect.x + rect.width // 2,
             y=rect.y + rect.height // 2,
             anchor_x="center",
