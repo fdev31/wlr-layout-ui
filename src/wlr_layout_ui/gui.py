@@ -91,7 +91,12 @@ class UI(pyglet.window.Window):
             screen.rect.y += offsetY
         self.center_layout()
 
-        self.widgets = [apply_but, self.on_off_but, self.resolutions, self.freqs]
+        self.widgets: list[SimpleDropdown | Button] = [
+            apply_but,
+            self.on_off_but,
+            self.resolutions,
+            self.freqs,
+        ]
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_coords = (x, y)
@@ -200,7 +205,7 @@ class UI(pyglet.window.Window):
 
     def get_status_text(self):
         if self.selected_item:
-            return f"Monitor: {self.selected_item.screen.name}"
+            return self.selected_item.screen.name
         else:
             return "Hi!"
 
