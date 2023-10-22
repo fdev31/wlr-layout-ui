@@ -99,6 +99,7 @@ class Style:
     text_color: tuple[int, int, int, int] = (50, 50, 50, 255)
     color: tuple[int, int, int] = (200, 200, 200)
     highlight: tuple[int, int, int] = (200, 255, 200)
+    bold: bool = False
 
 
 class SimpleDropdown:
@@ -335,67 +336,6 @@ class Button:
         return
 
     def draw(self, cursor):
-        rect = self.rect
-        style = self.style
-        self.text = pyglet.text.Label(
-            self.label,
-            x=rect.x + rect.width // 2,
-            y=rect.y + rect.height // 2,
-            anchor_x="center",
-            anchor_y="center",
-            color=style.text_color,
-            font_name=FONT,
-        )
-
-        is_hovered = self.contains(*cursor)
-
-        if self.togglable and self.toggled:
-            color = list(style.highlight)
-        else:
-            color = list(style.color)
-
-        if is_hovered:
-            color = [min(255, c + 20) for c in color]
-
-        if self.togglable:
-            self.toggled_rectangle = shapes.Rectangle(
-                self.rect.x,
-                self.rect.y,
-                rect.width,
-                rect.height,
-                color=style.highlight,
-            )
-            self.hovered_toggled_rectangle = shapes.Rectangle(
-                self.rect.x,
-                self.rect.y,
-                rect.width,
-                rect.height,
-                color=[min(255, c + 20) for c in style.highlight],
-            )
-        self.rectangle = shapes.Rectangle(
-            self.rect.x, self.rect.y, rect.width, rect.height, color=style.color
-        )
-        self.hovered_rectangle = shapes.Rectangle(
-            self.rect.x,
-            self.rect.y,
-            rect.width,
-            rect.height,
-            color=[min(255, c + 20) for c in style.color],
-        )
-
-        if self.togglable and self.toggled:
-            if self.contains(*cursor):
-                self.hovered_toggled_rectangle.draw()
-            else:
-                self.toggled_rectangle.draw()
-        else:
-            if self.contains(*cursor):
-                self.hovered_rectangle.draw()
-            else:
-                self.rectangle.draw()
-        self.text.draw()
-
-    def draw(self, cursor):
         # Draw rounded borders using circles and rectangles
         rect = self.rect
         style = self.style
@@ -406,6 +346,7 @@ class Button:
             anchor_x="center",
             anchor_y="center",
             color=style.text_color,
+            bold=style.bold,
             font_name=FONT,
         )
         contains = self.contains(*cursor)

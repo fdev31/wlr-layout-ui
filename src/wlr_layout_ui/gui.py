@@ -22,7 +22,7 @@ class UI(pyglet.window.Window):
             box.add(but_w),
             "Apply",
             action=self.save_layout,
-            style=Style(color=(120, 145, 210)),
+            style=Style(color=(120, 145, 210), bold=True),
         )
         self.on_off_but = Button(
             box.add(but_w),
