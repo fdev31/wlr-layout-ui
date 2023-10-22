@@ -72,7 +72,7 @@ class GuiScreen:
             self.rect.y,
             self.rect.width,
             self.rect.height,
-            border=5,
+            border=9 if self.highlighted else 2,
             color=self.current_color,
             border_color=border_color,
         ).draw()
