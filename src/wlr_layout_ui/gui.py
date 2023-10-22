@@ -165,6 +165,10 @@ class UI(pyglet.window.Window):
 
     def on_draw(self):
         self.clear()
+        # Draw a grey background
+        pyglet.shapes.Rectangle(
+            0, 0, self.width, self.height, color=(50, 50, 50, 255)
+        ).draw()
         for screen in self.gui_screens:
             screen.highlighted = screen == self.selected_item
             screen.draw()
@@ -179,7 +183,7 @@ class UI(pyglet.window.Window):
             x=WINDOW_MARGIN,
             y=WINDOW_MARGIN,
             font_name=FONT,
-            color=(100, 100, 100, 255),
+            color=(200, 200, 200, 255),
         )
         status_label.draw()
 
