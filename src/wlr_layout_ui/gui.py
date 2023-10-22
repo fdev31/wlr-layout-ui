@@ -232,12 +232,12 @@ class UI(pyglet.window.Window):
             if not gs.screen.active:
                 command.append(f"--output {gs.screen.uid} --off")
                 continue
-            x: int = (gs.rect.x * UI_RATIO) - min_x
-            y: int = -gs.rect.y * UI_RATIO - min_y
+            x: int = int((gs.rect.x * UI_RATIO) - min_x)
+            y: int = int(-gs.rect.y * UI_RATIO - min_y)
             assert gs.screen.mode
             sep = "x" if LEGACY else ","
             uid = gs.screen.uid
-            mode = f"{gs.screen.mode.width}x{gs.screen.mode.height}"
+            mode = f"{int(gs.screen.mode.width)}x{int(gs.screen.mode.height)}"
             command.append(f"--output {uid} --pos {x}{sep}{y} --mode {mode}")
         cmd = " ".join(command)
         print(cmd)
