@@ -4,7 +4,7 @@ import pyglet
 from pyglet import shapes
 
 from .settings import FONT, WIDGETS_RADIUS
-from .utils import collidepoint
+from .utils import collidepoint, brighten
 
 
 @dataclass
@@ -156,22 +156,23 @@ class SimpleDropdown:
         color = list(self.style.color)
 
         if is_hovered:
-            color = [min(255, c + 20) for c in color]
+            color = brighten(color)
 
         rect = self.rect
+        diameter = 2 * self.radius
 
         coordinates = [
-            (rect.x, rect.y + rect.height - 2 * self.radius),
+            (rect.x, rect.y + rect.height - diameter),
             (
-                rect.x + rect.width - 2 * self.radius,
-                rect.y + rect.height - 2 * self.radius,
+                rect.x + rect.width - diameter,
+                rect.y + rect.height - diameter,
             ),
         ]
         if not self.expanded:
             coordinates.extend(
                 [
                     (rect.x, rect.y),
-                    (rect.x + rect.width - 2 * self.radius, rect.y),
+                    (rect.x + rect.width - diameter, rect.y),
                 ]
             )
 
@@ -186,7 +187,7 @@ class SimpleDropdown:
         shapes.Rectangle(
             rect.x + self.radius,
             rect.y,
-            rect.width - 2 * self.radius,
+            rect.width - diameter,
             rect.height,
             color=color,
         ).draw()
@@ -194,7 +195,7 @@ class SimpleDropdown:
             rect.x,
             rect.y + self.radius,
             rect.width,
-            rect.height - 2 * self.radius,
+            rect.height - diameter,
             color=color,
         ).draw()
         if self.expanded:
@@ -260,23 +261,18 @@ class SimpleDropdown:
         self.expanded = False
 
     def on_mouse_press(self, x, y, button, modifiers):
+        # FIXME: inverted mode is probably broken
         menu_height = 0
         if self.expanded:
             menu_height = self.rect.height * (len(self.options) + 1)
-        # FIXME: fix inverted mode
         if self.invert:
             menu_height *= -1
 
-        if (
-            self.rect.x < x < self.rect.x + self.rect.width
-            and self.rect.y - menu_height < y < self.rect.y + self.rect.height
-        ):
+        x_matches = self.rect.x < x < self.rect.x + self.rect.width
+        if x_matches and self.rect.y - menu_height < y < self.rect.y + self.rect.height:
             old_index = self.selected_index
             # Dropdown button clicked
-            if (
-                self.rect.x < x < self.rect.x + self.rect.width
-                and self.rect.y < y < self.rect.y + self.rect.height
-            ):
+            if self.rect.y < y < self.rect.y + self.rect.height:
                 self.expanded = not self.expanded
             else:
                 # Check which option is clicked
@@ -353,16 +349,17 @@ class Button:
             color = list(style.color)
 
         if contains:
-            color = [min(255, c + 20) for c in color]
+            color = brighten(color)
 
         # Draw rounded corners using circles
+        diameter = 2 * self.radius
         coordinates = [
             (rect.x, rect.y),
-            (rect.x + rect.width - 2 * self.radius, rect.y),
-            (rect.x, rect.y + rect.height - 2 * self.radius),
+            (rect.x + rect.width - diameter, rect.y),
+            (rect.x, rect.y + rect.height - diameter),
             (
-                rect.x + rect.width - 2 * self.radius,
-                rect.y + rect.height - 2 * self.radius,
+                rect.x + rect.width - diameter,
+                rect.y + rect.height - diameter,
             ),
         ]
         for corner_x, corner_y in coordinates:
@@ -377,7 +374,7 @@ class Button:
         shapes.Rectangle(
             rect.x + self.radius,
             rect.y,
-            rect.width - 2 * self.radius,
+            rect.width - diameter,
             rect.height,
             color=color,
         ).draw()
@@ -385,7 +382,7 @@ class Button:
             rect.x,
             rect.y + self.radius,
             rect.width,
-            rect.height - 2 * self.radius,
+            rect.height - diameter,
             color=color,
         ).draw()
 

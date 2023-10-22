@@ -1,3 +1,7 @@
+def brighten(color):
+    return [min(255, c + 20) for c in color]
+
+
 def collidepoint(x, y, x2, y2, xp, yp):
     assert x < x2
     assert y < y2
