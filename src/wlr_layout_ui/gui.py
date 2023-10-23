@@ -4,7 +4,7 @@ import re
 
 import pyglet
 
-from .widgets import Button, HBox, SimpleDropdown, Style, Rect
+from .widgets import Button, HBox, VBox, SimpleDropdown, Style, Rect
 from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
 from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
@@ -21,9 +21,38 @@ class UI(pyglet.window.Window):
         but_w = 120
         but_h = 25
         self.cursor_coords = (0, 0)
+        self.window_size = (width, height)
 
         gui_screens: list[GuiScreen] = []
         self.gui_screens = gui_screens
+
+        pbox = VBox(
+            width - but_w - WINDOW_MARGIN, height - WINDOW_MARGIN - but_h, but_w
+        )
+        s_but_style = Style(color=(213, 139, 139))
+        but_style = Style(color=(139, 213, 202))
+        p_new_but = Button(
+            pbox.add(but_h * 1.1),
+            "Save new",
+            style=s_but_style,
+        )
+        p_save_but = Button(
+            pbox.add(but_h * 1.1),
+            "Save",
+            style=s_but_style,
+        )
+        p_load_but = Button(
+            pbox.add(but_h * 1.1),
+            "Load",
+            style=but_style,
+        )
+        profile_list = SimpleDropdown(
+            pbox.add(but_h * 1.1),
+            "Profiles",
+            [],
+        )
+
+        self.sidepanel = [profile_list, p_load_but, p_save_but, p_new_but]
 
         box = HBox(WINDOW_MARGIN, WINDOW_MARGIN, but_h)
         apply_but = Button(
@@ -92,14 +121,13 @@ class UI(pyglet.window.Window):
 
         for screen in gui_screens:
             screen.set_position(screen.rect.x + offsetX, screen.rect.y + offsetY)
-        self.center_layout(immediate=True)
 
         self.widgets: list[SimpleDropdown | Button] = [
             apply_but,
             self.on_off_but,
             self.resolutions,
             self.freqs,
-        ]
+        ] + self.sidepanel
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_coords = (x, y)
@@ -163,9 +191,15 @@ class UI(pyglet.window.Window):
 
     def on_resize(self, width, height):
         pyglet.window.Window.on_resize(self, width, height)
+        old_height = self.window_size[1]
         for wid in self.widgets:
-            wid.rect.y = height - WINDOW_MARGIN - wid.rect.height
+            if wid not in self.sidepanel:
+                wid.rect.y = height - WINDOW_MARGIN - wid.rect.height
+            else:
+                wid.rect.x = width - WINDOW_MARGIN - wid.rect.width
+                wid.rect.y -= old_height - height
         self.center_layout(immediate=True)
+        self.window_size = self.get_size()
 
     def on_mouse_release(self, x, y, button, modifiers):
         if self.selected_item and self.selected_item.dragging:
