@@ -4,7 +4,7 @@ import re
 
 import pyglet
 
-from .widgets import Button, HBox, VBox, SimpleDropdown, Style, Rect
+from .widgets import Button, HBox, VBox, Dropdown, Style, Rect
 from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
 from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
@@ -46,7 +46,7 @@ class UI(pyglet.window.Window):
             "Load",
             style=but_style,
         )
-        profile_list = SimpleDropdown(
+        profile_list = Dropdown(
             pbox.add(but_h * 1.1),
             "Profiles",
             [],
@@ -61,14 +61,14 @@ class UI(pyglet.window.Window):
             action=self.save_layout,
             style=Style(color=(120, 165, 240), bold=True),
         )
-        self.resolutions = SimpleDropdown(
+        self.resolutions = Dropdown(
             box.add(but_w * 1.1),
             "Resolution",
             [],
             onchange=self.update_screen_spec,
             # invert=True,
         )
-        self.freqs = SimpleDropdown(
+        self.freqs = Dropdown(
             box.add(but_w * 0.9),
             "Rate",
             [],
@@ -122,7 +122,7 @@ class UI(pyglet.window.Window):
         for screen in gui_screens:
             screen.set_position(screen.rect.x + offsetX, screen.rect.y + offsetY)
 
-        self.widgets: list[SimpleDropdown | Button] = [
+        self.widgets: list[Dropdown | Button] = [
             apply_but,
             self.on_off_but,
             self.resolutions,

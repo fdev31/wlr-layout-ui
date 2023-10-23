@@ -107,7 +107,7 @@ class Style:
     bold: bool = False
 
 
-class SimpleDropdown:
+class Dropdown:
     def __init__(
         self, rect, label, options, onchange=None, style=Style(), invert=False
     ):
