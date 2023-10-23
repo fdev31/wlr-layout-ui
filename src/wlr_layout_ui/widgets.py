@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import pyglet
 from pyglet.shapes import Rectangle, Triangle
 from pyglet.text import Label
 
@@ -10,7 +9,7 @@ from .shapes import RoundedRectangle
 
 
 @dataclass
-class Rect:
+class Rect:  # {{{
     x: int
     y: int
     width: int
@@ -73,8 +72,11 @@ class Rect:
         return Rect(self.x, self.y, self.width, self.height)
 
 
+# }}}
+
+
 @dataclass
-class HBox:
+class HBox:  # Boxes {{{
     x: int
     y: int
     height: int
@@ -99,6 +101,9 @@ class VBox:
         return r
 
 
+# }}}
+
+
 @dataclass
 class Style:
     text_color: tuple[int, int, int, int] = (50, 50, 50, 255)
@@ -107,7 +112,7 @@ class Style:
     bold: bool = False
 
 
-class Dropdown:
+class Dropdown:  # {{{
     def __init__(
         self, rect, label, options, onchange=None, style=Style(), invert=False
     ):
@@ -274,7 +279,10 @@ class Dropdown:
         return self.selected_index
 
 
-class Button:
+# }}}
+
+
+class Button:  # {{{
     def __init__(
         self,
         rect,
@@ -340,3 +348,6 @@ class Button:
             self.toggled = not self.toggled
             self.action()
             return True
+
+
+# }}}

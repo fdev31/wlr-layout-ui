@@ -26,6 +26,7 @@ class UI(pyglet.window.Window):
         gui_screens: list[GuiScreen] = []
         self.gui_screens = gui_screens
 
+        # make profiles widgets {{{
         pbox = VBox(
             width - but_w - WINDOW_MARGIN, height - WINDOW_MARGIN - but_h, but_w
         )
@@ -53,38 +54,41 @@ class UI(pyglet.window.Window):
         )
 
         self.sidepanel = []  # [profile_list, p_load_but, p_save_but, p_new_but]
+        # }}}
 
+        # make main buttons {{{
         box = HBox(WINDOW_MARGIN, WINDOW_MARGIN, but_h)
         apply_but = Button(
             box.add(but_w * 0.7),
             "Confirm",
-            action=self.save_layout,
+            action=self.action_save_layout,
             style=Style(color=(120, 165, 240), bold=True),
         )
         self.resolutions = Dropdown(
             box.add(but_w * 1.1),
             "Resolution",
             [],
-            onchange=self.update_screen_spec,
+            onchange=self.action_update_screen_spec,
             # invert=True,
         )
         self.freqs = Dropdown(
             box.add(but_w * 0.9),
             "Rate",
             [],
-            onchange=self._update_mode,
+            onchange=self.action_update_mode,
             # invert=True,
         )
         self.on_off_but = Button(
             box.add(but_w / 3),
             "On",
             toggled_label="Off",
-            action=self.toggle_screen_power,
+            action=self.action_toggle_screen_power,
             style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
             togglable=True,
         )
+        # }}}
 
-        # Loop over each screen in the displayInfo list
+        # make screen widgets {{{
         for screen in sorted(displayInfo, key=lambda s: s.uid):
             # Get the position and mode width and height for this screen
             x, y = screen.position
@@ -121,6 +125,7 @@ class UI(pyglet.window.Window):
 
         for screen in gui_screens:
             screen.set_position(screen.rect.x + offsetX, screen.rect.y + offsetY)
+        # }}}
 
         self.widgets: list[Dropdown | Button] = [
             apply_but,
@@ -129,6 +134,7 @@ class UI(pyglet.window.Window):
             self.freqs,
         ] + self.sidepanel
 
+    # Event handler methods {{{
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_coords = (x, y)
 
@@ -141,7 +147,7 @@ class UI(pyglet.window.Window):
         else:
             for screen in self.gui_screens:
                 if screen.rect.contains(x, y):
-                    self.select_screen(screen)
+                    self.action_select_screen(screen)
                     break
             # else:
             # NOTE: enables screen unfocusing:
@@ -150,38 +156,6 @@ class UI(pyglet.window.Window):
         for wid in self.widgets:
             if wid != active_widget:
                 wid.unfocus()
-
-    def select_screen(self, screen):
-        self.selected_item = screen
-        self.selected_item.dragging = True
-        # make it last displayed + easy to find
-        self.gui_screens.remove(screen)
-        self.gui_screens.append(screen)
-
-        cur_mode = screen.screen.mode
-        # Update resolution
-        res = sorted_resolutions(screen.screen.available)
-        self.resolutions.options = [
-            {"name": f"{r[0]} x {r[1]}", "value": r} for r in res
-        ]
-        i = -1
-        for i, r in enumerate(res):
-            if r[0] == cur_mode.width and r[1] == cur_mode.height:
-                break
-        self.resolutions.selected_index = i
-        self._update_frequencies(screen)
-
-    def _update_frequencies(self, screen, mode=None):
-        if mode is None:
-            cur_mode = screen.screen.mode.width, screen.screen.mode.height
-        else:
-            cur_mode = mode
-        freqs = sorted_frequencies(screen.screen.available, cur_mode[0], cur_mode[1])
-        self.freqs.options = [{"name": f"{r:.2f} Hz", "value": r} for r in freqs]
-        if mode is None:
-            self.freqs.selected_index = freqs.index(screen.screen.mode.freq)
-        else:
-            self.freqs.selected_index = 0
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if self.selected_item and self.selected_item.dragging:
@@ -238,6 +212,9 @@ class UI(pyglet.window.Window):
         )
         status_label.draw()
 
+    # }}}
+
+    # Layout operations & snapping code {{{
     def center_layout(self, immediate=False):
         all_rects = [screen.target_rect for screen in self.gui_screens]
         avg_x, avg_y = Rect(*compute_bounding_box(all_rects)).center
@@ -254,40 +231,8 @@ class UI(pyglet.window.Window):
                 screen.target_rect.x = screen.target_rect.x + offX
                 screen.target_rect.y = screen.target_rect.y + offY
 
-    def get_status_text(self):
-        if self.selected_item:
-            words = []
-            for word in self.selected_item.screen.name.split():
-                if not hex_re.match(word):
-                    words.append(word)
-            return " ".join(words)
-        else:
-            return "Select a monitor"
-
-    def save_layout(self):
-        screens = self.gui_screens
-        min_x = UI_RATIO * min([screen.rect.x for screen in screens])
-        min_y = UI_RATIO * min([-screen.rect.y for screen in screens])
-        print("# Screens layout:")
-        command = ["xrandr" if LEGACY else "wlr-randr"]
-        for gs in screens:
-            if not gs.screen.active:
-                command.append(f"--output {gs.screen.uid} --off")
-                continue
-            x: int = int((gs.rect.x * UI_RATIO) - min_x)
-            y: int = int(-gs.rect.y * UI_RATIO - min_y)
-            assert gs.screen.mode
-            sep = "x" if LEGACY else ","
-            uid = gs.screen.uid
-            mode = f"{int(gs.screen.mode.width)}x{int(gs.screen.mode.height)}"
-            command.append(f"--output {uid} --pos {x}{sep}{y} --mode {mode}")
-        cmd = " ".join(command)
-        print(cmd)
-        os.system(cmd)
-
     def snap_active_screen(self):
         active_screen = self.gui_screens[-1]
-        arect = active_screen.rect
 
         for wid in self.gui_screens[:-1]:
             if wid.rect.collide(active_screen.rect):
@@ -328,16 +273,52 @@ class UI(pyglet.window.Window):
                 active_screen.target_rect.x -= closest_match[1][0] - closest_match[0][0]
                 active_screen.target_rect.y -= closest_match[1][1] - closest_match[0][1]
 
-    def toggle_screen_power(self):
+    # }}}
+
+    # Button actions {{{
+    def action_update_frequencies(self, screen, mode=None):
+        if mode is None:
+            cur_mode = screen.screen.mode.width, screen.screen.mode.height
+        else:
+            cur_mode = mode
+        freqs = sorted_frequencies(screen.screen.available, cur_mode[0], cur_mode[1])
+        self.freqs.options = [{"name": f"{r:.2f} Hz", "value": r} for r in freqs]
+        if mode is None:
+            self.freqs.selected_index = freqs.index(screen.screen.mode.freq)
+        else:
+            self.freqs.selected_index = 0
+
+    def action_save_layout(self):
+        screens = self.gui_screens
+        min_x = UI_RATIO * min([screen.rect.x for screen in screens])
+        min_y = UI_RATIO * min([-screen.rect.y for screen in screens])
+        print("# Screens layout:")
+        command = ["xrandr" if LEGACY else "wlr-randr"]
+        for gs in screens:
+            if not gs.screen.active:
+                command.append(f"--output {gs.screen.uid} --off")
+                continue
+            x: int = int((gs.rect.x * UI_RATIO) - min_x)
+            y: int = int(-gs.rect.y * UI_RATIO - min_y)
+            assert gs.screen.mode
+            sep = "x" if LEGACY else ","
+            uid = gs.screen.uid
+            mode = f"{int(gs.screen.mode.width)}x{int(gs.screen.mode.height)}"
+            command.append(f"--output {uid} --pos {x}{sep}{y} --mode {mode}")
+        cmd = " ".join(command)
+        print(cmd)
+        os.system(cmd)
+
+    def action_toggle_screen_power(self):
         if self.selected_item:
             self.selected_item.screen.active = not self.selected_item.screen.active
 
-    def update_screen_spec(self):
-        self._update_frequencies(self.selected_item, self.resolutions.get_value())
-        self._update_mode()
+    def action_update_screen_spec(self):
+        self.action_update_frequencies(self.selected_item, self.resolutions.get_value())
+        self.action_update_mode()
         self.center_layout()
 
-    def _update_mode(self):
+    def action_update_mode(self):
         assert self.selected_item
         screen = self.selected_item.screen
         screen.mode = find_matching_mode(
@@ -345,3 +326,38 @@ class UI(pyglet.window.Window):
         )
         self.selected_item.target_rect.width = screen.mode.width // UI_RATIO
         self.selected_item.target_rect.height = screen.mode.height // UI_RATIO
+
+    def action_select_screen(self, screen):
+        self.selected_item = screen
+        self.selected_item.dragging = True
+        # make it last displayed + easy to find
+        self.gui_screens.remove(screen)
+        self.gui_screens.append(screen)
+
+        cur_mode = screen.screen.mode
+        # Update resolution
+        res = sorted_resolutions(screen.screen.available)
+        self.resolutions.options = [
+            {"name": f"{r[0]} x {r[1]}", "value": r} for r in res
+        ]
+        i = -1
+        for i, r in enumerate(res):
+            if r[0] == cur_mode.width and r[1] == cur_mode.height:
+                break
+        self.resolutions.selected_index = i
+        self.action_update_frequencies(screen)
+
+    # }}}
+    # Gui getters & properties  {{{
+    def get_status_text(self):
+        if self.selected_item:
+            words = []
+            for word in self.selected_item.screen.name.split():
+                if not hex_re.match(word):
+                    words.append(word)
+            return " ".join(words)
+        else:
+            return "Select a monitor"
+
+
+# }}}
