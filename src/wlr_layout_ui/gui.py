@@ -52,7 +52,7 @@ class UI(pyglet.window.Window):
             [],
         )
 
-        self.sidepanel = [profile_list, p_load_but, p_save_but, p_new_but]
+        self.sidepanel = []  # [profile_list, p_load_but, p_save_but, p_new_but]
 
         box = HBox(WINDOW_MARGIN, WINDOW_MARGIN, but_h)
         apply_but = Button(
@@ -127,7 +127,7 @@ class UI(pyglet.window.Window):
             self.on_off_but,
             self.resolutions,
             self.freqs,
-        ]  # + self.sidepanel
+        ] + self.sidepanel
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_coords = (x, y)
@@ -195,9 +195,11 @@ class UI(pyglet.window.Window):
         for wid in self.widgets:
             if wid not in self.sidepanel:
                 wid.rect.y = height - WINDOW_MARGIN - wid.rect.height
-            else:
-                wid.rect.x = width - WINDOW_MARGIN - wid.rect.width
-                wid.rect.y -= old_height - height
+
+        for wid in self.sidepanel:
+            wid.rect.x = width - WINDOW_MARGIN - wid.rect.width
+            wid.rect.y -= old_height - height
+
         self.center_layout(immediate=True)
         self.window_size = self.get_size()
 
@@ -220,7 +222,10 @@ class UI(pyglet.window.Window):
             screen.draw()
         if self.selected_item:
             for w in self.widgets:
-                w.draw(self.cursor_coords)
+                if w not in self.sidepanel:
+                    w.draw(self.cursor_coords)
+        for w in self.sidepanel:
+            w.draw(self.cursor_coords)
         self.draw_status_label()
 
     def draw_status_label(self):
