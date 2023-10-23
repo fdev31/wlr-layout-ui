@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 import pyglet
-from pyglet import shapes
+from pyglet.shapes import Rectangle, Triangle
+from pyglet.text import Label
 
 from .settings import FONT, WIDGETS_RADIUS
 from .utils import collidepoint, brighten
@@ -130,7 +131,7 @@ class SimpleDropdown:
             triangle_y = (
                 self.rect.y + (self.rect.height // 2) - int(0.5 * self.triangle_size)
             )
-            return shapes.Triangle(
+            return Triangle(
                 triangle_x,
                 triangle_y + self.triangle_size,
                 triangle_x + self.triangle_size,
@@ -142,7 +143,7 @@ class SimpleDropdown:
         else:
             margin = (self.rect.height - self.triangle_size) // 2
             triangle_y = self.rect.y + self.rect.height - margin
-            return shapes.Triangle(
+            return Triangle(
                 triangle_x,
                 triangle_y - self.triangle_size,
                 triangle_x + self.triangle_size,
@@ -166,7 +167,7 @@ class SimpleDropdown:
         rect = self.rect
 
         if self.expanded:
-            shapes.Rectangle(
+            Rectangle(
                 rect.x,
                 rect.y,
                 rect.width,
@@ -180,7 +181,7 @@ class SimpleDropdown:
             text = self.options[self.selected_index]["name"]
 
         # Selected option
-        pyglet.text.Label(
+        Label(
             text,
             x=self.rect.x + 10,
             y=self.rect.y + self.rect.height // 2,
@@ -207,13 +208,13 @@ class SimpleDropdown:
                     color = self.style.highlight
                 else:
                     color = self.style.color
-                shapes.Rectangle(
+                Rectangle(
                     option_x, option_y, self.rect.width, option_height, color=color
                 ).draw()
 
                 label = option["name"]
 
-                pyglet.text.Label(
+                Label(
                     label,
                     x=option_x + 10,
                     y=option_y + option_height // 2,
@@ -305,7 +306,7 @@ class Button:
         # Draw rounded borders using circles and rectangles
         rect = self.rect
         style = self.style
-        self.text = pyglet.text.Label(
+        self.text = Label(
             self.toggled_label if self.toggled_label and self.toggled else self.label,
             x=rect.x + rect.width // 2,
             y=rect.y + rect.height // 2,

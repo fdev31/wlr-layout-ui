@@ -1,9 +1,11 @@
+import random
+
 import pyglet
-from pyglet import shapes
-from .utils import collidepoint
+from pyglet.shapes import BorderedRectangle
+from pyglet.text import Label
+
 from .screens import Screen
 from .widgets import Rect
-import random
 
 
 class GuiScreen:
@@ -93,7 +95,7 @@ class GuiScreen:
         if self.highlighted:
             border_color = (255, 201, 0)
         # draw the background
-        shapes.BorderedRectangle(
+        BorderedRectangle(
             self.rect.x,
             self.rect.y,
             self.rect.width,
@@ -104,7 +106,7 @@ class GuiScreen:
         ).draw()
         # Render the screen uid as text
         tx, ty = self.rect.center
-        pyglet.text.Label(
+        Label(
             self.screen.uid,
             anchor_x="center",
             anchor_y="center",
@@ -121,7 +123,7 @@ class GuiScreen:
                 self.screen.mode.width,
                 self.screen.mode.height,
             )
-            pyglet.text.Label(
+            Label(
                 label,
                 anchor_x="center",
                 anchor_y="center",
@@ -130,7 +132,7 @@ class GuiScreen:
                 color=txt_color,
                 bold=self.screen.active,
             ).draw()
-            pyglet.text.Label(
+            Label(
                 "%dHz" % self.screen.mode.freq,
                 anchor_x="center",
                 anchor_y="center",
