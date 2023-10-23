@@ -5,6 +5,7 @@ from pyglet import shapes
 
 from .settings import FONT, WIDGETS_RADIUS
 from .utils import collidepoint, brighten
+from .shapes import RoundedRectangle
 
 
 @dataclass
@@ -161,46 +162,9 @@ class SimpleDropdown:
         if is_hovered:
             color = brighten(color)
 
+        RoundedRectangle(self.rect, self.radius, color).draw()
         rect = self.rect
-        diameter = 2 * self.radius
 
-        coordinates = [
-            (rect.x, rect.y + rect.height - diameter),
-            (
-                rect.x + rect.width - diameter,
-                rect.y + rect.height - diameter,
-            ),
-        ]
-        if not self.expanded:
-            coordinates.extend(
-                [
-                    (rect.x, rect.y),
-                    (rect.x + rect.width - diameter, rect.y),
-                ]
-            )
-
-        for corner_x, corner_y in coordinates:
-            shapes.Circle(
-                corner_x + self.radius,
-                corner_y + self.radius,
-                self.radius,
-                color=color,
-            ).draw()
-
-        shapes.Rectangle(
-            rect.x + self.radius,
-            rect.y,
-            rect.width - diameter,
-            rect.height,
-            color=color,
-        ).draw()
-        shapes.Rectangle(
-            rect.x,
-            rect.y + self.radius,
-            rect.width,
-            rect.height - diameter,
-            color=color,
-        ).draw()
         if self.expanded:
             shapes.Rectangle(
                 rect.x,
@@ -361,41 +325,7 @@ class Button:
         if contains:
             color = brighten(color)
 
-        # Draw rounded corners using circles
-        diameter = 2 * self.radius
-        coordinates = [
-            (rect.x, rect.y),
-            (rect.x + rect.width - diameter, rect.y),
-            (rect.x, rect.y + rect.height - diameter),
-            (
-                rect.x + rect.width - diameter,
-                rect.y + rect.height - diameter,
-            ),
-        ]
-        for corner_x, corner_y in coordinates:
-            shapes.Circle(
-                corner_x + self.radius,
-                corner_y + self.radius,
-                self.radius,
-                color=color,
-            ).draw()
-
-        # Draw rectangles to fill the gaps inside the rounded borders
-        shapes.Rectangle(
-            rect.x + self.radius,
-            rect.y,
-            rect.width - diameter,
-            rect.height,
-            color=color,
-        ).draw()
-        shapes.Rectangle(
-            rect.x,
-            rect.y + self.radius,
-            rect.width,
-            rect.height - diameter,
-            color=color,
-        ).draw()
-
+        RoundedRectangle(self.rect, self.radius, color).draw()
         self.text.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
