@@ -127,7 +127,7 @@ class UI(pyglet.window.Window):
             self.on_off_but,
             self.resolutions,
             self.freqs,
-        ] + self.sidepanel
+        ]  # + self.sidepanel
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_coords = (x, y)
