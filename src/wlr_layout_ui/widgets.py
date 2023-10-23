@@ -175,8 +175,10 @@ class SimpleDropdown:
                 color=color,
             ).draw()
 
-        if self.expanded or not self.options or self.selected_index < 0:
+        if self.expanded:
             text = self.label + ":"
+        elif not self.options or self.selected_index < 0:
+            text = "No " + self.label
         else:
             text = self.options[self.selected_index]["name"]
 
@@ -191,7 +193,8 @@ class SimpleDropdown:
         ).draw()
 
         # Triangle button
-        self.get_triangle().draw()
+        if self.options:
+            self.get_triangle().draw()
 
         x_match = self.rect.x < cursor[0] < self.rect.x + self.rect.width
 
@@ -238,6 +241,9 @@ class SimpleDropdown:
 
         x_matches = self.rect.x < x < self.rect.x + self.rect.width
         if x_matches and self.rect.y - menu_height < y < self.rect.y + self.rect.height:
+            if not self.options:
+                self.expanded = False
+                return True
             old_index = self.selected_index
             # Dropdown button clicked
             if self.rect.y < y < self.rect.y + self.rect.height:
