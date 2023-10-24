@@ -9,7 +9,7 @@ from .widgets import Button, HBox, VBox, Dropdown, Style, Rect
 from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
 from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
-from .utils import compute_bounding_box, trim_rects_flip_y
+from .utils import compute_bounding_box, trim_rects_flip_y, make_command
 from .profiles import save_profile, load_profiles
 from .screens import displayInfo, load
 

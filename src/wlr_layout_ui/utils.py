@@ -1,6 +1,21 @@
 from dataclasses import dataclass
 
 
+def make_command(rects, names, activity, wayland=True):
+    screens_rect = rects
+    trim_rects_flip_y(screens_rect)
+    print("# Screens layout:")
+    command = ["wlr-randr" if wayland else "xrandr"]
+    for rect, name, active in zip(screens_rect, names, activity):
+        if not active:
+            command.append(f"--output {name} --off")
+            continue
+        sep = "," if wayland else "x"
+        mode = f"{int(rect.width)}x{int(rect.height)}"
+        command.append(f"--output {name} --pos {rect.x}{sep}{rect.y} --mode {mode}")
+    return " ".join(command)
+
+
 def brighten(color):
     return [min(255, c + 20) for c in color]
 
