@@ -23,6 +23,15 @@ def main():
             print("Available profiles:")
             for p in profiles.keys():
                 print(f" - {p}")
+        if sys.argv[1][0] == "-":
+            print(
+                """With no options, launches the GUI
+Options:
+             -l : list profiles
+ <profile name> : loads a profile
+            """
+            )
+
         else:
             profile = profiles[sys.argv[1]]
             rects = [Rect(i["x"], i["y"], i["width"], i["height"]) for i in profile]
