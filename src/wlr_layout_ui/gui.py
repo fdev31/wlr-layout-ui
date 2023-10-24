@@ -46,11 +46,6 @@ class UI(pyglet.window.Window):
                 found.screen.active = info.pop("active")
                 found.screen.mode.__dict__.update(info)
                 found.target_rect = Rect(*rect)
-            else:
-                screen = Screen(
-                    info.pop("uid"), "Monitor not detected", info.pop("active")
-                )
-                self.gui_screens.append(GuiScreen(screen, Rect(*info.pop("rect"))))
         self.center_layout()
 
     def on_key_press(self, symbol, modifiers):
