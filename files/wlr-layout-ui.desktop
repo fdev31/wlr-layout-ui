@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.2.0
+Name=WLR Layout UI
+Comment=Monitor setup
+Exec=wlrlui
+Icon=video-display
+Terminal=false
+Type=Application
+Categories=Utility;Application;
