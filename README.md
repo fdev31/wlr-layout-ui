@@ -14,7 +14,3 @@ An simple GUI to setup the screens layout on wlroots based systems.
 ```
 wlrlui
 ```
-
-## Limitations
-
-Only allows to change screen positions, not the mode yet.
