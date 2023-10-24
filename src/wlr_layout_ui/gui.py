@@ -1,3 +1,4 @@
+import time
 import math
 import os
 import re
@@ -47,6 +48,8 @@ class UI(pyglet.window.Window):
                 found.screen.mode.__dict__.update(info)
                 found.target_rect = Rect(*rect)
         self.center_layout()
+        time.sleep(1)
+        self.action_save_layout()
 
     def on_key_press(self, symbol, modifiers):
         if self.text_input is not None:
@@ -132,7 +135,7 @@ class UI(pyglet.window.Window):
         box = HBox(WINDOW_MARGIN, WINDOW_MARGIN, but_h)
         apply_but = Button(
             box.add(but_w * 0.7),
-            "Confirm",
+            "Apply",
             action=self.action_save_layout,
             style=Style(color=(120, 165, 240), bold=True),
         )
@@ -281,8 +284,9 @@ class UI(pyglet.window.Window):
         for screen in self.gui_screens:
             screen.highlighted = screen == self.selected_item
             screen.draw()
+        self.widgets[0].draw(self.cursor_coords)  # apply button
         if self.selected_item:
-            for w in self.widgets:
+            for w in self.widgets[1:]:
                 if w not in self.sidepanel:
                     w.draw(self.cursor_coords)
         for w in self.sidepanel:
@@ -404,7 +408,7 @@ class UI(pyglet.window.Window):
             command.append(f"--output {uid} --pos {x}{sep}{y} --mode {mode}")
         cmd = " ".join(command)
         if os.system(cmd):
-            self.set_error("Failed saving the layout")
+            self.set_error("Failed applying the layout")
 
     def action_toggle_screen_power(self):
         if self.selected_item:
