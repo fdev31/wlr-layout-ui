@@ -11,7 +11,7 @@ from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
 from .utils import compute_bounding_box
 from .profiles import save_profile, load_profiles
-from .screens import Screen
+from .screens import displayInfo, load
 
 hex_re = re.compile("^[0-9x]+$")
 
@@ -48,8 +48,6 @@ class UI(pyglet.window.Window):
                 found.screen.mode.__dict__.update(info)
                 found.target_rect = Rect(*rect)
         self.center_layout()
-        time.sleep(1)
-        self.action_save_layout()
 
     def on_key_press(self, symbol, modifiers):
         if self.text_input is not None:
@@ -86,7 +84,7 @@ class UI(pyglet.window.Window):
         else:
             self.set_error("No profile selected!")
 
-    def __init__(self, width, height, displayInfo):
+    def __init__(self, width, height):
         super().__init__(width, height, PROG_NAME, resizable=True)
         self.selected_item = None
         self.scale_factor = 1
@@ -98,8 +96,6 @@ class UI(pyglet.window.Window):
 
         but_w = 120
         but_h = 25
-        gui_screens: list[GuiScreen] = []
-        self.gui_screens = gui_screens
 
         # make profiles widgets {{{
         pbox = VBox(
@@ -139,6 +135,12 @@ class UI(pyglet.window.Window):
             action=self.action_save_layout,
             style=Style(color=(120, 165, 240), bold=True),
         )
+        reload_but = Button(
+            box.add(but_w * 0.7),
+            "Reload",
+            action=self.action_reload,
+            style=Style(color=(120, 165, 240), bold=True),
+        )
         self.resolutions = Dropdown(
             box.add(but_w * 1.1),
             "Resolution",
@@ -146,6 +148,7 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_screen_spec,
             # invert=True,
         )
+        self.resolutions.require_selection = True
         self.freqs = Dropdown(
             box.add(but_w * 0.9),
             "Rate",
@@ -153,6 +156,7 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_mode,
             # invert=True,
         )
+        self.freqs.require_selection = True
         self.on_off_but = Button(
             box.add(but_w / 3),
             "On",
@@ -161,8 +165,30 @@ class UI(pyglet.window.Window):
             style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
             togglable=True,
         )
+        self.on_off_but.require_selection = True
         # }}}
 
+        self.widgets: list[Dropdown | Button] = [
+            apply_but,
+            reload_but,
+            self.on_off_but,
+            self.resolutions,
+            self.freqs,
+        ] + self.sidepanel
+
+        self.gui_screens: list[GuiScreen] = []
+        self.load_screens()
+
+    def action_reload(self):
+        os.system("hyprctl reload")
+        time.sleep(0.5)
+        load()
+        self.load_screens()
+
+    def load_screens(self):
+        width, height = self.get_size()
+        gui_screens = self.gui_screens
+        gui_screens.clear()
         # make screen widgets {{{
         for screen in sorted(displayInfo, key=lambda s: s.uid):
             # Get the position and mode width and height for this screen
@@ -201,13 +227,6 @@ class UI(pyglet.window.Window):
         for screen in gui_screens:
             screen.set_position(screen.rect.x + offsetX, screen.rect.y + offsetY)
         # }}}
-
-        self.widgets: list[Dropdown | Button] = [
-            apply_but,
-            self.on_off_but,
-            self.resolutions,
-            self.freqs,
-        ] + self.sidepanel
 
     # Event handler methods {{{
     def on_mouse_motion(self, x, y, dx, dy):
@@ -285,9 +304,10 @@ class UI(pyglet.window.Window):
             screen.highlighted = screen == self.selected_item
             screen.draw()
         self.widgets[0].draw(self.cursor_coords)  # apply button
-        if self.selected_item:
-            for w in self.widgets[1:]:
-                if w not in self.sidepanel:
+        for w in self.widgets[1:]:
+            if w not in self.sidepanel:
+                r_sel = getattr(w, "require_selection", False)
+                if self.selected_item or not r_sel:
                     w.draw(self.cursor_coords)
         for w in self.sidepanel:
             w.draw(self.cursor_coords)

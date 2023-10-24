@@ -46,6 +46,6 @@ def main():
 
     width = max_width + average_width * 2
     height = max_height + average_height * 2
-    window = UI(width, height, displayInfo)
+    window = UI(width, height)
     window.set_wm_class(PROG_NAME)
     pyglet.app.run()
