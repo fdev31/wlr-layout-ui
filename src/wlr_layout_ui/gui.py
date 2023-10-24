@@ -183,6 +183,7 @@ class UI(pyglet.window.Window):
         os.system("hyprctl reload")
         time.sleep(0.5)
         load()
+        GuiScreen.cur_color = 0
         self.load_screens()
 
     def load_screens(self):
