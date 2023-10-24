@@ -119,7 +119,7 @@ class Rect:  # {{{
         return (self.x, self.y, self.width, self.height)
 
     def scaled(self, factor):
-        return (
+        return Rect(
             self.x * factor,
             self.y * factor,
             self.width * factor,

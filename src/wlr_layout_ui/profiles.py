@@ -12,20 +12,13 @@ def load_profiles():
         return {}
 
 
-def save_profile(name: str, screens: list):
+def save_profile(name: str, profile_data):
     try:
         profiles = load_profiles()
     except FileNotFoundError:
         profiles = {}
 
-    pscreens = []
-    for screen in screens:
-        obj = screen.screen.mode.__dict__.copy()
-        obj["rect"] = screen.rect.asTuple()
-        obj["uid"] = screen.screen.uid
-        obj["active"] = screen.screen.active
-        pscreens.append(obj)
+    profiles[name] = profile_data
 
-    profiles[name] = pscreens
     with open(cfg_file, "wb") as f:
         tomli_w.dump(profiles, f)

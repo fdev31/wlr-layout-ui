@@ -380,15 +380,36 @@ class UI(pyglet.window.Window):
         GuiScreen.cur_color = 0
         self.load_screens()
 
+    def get_profile_data(self):
+        screens_rect = [
+            screen.target_rect.scaled(UI_RATIO) for screen in self.gui_screens
+        ]
+        trim_rects_flip_y(screens_rect)
+        ret = []
+        for rect, gs in zip(screens_rect, self.gui_screens):
+            assert gs.screen.mode
+            ret.append(
+                {
+                    "active": gs.screen.active,
+                    "width": gs.screen.mode.width,
+                    "height": gs.screen.mode.height,
+                    "freq": gs.screen.mode.freq,
+                    "x": rect.x,
+                    "y": rect.y,
+                    "uid": gs.screen.uid,
+                }
+            )
+        return ret
+
     def action_save_new_profile(self):
-        save_profile(self.text_input, self.gui_screens)
+        save_profile(self.text_input, self.get_profile_data())
         self.sync_profiles()
         self.text_input = None
 
     def action_save_profile(self):
         if self.profile_list.options:
             save_profile(
-                self.profile_list.get_selected_option()["name"], self.gui_screens
+                self.profile_list.get_selected_option()["name"], self.get_profile_data()
             )
             self.sync_profiles()
         else:
@@ -409,11 +430,12 @@ class UI(pyglet.window.Window):
             found = findScreen(screen_info["uid"])
             if found:
                 info = screen_info.copy()
-                rect = info.pop("rect")
+                rect = Rect(info["x"], -info["y"], info["width"], info["height"])
+                srect = rect.scaled(1 / UI_RATIO)
                 info.pop("uid")
                 found.screen.active = info.pop("active")
                 found.screen.mode.__dict__.update(info)
-                found.target_rect = Rect(*rect)
+                found.target_rect = srect
         self.center_layout()
 
     def action_update_frequencies(self, screen, mode=None):
@@ -430,9 +452,7 @@ class UI(pyglet.window.Window):
 
     def action_save_layout(self):
         screens = self.gui_screens
-        screens_rect = [
-            Rect(*screen.target_rect.scaled(UI_RATIO)) for screen in screens
-        ]
+        screens_rect = [screen.target_rect.scaled(UI_RATIO) for screen in screens]
         trim_rects_flip_y(screens_rect)
         print("# Screens layout:")
         command = ["xrandr" if LEGACY else "wlr-randr"]
