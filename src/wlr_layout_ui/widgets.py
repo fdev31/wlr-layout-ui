@@ -4,78 +4,8 @@ from pyglet.shapes import Rectangle, Triangle
 from pyglet.text import Label
 
 from .settings import FONT, WIDGETS_RADIUS
-from .utils import collidepoint, brighten
+from .utils import collidepoint, brighten, Rect
 from .shapes import RoundedRectangle
-
-
-@dataclass
-class Rect:  # {{{
-    x: int
-    y: int
-    width: int
-    height: int
-
-    @property
-    def topleft(self):
-        return (self.left, self.top)
-
-    @property
-    def topright(self):
-        return (self.right, self.top)
-
-    @property
-    def bottomleft(self):
-        return (self.left, self.bottom)
-
-    @property
-    def bottomright(self):
-        return (self.right, self.bottom)
-
-    @property
-    def left(self):
-        return self.x
-
-    @property
-    def right(self):
-        return self.x + self.width
-
-    @property
-    def top(self):
-        return self.y + self.height
-
-    @property
-    def bottom(self):
-        return self.y
-
-    @property
-    def center(self):
-        return self.x + self.width // 2, self.y + self.height // 2
-
-    def contains(self, x, y):
-        return collidepoint(
-            self.x, self.y, self.x + self.width, self.y + self.height, x, y
-        )
-
-    def collide(self, rect):
-        # return true if the two rectangles are overlapping in any way
-        if rect.left >= self.right:
-            return False
-        if rect.right <= self.left:
-            return False
-        if rect.top <= self.bottom:
-            return False
-        if rect.bottom >= self.top:
-            return False
-        return True
-
-    def copy(self):
-        return Rect(self.x, self.y, self.width, self.height)
-
-    def asTuple(self):
-        return (self.x, self.y, self.width, self.height)
-
-
-# }}}
 
 
 @dataclass
