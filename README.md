@@ -7,8 +7,7 @@ An simple GUI to setup the screens layout on wlroots based systems.
 ## Requires
 
 - wlr-randr
-- pyglet
-- tomli (python package)
+- Python: pyglet, tomli
 
 ## Usage
 
