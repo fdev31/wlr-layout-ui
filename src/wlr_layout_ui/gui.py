@@ -9,20 +9,97 @@ from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
 from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
 from .utils import compute_bounding_box
+from .profiles import save_profile, load_profiles
+from .screens import Screen
 
 hex_re = re.compile("^[0-9x]+$")
 
 
 class UI(pyglet.window.Window):
+    def set_error(self, message, duration=200):
+        self.error_message = message
+        self.error_message_duration = duration
+
+    def sync_profiles(self):
+        self.profiles = load_profiles()
+        self.profile_list.options = [
+            {"name": k, "value": v} for k, v in self.profiles.items()
+        ]
+
+    def action_load_selected_profile(self):
+        if not self.profile_list.options:
+            self.set_error("No profile selected!")
+            return
+
+        def findScreen(uid):
+            for screen in self.gui_screens:
+                if screen.screen.uid == uid:
+                    return screen
+
+        for screen_info in self.profile_list.get_value():
+            # try to match screen info with current screens & update accordingly
+            found = findScreen(screen_info["uid"])
+            if found:
+                info = screen_info.copy()
+                rect = info.pop("rect")
+                info.pop("uid")
+                found.screen.active = info.pop("active")
+                found.screen.mode.__dict__.update(info)
+                found.target_rect = Rect(*rect)
+            else:
+                screen = Screen(
+                    info.pop("uid"), "Monitor not detected", info.pop("active")
+                )
+                self.gui_screens.append(GuiScreen(screen, Rect(*info.pop("rect"))))
+        self.center_layout()
+
+    def on_key_press(self, symbol, modifiers):
+        if self.text_input is not None:
+            if symbol == 65288:  # backspace
+                self.text_input = self.text_input[:-1]
+            elif symbol == 65293:  # return
+                self.validate_text_input()
+            elif symbol == 65307:  # Escape
+                self.text_input = None
+            elif symbol <= 255:
+                self.text_input += chr(symbol)
+        else:
+            if symbol == 65293:  # return
+                self.action_save_layout()
+                self.close()
+            else:
+                super().on_key_press(symbol, modifiers)
+
+    def set_text_input(self, action):
+        self.validate_text_input = action
+        self.text_input = ""
+
+    def action_save_new_profile(self):
+        save_profile(self.text_input, self.gui_screens)
+        self.sync_profiles()
+        self.text_input = None
+
+    def action_save_profile(self):
+        if self.profile_list.options:
+            save_profile(
+                self.profile_list.get_selected_option()["name"], self.gui_screens
+            )
+            self.sync_profiles()
+        else:
+            self.set_error("No profile selected!")
+
     def __init__(self, width, height, displayInfo):
         super().__init__(width, height, PROG_NAME, resizable=True)
         self.selected_item = None
         self.scale_factor = 1
-        but_w = 120
-        but_h = 25
         self.cursor_coords = (0, 0)
         self.window_size = (width, height)
+        self.text_input: str | None = None
+        self.error_message = ""
+        self.error_message_duration = 0
 
+        but_w = 120
+        but_h = 25
         gui_screens: list[GuiScreen] = []
         self.gui_screens = gui_screens
 
@@ -36,24 +113,24 @@ class UI(pyglet.window.Window):
             pbox.add(but_h * 1.1),
             "Save new",
             style=s_but_style,
+            action=lambda: self.set_text_input(self.action_save_new_profile),
         )
         p_save_but = Button(
             pbox.add(but_h * 1.1),
             "Save",
             style=s_but_style,
+            action=self.action_save_profile,
         )
         p_load_but = Button(
             pbox.add(but_h * 1.1),
             "Load",
             style=but_style,
+            action=self.action_load_selected_profile,
         )
-        profile_list = Dropdown(
-            pbox.add(but_h * 1.1),
-            "Profiles",
-            [],
-        )
+        self.profile_list = Dropdown(pbox.add(but_h * 1.1), "Profiles", [])
+        self.sync_profiles()
 
-        self.sidepanel = []  # [profile_list, p_load_but, p_save_but, p_new_but]
+        self.sidepanel = [self.profile_list, p_load_but, p_save_but, p_new_but]
         # }}}
 
         # make main buttons {{{
@@ -191,6 +268,21 @@ class UI(pyglet.window.Window):
         pyglet.shapes.Rectangle(
             0, 0, self.width, self.height, color=(50, 50, 50, 255)
         ).draw()
+        # Higher priority modes
+        if self.text_input is not None:
+            w, h = self.get_size()
+            pyglet.text.Label(
+                "Profile name: ", font_size=24, x=10, y=h // 2 + 40, align="left"
+            ).draw()
+            pyglet.text.Label(
+                self.text_input + "|",
+                font_size=24,
+                x=WINDOW_MARGIN,
+                y=h // 2,
+                align="left",
+            ).draw()
+            return
+        # Standard display
         for screen in self.gui_screens:
             screen.highlighted = screen == self.selected_item
             screen.draw()
@@ -203,12 +295,22 @@ class UI(pyglet.window.Window):
         self.draw_status_label()
 
     def draw_status_label(self):
+        text = None
+        color = (200, 200, 200, 255)
+
+        if self.error_message:
+            self.error_message_duration -= 1
+            if self.error_message_duration == 0:
+                self.error_message = ""
+            else:
+                text = self.error_message
+                color = (250, 100, 100, 255)
         status_label = pyglet.text.Label(
-            self.get_status_text(),
+            text if text else self.get_status_text(),
             x=WINDOW_MARGIN,
             y=WINDOW_MARGIN,
             font_name=FONT,
-            color=(200, 200, 200, 255),
+            color=color,
         )
         status_label.draw()
 
@@ -306,8 +408,8 @@ class UI(pyglet.window.Window):
             mode = f"{int(gs.screen.mode.width)}x{int(gs.screen.mode.height)}"
             command.append(f"--output {uid} --pos {x}{sep}{y} --mode {mode}")
         cmd = " ".join(command)
-        print(cmd)
-        os.system(cmd)
+        if os.system(cmd):
+            self.set_error("Failed saving the layout")
 
     def action_toggle_screen_power(self):
         if self.selected_item:

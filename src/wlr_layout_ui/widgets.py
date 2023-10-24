@@ -71,6 +71,9 @@ class Rect:  # {{{
     def copy(self):
         return Rect(self.x, self.y, self.width, self.height)
 
+    def asTuple(self):
+        return (self.x, self.y, self.width, self.height)
+
 
 # }}}
 
