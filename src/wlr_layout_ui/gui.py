@@ -35,7 +35,7 @@ class UI(pyglet.window.Window):
         but_h = 28
 
         # make profiles widgets {{{
-        self.sidepanel = VBox(Rect(WINDOW_MARGIN, WINDOW_MARGIN, but_w, but_h))
+        self.sidepanel = VBox()
         ref_rect = Rect(0, 0, but_w, but_h)
         s_but_style = Style(color=(213, 139, 139))
         act_but_style = Style(color=(139, 233, 202))
