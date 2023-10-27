@@ -63,7 +63,7 @@ class GuiScreen:
     def statusInfo(self):
         return "Screen identifier: " + self.screen.name
 
-    def _animation_step(self, speed=1):
+    def _animation_step(self):
         r = self.rect
         t = self.target_rect
         for var in ("x", "y", "width", "height"):
