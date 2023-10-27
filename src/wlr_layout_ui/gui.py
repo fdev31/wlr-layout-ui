@@ -125,6 +125,8 @@ class UI(pyglet.window.Window):
 
         self.gui_screens: list[GuiScreen] = []
         self.load_screens()
+        # Ensure correct positioning
+        self.on_resize(width, height)
 
     def set_error(self, message, duration=200):
         self.error_message = message
