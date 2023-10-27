@@ -67,7 +67,7 @@ class UI(pyglet.window.Window):
         # }}}
 
         # make main buttons {{{
-        self.action_box = VBox(Rect(WINDOW_MARGIN, WINDOW_MARGIN, but_w, but_h))
+        self.action_box = VBox()
         ref_rect = Rect(0, 0, but_w, but_h)
         box = self.action_box
         apply_but = Button(
@@ -93,7 +93,7 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_screen_spec,
             # invert=True,
         )
-        self.settings_box = HBox(Rect(box.rect.right, WINDOW_MARGIN, but_h, 0))
+        self.settings_box = HBox()
         self.require_selected_item.add(self.settings_box)
         sbox = self.settings_box
         sbox.add(self.resolutions)
@@ -117,14 +117,18 @@ class UI(pyglet.window.Window):
         sbox.add(self.on_off_but)
         # }}}
 
-        but = Button(Rect(width // 2, height // 2, 100, 100), label="Test")
-
         self._widgets: list[Widget] = [
             self.action_box,
             self.settings_box,
             self.sidepanel,
-            but,
         ]
+        for w in self._widgets:
+            w.margin = WINDOW_MARGIN
+
+        # alignment
+        self.action_box.set_alignment("top", "left")
+        self.settings_box.set_alignment("top")
+        self.sidepanel.set_alignment("top", "right")
 
         self.gui_screens: list[GuiScreen] = []
         self.load_screens()
@@ -133,7 +137,7 @@ class UI(pyglet.window.Window):
 
     @property
     def widgets(self):
-        return self._widgets + self.gui_screens
+        return self.gui_screens + self._widgets
 
     def set_error(self, message, duration=200):
         self.error_message = message
@@ -317,14 +321,16 @@ class UI(pyglet.window.Window):
         pyglet.window.Window.on_resize(self, width, height)
 
         # TODO: use alignment rules instead
+        for w in self._widgets:
+            w.update_alignment(0, 0, width, height)
 
-        self.action_box.rect.y = height - WINDOW_MARGIN
-
-        self.settings_box.rect.y = height - WINDOW_MARGIN
-        self.settings_box.rect.x = (width - self.settings_box.rect.width) // 2
-
-        self.sidepanel.rect.y = height - WINDOW_MARGIN
-        self.sidepanel.rect.x = width - WINDOW_MARGIN - self.sidepanel.rect.width
+        # self.action_box.rect.y = height - WINDOW_MARGIN
+        #
+        # self.settings_box.rect.y = height - WINDOW_MARGIN
+        # self.settings_box.rect.x = (width - self.settings_box.rect.width) // 2
+        #
+        # self.sidepanel.rect.y = height - WINDOW_MARGIN
+        # self.sidepanel.rect.x = width - WINDOW_MARGIN - self.sidepanel.rect.width
 
         self.center_layout(immediate=True)
         self.window_size = self.get_size()
@@ -354,9 +360,11 @@ class UI(pyglet.window.Window):
         return self.selected_item or widget not in self.require_selected_item
 
     def draw_screens_and_widgets(self):
-        # Standard display
+        # Update focus
         for screen in self.gui_screens:
-            screen.highlighted = screen == self.selected_item
+            is_focused = screen == self.selected_item
+            if is_focused != screen.highlighted:
+                screen.highlighted = is_focused
 
         # Widgets
         for w in self.widgets:

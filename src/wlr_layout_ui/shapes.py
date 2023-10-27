@@ -8,6 +8,15 @@ class RoundedRectangle:
         self.color = color
 
     def draw(self):
+        if not self.radius:
+            Rectangle(
+                self.rect.x,
+                self.rect.y,
+                self.rect.width,
+                self.rect.height,
+                color=self.color,
+            ).draw()
+            return
         # Draw rounded corners using circles
         rect = self.rect
         color = self.color

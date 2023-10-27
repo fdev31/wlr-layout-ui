@@ -4,7 +4,7 @@ from pyglet.shapes import Rectangle, Triangle
 from pyglet.text import Label
 
 from .settings import FONT, WIDGETS_RADIUS
-from .utils import brighten
+from .utils import brighten, Rect
 from .shapes import RoundedRectangle
 
 
@@ -12,6 +12,35 @@ class Widget:
     def __init__(self, rect, style):
         self.rect = rect
         self.style = style if style else Style()
+        self.valign = "bottom"
+        self.halign = "left"
+        self.margin = 0
+
+    def set_alignment(self, vert="center", horiz="center"):
+        self.valign = vert
+        self.halign = horiz
+
+    def update_alignment(self, x, y, width, height):
+        if self.halign == "center":
+            self.rect.x = (width - self.rect.width) // 2
+        elif self.halign == "right":
+            self.rect.x = width - self.rect.width - self.margin
+        elif self.halign == "left":
+            self.rect.x = self.margin
+        else:
+            raise ValueError(f"Unknown horizontal alignment: {self.halign}")
+
+        if self.valign == "center":
+            self.rect.y = (height - self.rect.height) // 2
+        elif self.valign == "top":
+            self.rect.y = height - self.rect.height - self.margin
+        elif self.valign == "bottom":
+            self.rect.y = self.margin
+        else:
+            raise ValueError(f"Unknown vertical alignment: {self.valign}")
+
+        self.rect.x += x
+        self.rect.y += y
 
     def unfocus(self):
         return
@@ -19,13 +48,16 @@ class Widget:
     def draw(self, cursor):
         raise NotImplementedError()
 
-    def draw_shadow(self):
-        Rectangle(
-            self.rect.x + 3,
-            self.rect.y - 3,
-            self.rect.width,
-            self.rect.height,
-            color=(0, 0, 0, 80),
+    def draw_shadow(self, offX=3, offY=3, color=(0, 0, 0, 80), radius=0):
+        RoundedRectangle(
+            Rect(
+                self.rect.x + offX,
+                self.rect.y - offY,
+                self.rect.width,
+                self.rect.height,
+            ),
+            radius=radius,
+            color=color,
         ).draw()
 
     def contains(self, x, y):
@@ -36,12 +68,16 @@ class Widget:
 
 
 class _Box(Widget):
-    def __init__(self, rect, padding=4):
-        super().__init__(rect, None)
+    def __init__(self, rect=None, padding=4):
+        super().__init__(rect or Rect(0, 0, 0, 0), None)
         self.padding = padding
-        self.rect.width = 0
-        self.rect.height = 0
+        self.rect.width = self.totalpadding
+        self.rect.height = self.totalpadding
         self.widgets = []
+
+    @property
+    def totalpadding(self):
+        return self.padding * 2
 
     def unfocus(self):
         for w in self.widgets:
@@ -52,19 +88,23 @@ class _Box(Widget):
             if w.contains(x, y) and w.on_mouse_press(x, y, button, modifiers):
                 return True
 
+    def draw(self, cursor):
+        self.draw_shadow(0, 0, (255, 255, 255, 80), radius=0)
+
 
 class HBox(_Box):
     def add(self, widget):
         self.widgets.append(widget)
-        if self.widgets:
+        if len(self.widgets) > 1:
             self.rect.width += self.padding
         self.rect.width += widget.rect.width
-        self.rect.height = max(widget.rect.height, self.rect.height)
+        self.rect.height = max(widget.rect.height + self.totalpadding, self.rect.height)
 
     def draw(self, cursor):
-        x_off = 0
+        super().draw(cursor)
+        x_off = self.padding
         for i, w in enumerate(self.widgets):
-            w.rect.y = self.rect.y - w.rect.height
+            w.rect.y = self.rect.y + self.padding
             w.rect.x = self.rect.x + x_off
             x_off += w.rect.width + self.padding
             w.draw(cursor)
@@ -73,17 +113,18 @@ class HBox(_Box):
 class VBox(_Box):
     def add(self, widget):
         self.widgets.append(widget)
-        if self.widgets:
+        if len(self.widgets) > 1:
             self.rect.height += self.padding
         self.rect.height += widget.rect.height
-        self.rect.width = max(widget.rect.width, self.rect.width)
+        self.rect.width = max(widget.rect.width + self.totalpadding, self.rect.width)
 
     def draw(self, cursor):
-        y_off = 0
-        for i, w in enumerate(self.widgets):
-            w.rect.x = self.rect.x
-            w.rect.y = self.rect.y + y_off - w.rect.height
-            y_off -= w.rect.height + self.padding
+        super().draw(cursor)
+        y_off = self.padding
+        for w in reversed(self.widgets):
+            w.rect.x = self.rect.x + self.padding
+            w.rect.y = self.rect.y + y_off
+            y_off += w.rect.height + self.padding
             w.draw(cursor)
 
 
