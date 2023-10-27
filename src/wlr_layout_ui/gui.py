@@ -34,7 +34,6 @@ class UI(pyglet.window.Window):
         but_h = 28
 
         # make profiles widgets {{{
-        self.sidepanel = VBox()
         ref_rect = Rect(0, 0, but_w, but_h)
         s_but_style = Style(color=(213, 139, 139))
         act_but_style = Style(color=(139, 233, 202))
@@ -44,45 +43,45 @@ class UI(pyglet.window.Window):
             style=s_but_style,
             action=lambda: self.set_text_input(self.action_save_new_profile),
         )
-        self.sidepanel.add(p_new_but)
         p_save_but = Button(
             ref_rect.copy(),
             style=s_but_style,
             label="Save",
             action=self.action_save_profile,
         )
-        self.sidepanel.add(p_save_but)
         p_load_but = Button(
             ref_rect.copy(),
             label="Load",
             style=act_but_style,
             action=self.action_load_selected_profile,
         )
-        self.sidepanel.add(p_load_but)
         self.profile_list = Dropdown(ref_rect.copy(), label="Profiles", options=[])
-        self.sidepanel.add(self.profile_list)
+
+        self.sidepanel = VBox(
+            widgets=[p_new_but, p_save_but, p_load_but, self.profile_list]
+        )
         self.sync_profiles()
 
         # }}}
 
         # make main buttons {{{
-        self.action_box = VBox()
         ref_rect = Rect(0, 0, but_w, but_h)
-        box = self.action_box
-        apply_but = Button(
-            ref_rect.copy(),
-            label="Apply",
-            action=self.action_save_layout,
-            style=act_but_style,
+        self.action_box = VBox(
+            widgets=[
+                Button(
+                    ref_rect.copy(),
+                    label="Apply",
+                    action=self.action_save_layout,
+                    style=act_but_style,
+                ),
+                Button(
+                    ref_rect.copy(),
+                    label="Reload",
+                    action=self.action_reload,
+                    style=act_but_style,
+                ),
+            ]
         )
-        box.add(apply_but)
-        reload_but = Button(
-            ref_rect.copy(),
-            label="Reload",
-            action=self.action_reload,
-            style=act_but_style,
-        )
-        box.add(reload_but)
 
         ref_rect.width = int(ref_rect.width * 1.2)
         self.resolutions = Dropdown(
@@ -92,10 +91,6 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_screen_spec,
             # invert=True,
         )
-        self.settings_box = HBox()
-        self.require_selected_item.add(self.settings_box)
-        sbox = self.settings_box
-        sbox.add(self.resolutions)
         self.freqs = Dropdown(
             ref_rect.copy(),
             label="Rate",
@@ -103,7 +98,6 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_mode,
             # invert=True,
         )
-        sbox.add(self.freqs)
         ref_rect.width //= 3
         self.on_off_but = Button(
             ref_rect.copy(),
@@ -113,7 +107,11 @@ class UI(pyglet.window.Window):
             style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
             togglable=True,
         )
-        sbox.add(self.on_off_but)
+
+        self.settings_box = HBox(
+            widgets=[self.resolutions, self.freqs, self.on_off_but]
+        )
+        self.require_selected_item.add(self.settings_box)
         # }}}
 
         self._widgets: list[Widget] = [

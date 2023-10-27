@@ -68,12 +68,14 @@ class Widget:
 
 
 class _Box(Widget):
-    def __init__(self, rect=None, padding=4):
+    def __init__(self, rect=None, padding=4, widgets=[]):
         super().__init__(rect or Rect(0, 0, 0, 0), None)
         self.padding = padding
         self.rect.width = self.totalpadding
         self.rect.height = self.totalpadding
         self.widgets = []
+        for w in widgets:
+            self.add(w)
 
     @property
     def totalpadding(self):
