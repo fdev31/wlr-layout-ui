@@ -23,7 +23,6 @@ class UI(pyglet.window.Window):
         self.selected_item = None
         self.scale_factor = 1
         self.cursor_coords = (0, 0)
-        self.window_size = (width, height)
         self.text_input: str | None = None
         self.error_message = ""
         self.error_message_duration = 0
@@ -320,20 +319,10 @@ class UI(pyglet.window.Window):
     def on_resize(self, width, height):
         pyglet.window.Window.on_resize(self, width, height)
 
-        # TODO: use alignment rules instead
         for w in self._widgets:
             w.update_alignment(0, 0, width, height)
 
-        # self.action_box.rect.y = height - WINDOW_MARGIN
-        #
-        # self.settings_box.rect.y = height - WINDOW_MARGIN
-        # self.settings_box.rect.x = (width - self.settings_box.rect.width) // 2
-        #
-        # self.sidepanel.rect.y = height - WINDOW_MARGIN
-        # self.sidepanel.rect.x = width - WINDOW_MARGIN - self.sidepanel.rect.width
-
         self.center_layout(immediate=True)
-        self.window_size = self.get_size()
 
     def on_mouse_release(self, x, y, button, modifiers):
         if self.selected_item and self.selected_item.dragging:
