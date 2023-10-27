@@ -1,6 +1,9 @@
 import os
 import sys
+import time
+
 import pyglet
+
 from .gui import UI
 from .settings import UI_RATIO, PROG_NAME, LEGACY
 from .screens import displayInfo, load
@@ -20,10 +23,10 @@ def main():
 
         profiles = load_profiles()
         if sys.argv[1] == "-l":
-            print("Available profiles:")
+            print("")
             for p in profiles.keys():
                 print(f" - {p}")
-        if sys.argv[1][0] == "-":
+        elif sys.argv[1][0] == "-":
             print(
                 """With no options, launches the GUI
 Options:
@@ -33,12 +36,15 @@ Options:
             )
 
         else:
+            os.system("hyprctl reload")
             profile = profiles[sys.argv[1]]
             rects = [Rect(i["x"], i["y"], i["width"], i["height"]) for i in profile]
             names = [i["uid"] for i in profile]
             activity = [i["active"] for i in profile]
             cmd = make_command(rects, names, activity, not LEGACY)
-            os.system(cmd)
+            time.sleep(0.5)
+            if os.system(cmd):
+                print("Failed applying the layout")
         sys.exit(0)
     load()
     max_width = int(

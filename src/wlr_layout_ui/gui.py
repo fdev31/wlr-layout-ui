@@ -5,8 +5,9 @@ import re
 
 import pyglet
 
-from .widgets import Button, HBox, VBox, Dropdown, Style, Rect
+from .widgets import Button, HBox, VBox, Dropdown, Style, Rect, Widget
 from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
+from .settings import ALLOW_DESELECT
 from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
 from .utils import compute_bounding_box, trim_rects_flip_y, make_command
@@ -26,9 +27,12 @@ class UI(pyglet.window.Window):
         self.text_input: str | None = None
         self.error_message = ""
         self.error_message_duration = 0
+        self.require_selected_item = (
+            set()
+        )  # Items that can't be displayed without a selection
 
         but_w = 120
-        but_h = 25
+        but_h = 28
 
         # make profiles widgets {{{
         pbox = VBox(
@@ -38,23 +42,25 @@ class UI(pyglet.window.Window):
         but_style = Style(color=(139, 213, 202))
         p_new_but = Button(
             pbox.add(but_h * 1.1),
-            "Save new",
+            label="Save new",
             style=s_but_style,
             action=lambda: self.set_text_input(self.action_save_new_profile),
         )
         p_save_but = Button(
             pbox.add(but_h * 1.1),
-            "Save",
             style=s_but_style,
+            label="Save",
             action=self.action_save_profile,
         )
         p_load_but = Button(
             pbox.add(but_h * 1.1),
-            "Load",
+            label="Load",
             style=but_style,
             action=self.action_load_selected_profile,
         )
-        self.profile_list = Dropdown(pbox.add(but_h * 1.1), "Profiles", [])
+        self.profile_list = Dropdown(
+            pbox.add(but_h * 1.1), label="Profiles", options=[]
+        )
         self.sync_profiles()
 
         self.sidepanel = [self.profile_list, p_load_but, p_save_but, p_new_but]
@@ -64,44 +70,44 @@ class UI(pyglet.window.Window):
         box = HBox(WINDOW_MARGIN, WINDOW_MARGIN, but_h)
         apply_but = Button(
             box.add(but_w * 0.7),
-            "Apply",
+            label="Apply",
             action=self.action_save_layout,
             style=Style(color=(120, 165, 240), bold=True),
         )
         reload_but = Button(
             box.add(but_w * 0.7),
-            "Reload",
+            label="Reload",
             action=self.action_reload,
             style=Style(color=(120, 165, 240), bold=True),
         )
         self.resolutions = Dropdown(
             box.add(but_w * 1.1),
-            "Resolution",
-            [],
+            label="Resolution",
+            options=[],
             onchange=self.action_update_screen_spec,
             # invert=True,
         )
-        self.resolutions.require_selection = True
+        self.require_selected_item.add(self.resolutions)
         self.freqs = Dropdown(
             box.add(but_w * 0.9),
-            "Rate",
-            [],
+            label="Rate",
+            options=[],
             onchange=self.action_update_mode,
             # invert=True,
         )
-        self.freqs.require_selection = True
+        self.require_selected_item.add(self.freqs)
         self.on_off_but = Button(
             box.add(but_w / 3),
-            "On",
+            label="On",
             toggled_label="Off",
             action=self.action_toggle_screen_power,
             style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
             togglable=True,
         )
-        self.on_off_but.require_selection = True
+        self.require_selected_item.add(self.on_off_but)
         # }}}
 
-        self.widgets: list[Dropdown | Button] = [
+        self.widgets: list[Widget] = [
             apply_but,
             reload_but,
             self.on_off_but,
@@ -239,7 +245,7 @@ class UI(pyglet.window.Window):
                     words.append(word)
             return " ".join(words)
         else:
-            return "Select a monitor"
+            return "Select a monitor to edit its settings"
 
     # }}}
     # Event handler methods {{{
@@ -274,9 +280,9 @@ class UI(pyglet.window.Window):
                 if screen.rect.contains(x, y):
                     self.action_select_screen(screen)
                     break
-            # else:
-            # NOTE: enables screen unfocusing:
-            #     self.selected_item = None
+            else:
+                if ALLOW_DESELECT:
+                    self.selected_item = None
 
         for wid in self.widgets:
             if wid != active_widget:
@@ -323,19 +329,23 @@ class UI(pyglet.window.Window):
             align="left",
         ).draw()
 
+    def _can_draw(self, widget):
+        return self.selected_item or widget not in self.require_selected_item
+
     def draw_screens_and_widgets(self):
         # Standard display
         for screen in self.gui_screens:
             screen.highlighted = screen == self.selected_item
             screen.draw()
-        self.widgets[0].draw(self.cursor_coords)  # apply button
-        for w in self.widgets[1:]:
-            if w not in self.sidepanel:
-                r_sel = getattr(w, "require_selection", False)
-                if self.selected_item or not r_sel:
-                    w.draw(self.cursor_coords)
-        for w in self.sidepanel:
-            w.draw(self.cursor_coords)
+        # Shadows
+        for w in self.widgets:
+            if self._can_draw(w):
+                w.draw_shadow()
+
+        # Widgets
+        for w in self.widgets:
+            if self._can_draw(w):
+                w.draw(self.cursor_coords)
 
     def on_draw(self):
         self.clear()
@@ -402,6 +412,7 @@ class UI(pyglet.window.Window):
         return ret
 
     def action_save_new_profile(self):
+        assert self.text_input
         save_profile(self.text_input, self.get_profile_data())
         self.sync_profiles()
         self.text_input = None
@@ -451,22 +462,10 @@ class UI(pyglet.window.Window):
             self.freqs.selected_index = 0
 
     def action_save_layout(self):
-        screens = self.gui_screens
-        screens_rect = [screen.target_rect.scaled(UI_RATIO) for screen in screens]
-        trim_rects_flip_y(screens_rect)
-        print("# Screens layout:")
-        command = ["xrandr" if LEGACY else "wlr-randr"]
-        for rect, gs in zip(screens_rect, screens):
-            if not gs.screen.active:
-                command.append(f"--output {gs.screen.uid} --off")
-                continue
-            assert gs.screen.mode
-            sep = "x" if LEGACY else ","
-            uid = gs.screen.uid
-            mode = f"{int(gs.screen.mode.width)}x{int(gs.screen.mode.height)}"
-            command.append(f"--output {uid} --pos {rect.x}{sep}{rect.y} --mode {mode}")
-        cmd = " ".join(command)
-        print(cmd)
+        rects = [i.rect.scaled(UI_RATIO) for i in self.gui_screens]
+        names = [i.screen.uid for i in self.gui_screens]
+        activity = [i.screen.active for i in self.gui_screens]
+        cmd = make_command(rects, names, activity, not LEGACY)
         if os.system(cmd):
             self.set_error("Failed applying the layout")
 

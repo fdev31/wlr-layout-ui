@@ -4,8 +4,32 @@ from pyglet.shapes import Rectangle, Triangle
 from pyglet.text import Label
 
 from .settings import FONT, WIDGETS_RADIUS
-from .utils import collidepoint, brighten, Rect
+from .utils import brighten, Rect
 from .shapes import RoundedRectangle
+
+
+class Widget:
+    def __init__(self, rect, style):
+        self.rect = rect
+        self.style = style if style else Style()
+
+    def unfocus(self):
+        return
+
+    def draw(self, cursor):
+        raise NotImplementedError()
+
+    def draw_shadow(self):
+        Rectangle(
+            self.rect.x + 3,
+            self.rect.y - 3,
+            self.rect.width,
+            self.rect.height,
+            color=(0, 0, 0, 80),
+        ).draw()
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        return
 
 
 @dataclass
@@ -45,18 +69,15 @@ class Style:
     bold: bool = False
 
 
-class Dropdown:  # {{{
-    def __init__(
-        self, rect, label, options, onchange=None, style=Style(), invert=False
-    ):
+class Dropdown(Widget):  # {{{
+    def __init__(self, rect, label, options, style=None, onchange=None, invert=False):
+        super().__init__(rect, style)
         self.invert = invert
         self.options = options
         self.selected_index = 0
         self.expanded = False
-        self.style = style
         self.label = label
         self.onchange = onchange
-        self.rect = rect
         self.radius = WIDGETS_RADIUS
 
         # Dimensions
@@ -94,10 +115,9 @@ class Dropdown:  # {{{
     def draw(self, cursor):
         # Dropdown box
 
-        is_hovered = self.rect.contains(*cursor)
-
         color = list(self.style.color)
 
+        is_hovered = self.rect.contains(*cursor)
         if is_hovered:
             color = brighten(color)
 
@@ -215,39 +235,24 @@ class Dropdown:  # {{{
 # }}}
 
 
-class Button:  # {{{
+class Button(Widget):  # {{{
     def __init__(
         self,
         rect,
         label,
+        style=None,
         action=lambda: None,
-        style=Style(),
         togglable=False,
         toggled_label=None,
     ):
+        super().__init__(rect, style)
         self.style = style
         self.action = action
         self.togglable = togglable
         self.toggled = False
-        self.rect = rect
-        self.style = style
         self.label = label
         self.radius = WIDGETS_RADIUS
         self.toggled_label = toggled_label
-
-    @property
-    def ex(self):
-        return self.rect.x + self.rect.width
-
-    @property
-    def ey(self):
-        return self.rect.y + self.rect.height
-
-    def contains(self, x, y):
-        return self.rect.x < x < self.ex and self.rect.y < y < self.ey
-
-    def unfocus(self):
-        return
 
     def draw(self, cursor):
         # Draw rounded borders using circles and rectangles
@@ -263,21 +268,20 @@ class Button:  # {{{
             bold=style.bold,
             font_name=FONT,
         )
-        contains = self.contains(*cursor)
 
         if self.togglable and self.toggled:
             color = list(style.highlight)
         else:
             color = list(style.color)
 
-        if contains:
+        if self.rect.contains(*cursor):
             color = brighten(color)
 
         RoundedRectangle(self.rect, self.radius, color).draw()
         self.text.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if self.action and self.contains(x, y):
+        if self.action and self.rect.contains(x, y):
             self.toggled = not self.toggled
             self.action()
             return True

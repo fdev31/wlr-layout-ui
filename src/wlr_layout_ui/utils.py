@@ -13,7 +13,9 @@ def make_command(rects, names, activity, wayland=True):
         sep = "," if wayland else "x"
         mode = f"{int(rect.width)}x{int(rect.height)}"
         command.append(f"--output {name} --pos {rect.x}{sep}{rect.y} --mode {mode}")
-    return " ".join(command)
+    cmd = " ".join(command)
+    print(cmd)
+    return cmd
 
 
 def brighten(color):
