@@ -38,7 +38,7 @@ class UI(pyglet.window.Window):
         self.sidepanel = VBox(Rect(WINDOW_MARGIN, WINDOW_MARGIN, but_w, but_h))
         ref_rect = Rect(0, 0, but_w, but_h)
         s_but_style = Style(color=(213, 139, 139))
-        but_style = Style(color=(139, 213, 202))
+        act_but_style = Style(color=(139, 233, 202))
         p_new_but = Button(
             ref_rect.copy(),
             label="Save new",
@@ -56,7 +56,7 @@ class UI(pyglet.window.Window):
         p_load_but = Button(
             ref_rect.copy(),
             label="Load",
-            style=but_style,
+            style=act_but_style,
             action=self.action_load_selected_profile,
         )
         self.sidepanel.add(p_load_but)
@@ -74,14 +74,14 @@ class UI(pyglet.window.Window):
             ref_rect.copy(),
             label="Apply",
             action=self.action_save_layout,
-            style=Style(color=(120, 165, 240), bold=True),
+            style=act_but_style,
         )
         box.add(apply_but)
         reload_but = Button(
             ref_rect.copy(),
             label="Reload",
             action=self.action_reload,
-            style=Style(color=(120, 165, 240), bold=True),
+            style=act_but_style,
         )
         box.add(reload_but)
 
@@ -95,8 +95,8 @@ class UI(pyglet.window.Window):
         )
         self.settings_box = HBox(Rect(box.rect.right, WINDOW_MARGIN, but_h, 0))
         self.require_selected_item.add(self.settings_box)
-        box = self.settings_box
-        box.add(self.resolutions)
+        sbox = self.settings_box
+        sbox.add(self.resolutions)
         self.freqs = Dropdown(
             ref_rect.copy(),
             label="Rate",
@@ -104,7 +104,7 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_mode,
             # invert=True,
         )
-        box.add(self.freqs)
+        sbox.add(self.freqs)
         ref_rect.width //= 3
         self.on_off_but = Button(
             ref_rect.copy(),
@@ -114,7 +114,7 @@ class UI(pyglet.window.Window):
             style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
             togglable=True,
         )
-        box.add(self.on_off_but)
+        sbox.add(self.on_off_but)
         # }}}
 
         self.widgets: list[Widget] = [
