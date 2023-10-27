@@ -267,22 +267,24 @@ class UI(pyglet.window.Window):
 
     # }}}
     # Event handler methods {{{
-    def on_key_press(self, symbol, modifiers):
+    def on_text(self, text):
         if self.text_input is not None:
-            if symbol == 65288:  # backspace
-                self.text_input = self.text_input[:-1]
-            elif symbol == 65293:  # return
-                self.validate_text_input()
-            elif symbol == 65307:  # Escape
-                self.text_input = None
-            elif symbol <= 255:
-                self.text_input += chr(symbol)
-        else:
+            self.text_input += text
+
+    def on_key_press(self, symbol, modifiers):
+        if self.text_input is None:
             if symbol == 65293:  # return
                 self.action_save_layout()
                 self.close()
             else:
                 super().on_key_press(symbol, modifiers)
+        else:
+            if symbol == 65288:  # backspace
+                self.text_input = self.text_input[:-1]
+            elif symbol == 65293:  # return
+                self.validate_symbol_input()
+            elif symbol == 65307:  # Escape
+                self.text_input = None
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_coords = (x, y)
