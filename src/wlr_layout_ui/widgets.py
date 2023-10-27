@@ -28,34 +28,63 @@ class Widget:
             color=(0, 0, 0, 80),
         ).draw()
 
+    def contains(self, x, y):
+        return self.rect.contains(x, y)
+
     def on_mouse_press(self, x, y, button, modifiers):
         return
 
 
-@dataclass
-class HBox:  # Boxes {{{
-    x: int
-    y: int
-    height: int
-    padding: int = 4
+class _Box(Widget):
+    def __init__(self, rect, padding=4):
+        super().__init__(rect, None)
+        self.padding = padding
+        self.rect.width = 0
+        self.rect.height = 0
+        self.widgets = []
 
-    def add(self, width):
-        r = Rect(self.x, self.y, width, self.height)
-        self.x += width + self.padding
-        return r
+    def unfocus(self):
+        for w in self.widgets:
+            w.unfocus()
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        for w in self.widgets:
+            if w.contains(x, y) and w.on_mouse_press(x, y, button, modifiers):
+                return True
 
 
-@dataclass
-class VBox:
-    x: int
-    y: int
-    width: int
-    padding: int = 4
+class HBox(_Box):
+    def add(self, widget):
+        self.widgets.append(widget)
+        if self.widgets:
+            self.rect.width += self.padding
+        self.rect.width += widget.rect.width
+        self.rect.height = max(widget.rect.height, self.rect.height)
 
-    def add(self, height):
-        r = Rect(self.x, self.y, self.width, height)
-        self.y -= height + self.padding
-        return r
+    def draw(self, cursor):
+        x_off = 0
+        for i, w in enumerate(self.widgets):
+            w.rect.y = self.rect.y - w.rect.height
+            w.rect.x = self.rect.x + x_off
+            x_off += w.rect.width + self.padding
+            w.draw(cursor)
+
+
+class VBox(_Box):
+    def add(self, widget):
+        self.widgets.append(widget)
+        if self.widgets:
+            self.rect.height += self.padding
+        self.rect.height += widget.rect.height
+        self.rect.width = max(widget.rect.width, self.rect.width)
+
+    def draw(self, cursor):
+        y_off = 0
+        for i, w in enumerate(self.widgets):
+            w.rect.x = self.rect.x
+            w.rect.y = self.rect.y + y_off - w.rect.height
+            y_off -= w.rect.height + self.padding
+            w.draw(cursor)
 
 
 # }}}
@@ -82,6 +111,17 @@ class Dropdown(Widget):  # {{{
 
         # Dimensions
         self.triangle_size = int(rect.height * 0.5)
+
+    def contains(self, x, y):
+        if self.expanded:
+            return (
+                self.rect.x < x < self.rect.right
+                and self.rect.y + self.rect.height
+                > y
+                > self.rect.y - (self.rect.height * (len(self.options) + 1))
+            )
+        else:
+            return self.rect.contains(x, y)
 
     def get_triangle(self):
         triangle_x = self.rect.x + self.rect.width - self.triangle_size - 4

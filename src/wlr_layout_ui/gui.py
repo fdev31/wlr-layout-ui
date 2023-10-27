@@ -27,93 +27,101 @@ class UI(pyglet.window.Window):
         self.text_input: str | None = None
         self.error_message = ""
         self.error_message_duration = 0
-        self.require_selected_item = (
-            set()
-        )  # Items that can't be displayed without a selection
+        self.require_selected_item: set[
+            Widget
+        ] = set()  # Items that can't be displayed without a selection
 
         but_w = 120
         but_h = 28
 
         # make profiles widgets {{{
-        pbox = VBox(
-            width - but_w - WINDOW_MARGIN, height - WINDOW_MARGIN - but_h, but_w
-        )
+        self.sidepanel = VBox(Rect(WINDOW_MARGIN, WINDOW_MARGIN, but_w, but_h))
+        ref_rect = Rect(0, 0, but_w, but_h)
         s_but_style = Style(color=(213, 139, 139))
         but_style = Style(color=(139, 213, 202))
         p_new_but = Button(
-            pbox.add(but_h * 1.1),
+            ref_rect.copy(),
             label="Save new",
             style=s_but_style,
             action=lambda: self.set_text_input(self.action_save_new_profile),
         )
+        self.sidepanel.add(p_new_but)
         p_save_but = Button(
-            pbox.add(but_h * 1.1),
+            ref_rect.copy(),
             style=s_but_style,
             label="Save",
             action=self.action_save_profile,
         )
+        self.sidepanel.add(p_save_but)
         p_load_but = Button(
-            pbox.add(but_h * 1.1),
+            ref_rect.copy(),
             label="Load",
             style=but_style,
             action=self.action_load_selected_profile,
         )
-        self.profile_list = Dropdown(
-            pbox.add(but_h * 1.1), label="Profiles", options=[]
-        )
+        self.sidepanel.add(p_load_but)
+        self.profile_list = Dropdown(ref_rect.copy(), label="Profiles", options=[])
+        self.sidepanel.add(self.profile_list)
         self.sync_profiles()
 
-        self.sidepanel = [self.profile_list, p_load_but, p_save_but, p_new_but]
         # }}}
 
         # make main buttons {{{
-        box = HBox(WINDOW_MARGIN, WINDOW_MARGIN, but_h)
+        self.action_box = VBox(Rect(WINDOW_MARGIN, WINDOW_MARGIN, but_w, but_h))
+        ref_rect = Rect(0, 0, but_w, but_h)
+        box = self.action_box
         apply_but = Button(
-            box.add(but_w * 0.7),
+            ref_rect.copy(),
             label="Apply",
             action=self.action_save_layout,
             style=Style(color=(120, 165, 240), bold=True),
         )
+        box.add(apply_but)
         reload_but = Button(
-            box.add(but_w * 0.7),
+            ref_rect.copy(),
             label="Reload",
             action=self.action_reload,
             style=Style(color=(120, 165, 240), bold=True),
         )
+        box.add(reload_but)
+
+        ref_rect.width = int(ref_rect.width * 1.2)
         self.resolutions = Dropdown(
-            box.add(but_w * 1.1),
+            ref_rect.copy(),
             label="Resolution",
             options=[],
             onchange=self.action_update_screen_spec,
             # invert=True,
         )
-        self.require_selected_item.add(self.resolutions)
+        self.settings_box = HBox(Rect(box.rect.right, WINDOW_MARGIN, but_h, 0))
+        self.require_selected_item.add(self.settings_box)
+        box = self.settings_box
+        box.add(self.resolutions)
         self.freqs = Dropdown(
-            box.add(but_w * 0.9),
+            ref_rect.copy(),
             label="Rate",
             options=[],
             onchange=self.action_update_mode,
             # invert=True,
         )
-        self.require_selected_item.add(self.freqs)
+        box.add(self.freqs)
+        ref_rect.width //= 3
         self.on_off_but = Button(
-            box.add(but_w / 3),
+            ref_rect.copy(),
             label="On",
             toggled_label="Off",
             action=self.action_toggle_screen_power,
             style=Style(highlight=(200, 100, 150), color=(100, 200, 150)),
             togglable=True,
         )
-        self.require_selected_item.add(self.on_off_but)
+        box.add(self.on_off_but)
         # }}}
 
         self.widgets: list[Widget] = [
-            apply_but,
-            reload_but,
-            self.on_off_but,
-            self.resolutions,
-            self.freqs,
-        ] + self.sidepanel
+            self.action_box,
+            self.settings_box,
+            self.sidepanel,
+        ]
 
         self.gui_screens: list[GuiScreen] = []
         self.load_screens()
@@ -297,13 +305,11 @@ class UI(pyglet.window.Window):
     def on_resize(self, width, height):
         pyglet.window.Window.on_resize(self, width, height)
         old_height = self.window_size[1]
-        for wid in self.widgets:
-            if wid not in self.sidepanel:
-                wid.rect.y = height - WINDOW_MARGIN - wid.rect.height
-
-        for wid in self.sidepanel:
-            wid.rect.x = width - WINDOW_MARGIN - wid.rect.width
-            wid.rect.y -= old_height - height
+        self.action_box.rect.y = height - WINDOW_MARGIN
+        self.settings_box.rect.y = height - WINDOW_MARGIN
+        self.settings_box.rect.x = (width - self.settings_box.rect.width) // 2
+        self.sidepanel.rect.y = height - WINDOW_MARGIN
+        self.sidepanel.rect.x = width - WINDOW_MARGIN - self.sidepanel.rect.width
 
         self.center_layout(immediate=True)
         self.window_size = self.get_size()
@@ -337,10 +343,6 @@ class UI(pyglet.window.Window):
         for screen in self.gui_screens:
             screen.highlighted = screen == self.selected_item
             screen.draw()
-        # Shadows
-        for w in self.widgets:
-            if self._can_draw(w):
-                w.draw_shadow()
 
         # Widgets
         for w in self.widgets:
