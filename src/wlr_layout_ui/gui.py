@@ -335,8 +335,11 @@ class UI(pyglet.window.Window):
         pyglet.text.Label(
             "Profile name: ", font_size=24, x=10, y=h // 2 + 40, align="left"
         ).draw()
+        text = self.text_input
+        if int(time.time() * 1.5) % 2:
+            text += "_"
         pyglet.text.Label(
-            self.text_input + "|",
+            text,
             font_size=24,
             x=WINDOW_MARGIN,
             y=h // 2,
