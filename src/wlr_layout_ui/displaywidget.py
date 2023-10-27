@@ -5,10 +5,11 @@ from pyglet.shapes import BorderedRectangle
 from pyglet.text import Label
 
 from .screens import Screen
-from .widgets import Rect
+from .utils import Rect, brighten
+from .widgets import Widget
 
 
-class GuiScreen:
+class GuiScreen(Widget):
     def __str__(self):
         return "<Screen %s (%s) - %s>" % (self.rect, self.color, self.screen.name)
 
@@ -30,8 +31,8 @@ class GuiScreen:
         rect: Rect,
         color: tuple[int, int, int] = (100, 100, 100),
     ):
+        super().__init__(rect, None)
         self.screen = screen
-        self.rect = rect
         self.target_rect = rect.copy()
         self.color = color
         self.dragging = False
@@ -84,7 +85,7 @@ class GuiScreen:
         self.rect.y = y
         self.target_rect.y = y
 
-    def draw(self):
+    def draw(self, cursor):
         if self.rect != self.target_rect:
             self._animation_step()
 
@@ -95,13 +96,17 @@ class GuiScreen:
         if self.highlighted:
             border_color = (255, 201, 0)
         # draw the background
+        color = self.current_color
+        if self.rect.contains(*cursor):
+            color = brighten(color)
+
         BorderedRectangle(
             self.rect.x,
             self.rect.y,
             self.rect.width,
             self.rect.height,
             border=9 if self.highlighted else 2,
-            color=self.current_color,
+            color=color,
             border_color=border_color,
         ).draw()
         # Render the screen uid as text

@@ -4,7 +4,7 @@ from pyglet.shapes import Rectangle, Triangle
 from pyglet.text import Label
 
 from .settings import FONT, WIDGETS_RADIUS
-from .utils import brighten, Rect
+from .utils import brighten
 from .shapes import RoundedRectangle
 
 
@@ -286,7 +286,6 @@ class Button(Widget):  # {{{
         toggled_label=None,
     ):
         super().__init__(rect, style)
-        self.style = style
         self.action = action
         self.togglable = togglable
         self.toggled = False

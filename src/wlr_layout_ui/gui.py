@@ -5,12 +5,12 @@ import re
 
 import pyglet
 
-from .widgets import Button, HBox, VBox, Dropdown, Style, Rect, Widget
+from .widgets import Button, HBox, VBox, Dropdown, Style, Widget
 from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
 from .settings import ALLOW_DESELECT
 from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
-from .utils import compute_bounding_box, trim_rects_flip_y, make_command
+from .utils import compute_bounding_box, trim_rects_flip_y, make_command, Rect
 from .profiles import save_profile, load_profiles
 from .screens import displayInfo, load
 
@@ -117,16 +117,23 @@ class UI(pyglet.window.Window):
         sbox.add(self.on_off_but)
         # }}}
 
-        self.widgets: list[Widget] = [
+        but = Button(Rect(width // 2, height // 2, 100, 100), label="Test")
+
+        self._widgets: list[Widget] = [
             self.action_box,
             self.settings_box,
             self.sidepanel,
+            but,
         ]
 
         self.gui_screens: list[GuiScreen] = []
         self.load_screens()
         # Ensure correct positioning
         self.on_resize(width, height)
+
+    @property
+    def widgets(self):
+        return self._widgets + self.gui_screens
 
     def set_error(self, message, duration=200):
         self.error_message = message
@@ -299,6 +306,8 @@ class UI(pyglet.window.Window):
                 wid.unfocus()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        self.cursor_coords = (x, y)
+
         if self.selected_item and self.selected_item.dragging:
             self.selected_item.set_position(
                 self.selected_item.rect.x + dx, self.selected_item.rect.y + dy
@@ -306,10 +315,14 @@ class UI(pyglet.window.Window):
 
     def on_resize(self, width, height):
         pyglet.window.Window.on_resize(self, width, height)
-        old_height = self.window_size[1]
+
+        # TODO: use alignment rules instead
+
         self.action_box.rect.y = height - WINDOW_MARGIN
+
         self.settings_box.rect.y = height - WINDOW_MARGIN
         self.settings_box.rect.x = (width - self.settings_box.rect.width) // 2
+
         self.sidepanel.rect.y = height - WINDOW_MARGIN
         self.sidepanel.rect.x = width - WINDOW_MARGIN - self.sidepanel.rect.width
 
@@ -344,7 +357,6 @@ class UI(pyglet.window.Window):
         # Standard display
         for screen in self.gui_screens:
             screen.highlighted = screen == self.selected_item
-            screen.draw()
 
         # Widgets
         for w in self.widgets:
