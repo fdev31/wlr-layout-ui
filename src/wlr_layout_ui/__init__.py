@@ -5,7 +5,7 @@ import time
 import pyglet
 
 from .gui import UI
-from .settings import UI_RATIO, PROG_NAME, LEGACY
+from .settings import UI_RATIO, PROG_NAME, LEGACY, reload_pre_commands
 from .screens import displayInfo, load
 from .utils import make_command, Rect
 
@@ -36,7 +36,7 @@ Options:
             )
 
         else:
-            os.system("hyprctl reload")
+            reload_pre_commands()
             profile = profiles[sys.argv[1]]
             rects = [Rect(i["x"], i["y"], i["width"], i["height"]) for i in profile]
             names = [i["uid"] for i in profile]

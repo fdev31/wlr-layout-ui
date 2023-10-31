@@ -7,7 +7,7 @@ import pyglet
 
 from .widgets import Button, HBox, VBox, Dropdown, Style, Widget
 from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
-from .settings import ALLOW_DESELECT
+from .settings import ALLOW_DESELECT, reload_pre_commands
 from .displaywidget import GuiScreen
 from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
 from .utils import compute_bounding_box, trim_rects_flip_y, make_command, Rect
@@ -400,7 +400,7 @@ class UI(pyglet.window.Window):
     # Button actions {{{
 
     def action_reload(self):
-        os.system("hyprctl reload")
+        reload_pre_commands()
         time.sleep(0.5)
         load()
         GuiScreen.cur_color = 0
