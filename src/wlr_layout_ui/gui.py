@@ -256,7 +256,9 @@ class UI(pyglet.window.Window):
     # }}}
     # Gui getters & properties  {{{
     def get_status_text(self):
-        if self.selected_item:
+        if self.text_input is not None:
+            return f'Press ENTER to validate "{self.text_input}"'
+        elif self.selected_item:
             words = []
             for word in self.selected_item.screen.name.split():
                 if not hex_re.match(word):
