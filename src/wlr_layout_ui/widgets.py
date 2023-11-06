@@ -77,6 +77,9 @@ class _Box(Widget):
         for w in widgets:
             self.add(w)
 
+    def __repr__(self):
+        return f"<Box = {self.widgets}>"
+
     @property
     def totalpadding(self):
         return self.padding * 2
@@ -155,20 +158,33 @@ class Dropdown(Widget):  # {{{
         # Dimensions
         self.triangle_size = int(rect.height * 0.5)
 
+    def __repr__(self):
+        return f"<Dropdown::{self.label} = {self.options}>"
+
     def contains(self, x, y):
         if self.expanded:
-            return (
-                self.rect.x < x < self.rect.right
-                and self.rect.y + self.rect.height
-                > y
-                > self.rect.y - (self.rect.height * (len(self.options) + 1))
-            )
+            if self.invert:
+                return (
+                    self.rect.x < x < self.rect.right
+                    and self.rect.y + self.rect.height
+                    < y < self.rect.y + (self.rect.height * (len(self.options) + 1))
+                )
+            else:
+                return (
+                    self.rect.x < x < self.rect.right
+                    and self.rect.y + self.rect.height
+                    > y
+                    > self.rect.y - (self.rect.height * (len(self.options) + 1))
+                )
         else:
             return self.rect.contains(x, y)
 
     def get_triangle(self):
         triangle_x = self.rect.x + self.rect.width - self.triangle_size - 4
-        if not self.expanded:
+        show_down = self.expanded
+        if self.invert:
+            show_down = not show_down
+        if not show_down:
             margin = self.rect.height - self.triangle_size
             triangle_y = (
                 self.rect.y + (self.rect.height // 2) - int(0.5 * self.triangle_size)
@@ -244,7 +260,7 @@ class Dropdown(Widget):  # {{{
             for i, option in enumerate(self.options):
                 option_x = self.rect.x
                 if self.invert:
-                    option_y = self.rect.y + i * self.rect.height
+                    option_y = self.rect.y + ( (i + 1) * self.rect.height)
                 else:
                     option_y = self.rect.y - (i + 1) * self.rect.height
                 option_height = self.rect.height
@@ -277,11 +293,13 @@ class Dropdown(Widget):  # {{{
         menu_height = 0
         if self.expanded:
             menu_height = self.rect.height * (len(self.options) + 1)
-        if self.invert:
-            menu_height *= -1
 
         x_matches = self.rect.x < x < self.rect.x + self.rect.width
-        if x_matches and self.rect.y - menu_height < y < self.rect.y + self.rect.height:
+        if self.invert:
+            y_matches = self.rect.y + menu_height + self.rect.height > y > self.rect.y
+        else:
+            y_matches = self.rect.y - menu_height < y < self.rect.y + self.rect.height
+        if x_matches and y_matches:
             if not self.options:
                 self.expanded = False
                 return True
@@ -293,7 +311,7 @@ class Dropdown(Widget):  # {{{
                 # Check which option is clicked
                 for i, option in enumerate(self.options):
                     if self.invert:
-                        option_y = self.rect.y + (i + 1) * self.rect.height
+                        option_y = self.rect.y + ((i + 1) * self.rect.height)
                     else:
                         option_y = self.rect.y - (i + 1) * self.rect.height
                     if option_y < y < option_y + self.rect.height:
@@ -335,6 +353,9 @@ class Button(Widget):  # {{{
         self.label = label
         self.radius = WIDGETS_RADIUS
         self.toggled_label = toggled_label
+
+    def __repr__(self):
+        return f'<Button {self.label}>'
 
     def draw(self, cursor):
         # Draw rounded borders using circles and rectangles
