@@ -86,13 +86,19 @@ def load():
                         current_screen.mode = current_screen.available[-1]
             else:
                 if mode_mode:
-                    res, freq = sline.split(",", 1)
-                    res = res.split(None, 1)[0]
-                    res = tuple(int(x) for x in res.split("x"))
-                    freq, comment = freq.strip().split(None, 1)
-                    current_screen.available.append(Mode(res[0], res[1], float(freq)))
-                    if "current" in comment:
-                        current_screen.mode = current_screen.available[-1]
+                    try:
+                        res, freq = sline.split(",", 1)
+                    except ValueError:
+                        print("Unable to parse: %s" % sline)
+                    else:
+                        res = res.split(None, 1)[0]
+                        res = tuple(int(x) for x in res.split("x"))
+                        freq, comment = freq.strip().split(None, 1)
+                        current_screen.available.append(
+                            Mode(res[0], res[1], float(freq))
+                        )
+                        if "current" in comment:
+                            current_screen.mode = current_screen.available[-1]
 
                 elif sline.startswith("Modes:"):
                     mode_mode = True
