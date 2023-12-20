@@ -223,12 +223,32 @@ class UI(pyglet.window.Window):
                     wid.rect.topright,
                     wid.rect.bottomright,
                     wid.rect.bottomleft,
+                    (wid.rect.x + wid.rect.width / 2, wid.rect.y),
+                    (wid.rect.x + wid.rect.width / 2, wid.rect.y + wid.rect.height),
+                    (wid.rect.x, wid.rect.y + wid.rect.height / 2),
+                    (wid.rect.x + wid.rect.width, wid.rect.y + wid.rect.height / 2),
                 ]
                 active_screen_coords: list[tuple[int, int]] = [
                     active_screen.rect.topleft,
                     active_screen.rect.topright,
                     active_screen.rect.bottomright,
                     active_screen.rect.bottomleft,
+                    (
+                        active_screen.rect.x + active_screen.rect.width / 2,
+                        active_screen.rect.y,
+                    ),
+                    (
+                        active_screen.rect.x + active_screen.rect.width / 2,
+                        active_screen.rect.y + active_screen.rect.height,
+                    ),
+                    (
+                        active_screen.rect.x,
+                        active_screen.rect.y + active_screen.rect.height / 2,
+                    ),
+                    (
+                        active_screen.rect.x + active_screen.rect.width,
+                        active_screen.rect.y + active_screen.rect.height / 2,
+                    ),
                 ]
 
                 def distance(point1: tuple[int, int], point2: tuple[int, int]):
