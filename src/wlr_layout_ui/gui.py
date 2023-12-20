@@ -159,17 +159,17 @@ class UI(pyglet.window.Window):
         for screen in sorted(displayInfo, key=lambda s: s.uid):
             # Get the position and mode width and height for this screen
             x, y = screen.position
-            y = height - y
 
             max_width = max(m.width for m in screen.available)
             max_height = max(m.height for m in screen.available)
 
             if screen.mode:
+                h = int(screen.mode.height / UI_RATIO)
                 rect = Rect(
                     int(x / UI_RATIO),
-                    int(y / UI_RATIO),
+                    -int(y / UI_RATIO) - h,
                     int(screen.mode.width / UI_RATIO),
-                    int(screen.mode.height / UI_RATIO),
+                    h,
                 )
             else:
                 rect = Rect(
@@ -201,7 +201,6 @@ class UI(pyglet.window.Window):
         win_res = self.get_size()
         offX = (win_res[0] // 2) - avg_x
         offY = (win_res[1] // 2) - avg_y
-        self.gui_screens = list(self.gui_screens)
         for screen in self.gui_screens:
             if immediate:
                 screen.set_position(

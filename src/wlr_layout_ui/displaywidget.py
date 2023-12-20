@@ -10,8 +10,10 @@ from .widgets import Widget
 
 
 class GuiScreen(Widget):
-    def __str__(self):
+    def __repr__(self):
         return "<Screen %s (%s) - %s>" % (self.rect, self.color, self.screen.name)
+
+    __str__ = __repr__
 
     all_colors: tuple[tuple[int, int, int], ...] = (
         (108, 158, 208),
