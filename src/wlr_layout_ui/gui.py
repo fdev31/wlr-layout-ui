@@ -478,7 +478,12 @@ class UI(pyglet.window.Window):
             found = findScreen(screen_info["uid"])
             if found:
                 info = screen_info.copy()
-                rect = Rect(info["x"], -info["y"], info["width"], info["height"])
+                rect = Rect(
+                    info["x"],
+                    -info["y"] - info["height"],
+                    info["width"],
+                    info["height"],
+                )
                 srect = rect.scaled(1 / UI_RATIO)
                 info.pop("uid")
                 found.screen.active = info.pop("active")
