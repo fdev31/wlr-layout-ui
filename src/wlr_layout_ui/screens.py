@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from typing import Tuple
 
 __all__ = ["Mode", "Screen", "load", "LEGACY"]
@@ -108,3 +109,11 @@ def load():
                     current_screen.position = tuple(
                         int(x) for x in sline.split(":")[1].strip().split(",")
                     )
+    try:
+        monitors = json.loads(subprocess.getoutput("hyprctl -j monitors all"))
+    except json.decoder.JSONDecodeError:
+        pass
+    else:
+        monitors = {o["name"]: o for o in monitors}
+        for info in displayInfo:
+            info.active = monitors[info.uid]["activeWorkspace"]["id"] >= 0
