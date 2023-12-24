@@ -13,7 +13,7 @@ def make_command(rects, names, activity, wayland=True):
         sep = "," if wayland else "x"
         mode = f"{int(rect.width)}x{int(rect.height)}"
         command.append(
-            f"--output {name} --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}"
+            f"--output {name} --on --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}"
         )
     cmd = " ".join(command)
     print(cmd)
