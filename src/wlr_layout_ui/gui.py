@@ -487,7 +487,11 @@ class UI(pyglet.window.Window):
                 srect = rect.scaled(1 / UI_RATIO)
                 info.pop("uid")
                 found.screen.active = info.pop("active")
-                found.screen.mode.__dict__.update(info)
+                found.screen.mode = find_matching_mode(
+                    found.screen.available,
+                    (info["width"], info["height"]),
+                    info["freq"],
+                )
                 found.target_rect = srect
         self.center_layout()
 
