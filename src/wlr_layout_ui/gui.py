@@ -303,7 +303,7 @@ class UI(pyglet.window.Window):
             if symbol == 65288:  # backspace
                 self.text_input = self.text_input[:-1]
             elif symbol == 65293:  # return
-                self.validate_symbol_input()
+                self.validate_text_input()
             elif symbol == 65307:  # Escape
                 self.text_input = None
 
