@@ -3,37 +3,33 @@ import re
 import json
 from typing import Tuple
 
+from dataclasses import dataclass, field
+
 __all__ = ["Mode", "Screen", "load", "LEGACY"]
 
 LEGACY = not os.environ.get("WAYLAND_DISPLAY", False)
 MODE_RE = re.compile(r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>[+-]\d+)(?P<y>[+-]\d+)$")
 
 
+@dataclass
 class Mode:
-    def __init__(self, width, height, freq):
-        self.width = width
-        self.height = height
-        self.freq = freq
+    width: int
+    height: int
+    freq: float
 
     def __repr__(self):
         return "%dx%d@ %.2f" % (self.width, self.height, self.freq)
 
 
+@dataclass
 class Screen:
-    def __init__(
-        self,
-        uid: str,
-        name: str,
-        active: bool = False,
-        position: Tuple[int, int] = (0, 0),
-        mode: None | Mode = None,
-    ):
-        self.uid = uid
-        self.name = name
-        self.active = active
-        self.position = position
-        self.mode: Mode | None = mode
-        self.available: list[Mode] = []
+    uid: str
+    name: str
+    active: bool = False
+    position: Tuple[int, int] = (0, 0)
+    mode: None | Mode = None
+    scale: float = 1
+    available: list[Mode] = field(default_factory=list)
 
     def __repr__(self):
         return "<Screen%s %s [%s]>" % ("*" if self.active else "", self.name, self.mode)
@@ -117,3 +113,4 @@ def load():
         monitors = {o["name"]: o for o in monitors}
         for info in displayInfo:
             info.active = monitors[info.uid]["activeWorkspace"]["id"] >= 0
+            info.scale = monitors[info.uid]["scale"]

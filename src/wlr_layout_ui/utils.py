@@ -1,20 +1,22 @@
 from dataclasses import dataclass
 
 
-def make_command(rects, names, activity, wayland=True):
-    screens_rect = rects
+def make_command(screens, rects, wayland=True):
+    screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     print("# Screens layout:")
     command = ["wlr-randr" if wayland else "xrandr"]
-    for rect, name, active in zip(screens_rect, names, activity):
-        if not active:
-            command.append(f"--output {name} --off")
+
+    for screen, rect in zip(screens, screens_rect):
+        if not screen.active:
+            command.append(f"--output {screen.uid} --off")
             continue
         sep = "," if wayland else "x"
-        mode = f"{int(rect.width)}x{int(rect.height)}"
+        mode = f"{int(screen.mode.width)}x{int(screen.mode.height)}"
         command.append(
-            f"--output {name} --on --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}"
+            f"--output {screen.uid} --on --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}"
         )
+
     cmd = " ".join(command)
     print(cmd)
     return cmd

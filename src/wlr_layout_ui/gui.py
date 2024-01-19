@@ -164,19 +164,19 @@ class UI(pyglet.window.Window):
             max_height = max(m.height for m in screen.available)
 
             if screen.mode:
-                h = int(screen.mode.height / UI_RATIO)
+                h = int(screen.mode.height / UI_RATIO / screen.scale)
                 rect = Rect(
                     int(x / UI_RATIO),
                     -int(y / UI_RATIO) - h,
-                    int(screen.mode.width / UI_RATIO),
+                    int((screen.mode.width / UI_RATIO) / screen.scale),
                     h,
                 )
             else:
                 rect = Rect(
                     int(x / UI_RATIO),
                     int(y / UI_RATIO),
-                    int(max_width / UI_RATIO),
-                    int(max_height / UI_RATIO),
+                    int((max_width / UI_RATIO) / screen.scale),
+                    int((max_height / UI_RATIO) / screen.scale),
                 )
             gs = GuiScreen(screen, rect)
             gs.genColor()
@@ -508,10 +508,11 @@ class UI(pyglet.window.Window):
             self.freqs.selected_index = 0
 
     def action_save_layout(self):
-        rects = [i.rect.scaled(UI_RATIO) for i in self.gui_screens]
-        names = [i.screen.uid for i in self.gui_screens]
-        activity = [i.screen.active for i in self.gui_screens]
-        cmd = make_command(rects, names, activity, not LEGACY)
+        cmd = make_command(
+            [s.screen for s in self.gui_screens],
+            [s.rect.scaled(UI_RATIO) for s in self.gui_screens],
+            not LEGACY,
+        )
         if os.system(cmd):
             self.set_error("Failed applying the layout")
 
