@@ -27,6 +27,7 @@ def main():
             for p in profiles.keys():
                 print(f" - {p}")
         elif sys.argv[1][0] == "-":
+            load()
             print(
                 """With no options, launches the GUI
 Options:
@@ -37,11 +38,17 @@ Options:
 
         else:
             reload_pre_commands()
-            profile = profiles[sys.argv[1]]
+            try:
+                profile = profiles[sys.argv[1]]
+            except KeyError:
+                print("No such profile: %s" % sys.argv[1])
+                raise SystemExit(1)
+            load()
+            p_by_id = {p["uid"]: p for p in profile}
             rects = [Rect(i["x"], i["y"], i["width"], i["height"]) for i in profile]
-            names = [i["uid"] for i in profile]
-            activity = [i["active"] for i in profile]
-            cmd = make_command(rects, names, activity, not LEGACY)
+            for di in displayInfo:
+                di.active = p_by_id[di.uid]["active"]
+            cmd = make_command(displayInfo, rects, not LEGACY)
             time.sleep(0.5)
             if os.system(cmd):
                 print("Failed applying the layout")
