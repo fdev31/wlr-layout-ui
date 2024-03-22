@@ -5,6 +5,7 @@ from typing import Tuple
 import subprocess
 import difflib
 
+from .utils import config
 from dataclasses import dataclass, field
 
 __all__ = ["Mode", "Screen", "load", "LEGACY"]
@@ -87,6 +88,7 @@ def load():
         new_hyprland = False
 
     if new_hyprland:
+        config["hyprland"] = True
         load_from_hyprctl()
         return
 

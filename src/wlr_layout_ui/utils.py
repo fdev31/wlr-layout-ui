@@ -1,13 +1,15 @@
 from dataclasses import dataclass
 
+config = {"hyprland": False}
+
 
 def make_command(screens, rects, wayland=True):
-    if wayland:
-        return make_command_wayland(screens, rects)
-    return make_command_legacy(screens, rects)
+    if wayland and config.get("hyprland"):
+        return make_command_hyprland(screens, rects)
+    return make_command_legacy(screens, rects, wayland)
 
 
-def make_command_wayland(screens, rects):
+def make_command_hyprland(screens, rects):
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     print("# Screens layout:")
