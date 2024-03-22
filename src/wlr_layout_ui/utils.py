@@ -26,7 +26,7 @@ def make_command_wayland(screens, rects):
     return cmd
 
 
-def make_command_legacy(screens, rects):
+def make_command_legacy(screens, rects, wayland=False):
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     print("# Screens layout:")
