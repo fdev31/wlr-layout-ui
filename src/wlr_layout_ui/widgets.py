@@ -167,7 +167,8 @@ class Dropdown(Widget):  # {{{
                 return (
                     self.rect.x < x < self.rect.right
                     and self.rect.y + self.rect.height
-                    < y < self.rect.y + (self.rect.height * (len(self.options) + 1))
+                    < y
+                    < self.rect.y + (self.rect.height * (len(self.options) + 1))
                 )
             else:
                 return (
@@ -260,7 +261,7 @@ class Dropdown(Widget):  # {{{
             for i, option in enumerate(self.options):
                 option_x = self.rect.x
                 if self.invert:
-                    option_y = self.rect.y + ( (i + 1) * self.rect.height)
+                    option_y = self.rect.y + ((i + 1) * self.rect.height)
                 else:
                     option_y = self.rect.y - (i + 1) * self.rect.height
                 option_height = self.rect.height
@@ -355,7 +356,7 @@ class Button(Widget):  # {{{
         self.toggled_label = toggled_label
 
     def __repr__(self):
-        return f'<Button {self.label}>'
+        return f"<Button {self.label}>"
 
     def draw(self, cursor):
         # Draw rounded borders using circles and rectangles
