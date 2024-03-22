@@ -2,6 +2,31 @@ from dataclasses import dataclass
 
 
 def make_command(screens, rects, wayland=True):
+    if wayland:
+        return make_command_wayland(screens, rects)
+    return make_command_legacy(screens, rects)
+
+
+def make_command_wayland(screens, rects):
+    screens_rect = rects.copy()
+    trim_rects_flip_y(screens_rect)
+    print("# Screens layout:")
+    command = ["hyprctl --batch"]
+
+    for screen, rect in zip(screens, screens_rect):
+        if not screen.active:
+            command.append(f"keyword monitor {screen.uid},disable ;")
+            continue
+        command.append(
+            f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale} ;"
+        )
+
+    cmd = " ".join(command)
+    print(cmd)
+    return cmd
+
+
+def make_command_legacy(screens, rects):
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     print("# Screens layout:")

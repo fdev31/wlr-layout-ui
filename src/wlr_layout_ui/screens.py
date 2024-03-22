@@ -2,6 +2,8 @@ import os
 import re
 import json
 from typing import Tuple
+import subprocess
+import difflib
 
 from dataclasses import dataclass, field
 
@@ -18,7 +20,7 @@ class Mode:
     freq: float
 
     def __repr__(self):
-        return "%dx%d@ %.2f" % (self.width, self.height, self.freq)
+        return "%dx%d@%.2fHz" % (self.width, self.height, self.freq)
 
 
 @dataclass
@@ -38,11 +40,55 @@ class Screen:
 displayInfo: list[Screen] = []
 
 
+def _parseMode(txt):
+    res, freq = txt.split("@")
+    x, y = res.split("x")
+    return (int(x), int(y), float(freq[:-2]))
+
+
+def load_from_hyprctl():
+    monitors = json.loads(subprocess.getoutput("hyprctl -j monitors all"))
+    for monitor in monitors:
+        modes = [Mode(*_parseMode(m)) for m in monitor["availableModes"]]
+        cur_mode = "%dx%d@%.2fHz" % (
+            monitor["width"],
+            monitor["height"],
+            monitor["refreshRate"],
+        )
+        modes_str = [repr(m) for m in modes]
+        try:
+            idx = modes_str.index(cur_mode)
+        except IndexError:
+            idx = modes_str.index(difflib.get_close_matches(cur_mode, modes_str)[0])
+        current_screen = Screen(
+            uid=monitor["name"],
+            name=monitor["description"],
+            active=monitor["activeWorkspace"]["id"] >= 0,
+            scale=monitor["scale"],
+            position=(monitor["x"], monitor["y"]),
+            available=modes,
+            mode=modes[idx],
+        )
+        displayInfo.append(current_screen)
+
+
 def load():
-    import subprocess
 
     if displayInfo:
         displayInfo.clear()
+
+    try:
+        v = json.loads(subprocess.getoutput("hyprctl -j version"))["tag"]
+        good_v = (37, 38, 39)
+        new_hyprland = any(v.startswith("v0.%d" % x) for x in good_v) or (
+            not v.startswith("v0.2") and not v.startswith("v0.1")
+        )
+    except (KeyError, json.JSONDecodeError):
+        new_hyprland = False
+
+    if new_hyprland:
+        load_from_hyprctl()
+        return
 
     out = subprocess.getoutput("xrandr" if LEGACY else "wlr-randr")
     current_screen: None | Screen = None

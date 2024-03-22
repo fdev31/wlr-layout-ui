@@ -26,9 +26,9 @@ class UI(pyglet.window.Window):
         self.text_input: str | None = None
         self.error_message = ""
         self.error_message_duration = 0
-        self.require_selected_item: set[
-            Widget
-        ] = set()  # Items that can't be displayed without a selection
+        self.require_selected_item: set[Widget] = (
+            set()
+        )  # Items that can't be displayed without a selection
 
         but_w = 120
         but_h = 28
