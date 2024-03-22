@@ -1,15 +1,21 @@
-from pyglet.shapes import Rectangle, Circle
+from functools import cache
+from .factories import makeCircle, makeRectangle
+
+
+@cache
+def makeRoundedRectangle(rect, radius, color):
+    return RoundedRectangle(rect, radius, color)
 
 
 class RoundedRectangle:
     def __init__(self, rect, radius, color):
         self.rect = rect
         self.radius = radius
-        self.color = color
+        self.color = tuple(color)
 
     def draw(self):
         if not self.radius:
-            Rectangle(
+            makeRectangle(
                 self.rect.x,
                 self.rect.y,
                 self.rect.width,
@@ -31,7 +37,7 @@ class RoundedRectangle:
             ),
         ]
         for corner_x, corner_y in corners_pos:
-            Circle(
+            makeCircle(
                 corner_x + self.radius,
                 corner_y + self.radius,
                 self.radius,
@@ -39,14 +45,14 @@ class RoundedRectangle:
             ).draw()
 
         # Draw rectangles to fill the gaps inside the rounded borders
-        Rectangle(
+        makeRectangle(
             rect.x + self.radius,
             rect.y,
             rect.width - diameter,
             rect.height,
             color=color,
         ).draw()
-        Rectangle(
+        makeRectangle(
             rect.x,
             rect.y + self.radius,
             rect.width,

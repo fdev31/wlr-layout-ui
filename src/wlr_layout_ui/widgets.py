@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
-from pyglet.shapes import Rectangle, Triangle
-from pyglet.text import Label
+from pyglet.shapes import Triangle
 
 from .settings import FONT, WIDGETS_RADIUS
 from .utils import brighten, Rect
 from .shapes import RoundedRectangle
+from .factories import makeRectangle, makeLabel
 
 
 class Widget:
@@ -49,7 +49,7 @@ class Widget:
         raise NotImplementedError()
 
     def draw_shadow(self, offX=3, offY=3, color=(0, 0, 0, 80), radius=0):
-        RoundedRectangle(
+        r = RoundedRectangle(
             Rect(
                 self.rect.x + offX,
                 self.rect.y - offY,
@@ -58,7 +58,8 @@ class Widget:
             ),
             radius=radius,
             color=color,
-        ).draw()
+        )
+        r.draw()
 
     def contains(self, x, y):
         return self.rect.contains(x, y)
@@ -221,11 +222,12 @@ class Dropdown(Widget):  # {{{
         if is_hovered:
             color = brighten(color)
 
-        RoundedRectangle(self.rect, self.radius, color).draw()
+        r = RoundedRectangle(self.rect, self.radius, color)
+        r.draw()
         rect = self.rect
 
         if self.expanded:
-            Rectangle(
+            makeRectangle(
                 rect.x,
                 rect.y,
                 rect.width,
@@ -241,7 +243,7 @@ class Dropdown(Widget):  # {{{
             text = self.options[self.selected_index]["name"]
 
         # Selected option
-        Label(
+        makeLabel(
             text,
             x=self.rect.x + 10,
             y=self.rect.y + self.rect.height // 2,
@@ -269,13 +271,13 @@ class Dropdown(Widget):  # {{{
                     color = self.style.highlight
                 else:
                     color = self.style.color
-                Rectangle(
+                makeRectangle(
                     option_x, option_y, self.rect.width, option_height, color=color
                 ).draw()
 
                 label = option["name"]
 
-                Label(
+                makeLabel(
                     label,
                     x=option_x + 10,
                     y=option_y + option_height // 2,
@@ -362,7 +364,7 @@ class Button(Widget):  # {{{
         # Draw rounded borders using circles and rectangles
         rect = self.rect
         style = self.style
-        self.text = Label(
+        self.text = makeLabel(
             self.toggled_label if self.toggled_label and self.toggled else self.label,
             x=rect.x + rect.width // 2,
             y=rect.y + rect.height // 2,
@@ -381,7 +383,8 @@ class Button(Widget):  # {{{
         if self.rect.contains(*cursor):
             color = brighten(color)
 
-        RoundedRectangle(self.rect, self.radius, color).draw()
+        r = RoundedRectangle(self.rect, self.radius, color)
+        r.draw()
         self.text.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
