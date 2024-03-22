@@ -216,7 +216,7 @@ class Dropdown(Widget):  # {{{
     def draw(self, cursor):
         # Dropdown box
 
-        color = list(self.style.color)
+        color = self.style.color
 
         is_hovered = self.rect.contains(*cursor)
         if is_hovered:
