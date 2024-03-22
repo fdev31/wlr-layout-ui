@@ -315,10 +315,7 @@ class UI(pyglet.window.Window):
             elif symbol == 65307 and self.confirmation_needed:  # Escape
                 os.system(self.original_cmd)
                 self.confirmation_needed = False
-                load()
-                self.selected_item = None
-                GuiScreen.cur_color = 0
-                self.load_screens()
+                self.reset_sel()
             else:
                 super().on_key_press(symbol, modifiers)
         else:
@@ -460,12 +457,16 @@ class UI(pyglet.window.Window):
     # }}}
     # Button actions {{{
 
-    def action_reload(self):
-        reload_pre_commands()
-        time.sleep(0.5)
+    def reset_sel(self):
+        self.selected_item = None
         load()
         GuiScreen.cur_color = 0
         self.load_screens()
+
+    def action_reload(self):
+        reload_pre_commands()
+        time.sleep(0.5)
+        self.reset_sel()
 
     def get_profile_data(self):
         screens_rect = [
