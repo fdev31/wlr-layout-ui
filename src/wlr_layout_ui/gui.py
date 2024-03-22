@@ -16,6 +16,8 @@ from .screens import displayInfo, load
 
 hex_re = re.compile("^[0-9x]+$")
 
+CONFIRM_DELAY = 10
+
 
 class UI(pyglet.window.Window):
     def __init__(self, width, height):
@@ -23,6 +25,7 @@ class UI(pyglet.window.Window):
         self.selected_item = None
         self.scale_factor = 1
         self.cursor_coords = (0, 0)
+        self.confirmation_needed = False
         self.text_input: str | None = None
         self.error_message = ""
         self.error_message_duration = 0
@@ -131,6 +134,15 @@ class UI(pyglet.window.Window):
         self.load_screens()
         # Ensure correct positioning
         self.on_resize(width, height)
+        self.set_current_modes_as_ref()
+
+    def set_current_modes_as_ref(self):
+        "Set original cmd to allow reverting the selected mode"
+        self.original_cmd = make_command(
+            [s.screen for s in self.gui_screens],
+            [s.rect.scaled(UI_RATIO) for s in self.gui_screens],
+            not LEGACY,
+        )
 
     @property
     def widgets(self):
@@ -295,8 +307,18 @@ class UI(pyglet.window.Window):
     def on_key_press(self, symbol, modifiers):
         if self.text_input is None:
             if symbol == 65293:  # return
-                self.action_save_layout()
-                self.close()
+                if self.confirmation_needed:
+                    self.confirmation_needed = False
+                    self.set_current_modes_as_ref()
+                else:
+                    self.action_save_layout()
+            elif symbol == 65307 and self.confirmation_needed:  # Escape
+                os.system(self.original_cmd)
+                self.confirmation_needed = False
+                load()
+                self.selected_item = None
+                GuiScreen.cur_color = 0
+                self.load_screens()
             else:
                 super().on_key_press(symbol, modifiers)
         else:
@@ -353,6 +375,22 @@ class UI(pyglet.window.Window):
         if self.selected_item:
             self.on_off_but.toggled = not self.selected_item.screen.active
 
+    def draw_countdown(self):
+        delay = time.time() - self.confirmation_needed
+        if delay >= CONFIRM_DELAY:
+            os.system(self.original_cmd)
+            self.confirmation_needed = False
+            return
+
+        w, h = self.get_size()
+        pyglet.text.Label(
+            f"Press ENTER to confirm ({CONFIRM_DELAY-delay:.2f}s left) ",
+            font_size=24,
+            x=10,
+            y=h // 2 + 40,
+            align="center",
+        ).draw()
+
     def draw_text_input(self):
         w, h = self.get_size()
         pyglet.text.Label(
@@ -393,6 +431,8 @@ class UI(pyglet.window.Window):
         # Higher priority modes
         if self.text_input is not None:
             self.draw_text_input()
+        elif self.confirmation_needed:
+            self.draw_countdown()
         else:
             self.draw_screens_and_widgets()
         self.draw_status_label()
@@ -515,6 +555,8 @@ class UI(pyglet.window.Window):
         )
         if os.system(cmd):
             self.set_error("Failed applying the layout")
+
+        self.confirmation_needed = time.time()
 
     def action_toggle_screen_power(self):
         if self.selected_item:
