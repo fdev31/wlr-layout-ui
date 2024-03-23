@@ -79,11 +79,12 @@ def load():
         displayInfo.clear()
 
     try:
-        v = json.loads(subprocess.getoutput("hyprctl -j version"))["tag"]
-        good_v = (37, 38, 39)
-        new_hyprland = any(v.startswith("v0.%d" % x) for x in good_v) or (
-            not v.startswith("v0.2") and not v.startswith("v0.1")
-        )
+        version = json.loads(subprocess.getoutput("hyprctl -j version"))["tag"]
+        version = version[1:].split(".")
+        major = int(version[0])
+        minor = int(version[1])
+        _patch = int(version[2])
+        new_hyprland = major == 0 and minor >= 37 or major > 0
     except (KeyError, json.JSONDecodeError):
         new_hyprland = False
 
