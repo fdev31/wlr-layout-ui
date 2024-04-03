@@ -364,6 +364,8 @@ class UI(pyglet.window.Window):
 
         self.center_layout(immediate=True)
 
+        self._confirm_labels = None
+
     def on_mouse_release(self, x, y, button, modifiers):
         if self.selected_item and self.selected_item.dragging:
             self.snap_active_screen()
@@ -377,16 +379,39 @@ class UI(pyglet.window.Window):
         if delay >= CONFIRM_DELAY:
             os.system(self.original_cmd)
             self.confirmation_needed = False
-            return
+        else:
+            color = (200, 200, 200, 255)
+            w, h = self.get_size()
+            remaining = CONFIRM_DELAY - delay
+            ratio = remaining / CONFIRM_DELAY
 
-        w, h = self.get_size()
-        pyglet.text.Label(
-            f"Press ENTER to confirm ({CONFIRM_DELAY-delay:.2f}s left) ",
-            font_size=24,
-            x=10,
-            y=h // 2 + 40,
-            align="center",
-        ).draw()
+            pyglet.shapes.Rectangle(
+                0,
+                h // 2 - 40,
+                int(w * ratio),
+                10,
+                color=(50 + int(200 * (1.0 - ratio)), int(200 * ratio), 100, 255),
+            ).draw()
+            if getattr(self, "_confirm_labels", None):
+                lbl1, lbl2 = self._confirm_labels
+            else:
+                lbl1 = pyglet.text.HTMLLabel(
+                    "Press <b>ENTER</b>",
+                    x=WINDOW_MARGIN,
+                    y=h // 2 + 40,
+                )
+                lbl1.set_style("color", color)
+                lbl1.font_size = 40
+                lbl2 = pyglet.text.Label(
+                    "to confirm (or ESCAPE to abort)",
+                    font_size=20,
+                    color=color,
+                    x=WINDOW_MARGIN,
+                    y=h // 2,
+                )
+                self._confirm_labels = (lbl1, lbl2)
+            lbl1.draw()
+            lbl2.draw()
 
     def draw_text_input(self):
         w, h = self.get_size()
@@ -425,6 +450,7 @@ class UI(pyglet.window.Window):
         pyglet.shapes.Rectangle(
             0, 0, self.width, self.height, color=(50, 50, 50, 255)
         ).draw()
+
         # Higher priority modes
         if self.text_input is not None:
             self.draw_text_input()
@@ -432,7 +458,7 @@ class UI(pyglet.window.Window):
             self.draw_countdown()
         else:
             self.draw_screens_and_widgets()
-        self.draw_status_label()
+            self.draw_status_label()
 
     def draw_status_label(self):
         text = None

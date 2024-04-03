@@ -13,7 +13,7 @@ def make_command_hyprland(screens, rects):
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     print("# Screens layout:")
-    command = ["hyprctl --batch"]
+    command = ['hyprctl --batch "']
 
     for screen, rect in zip(screens, screens_rect):
         if not screen.active:
@@ -23,8 +23,7 @@ def make_command_hyprland(screens, rects):
             f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale} ;"
         )
 
-    cmd = " ".join(command)
-    print(cmd)
+    cmd = " ".join(command + ['"'])
     return cmd
 
 
