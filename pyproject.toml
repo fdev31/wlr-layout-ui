@@ -6,6 +6,7 @@ authors = ["fdev31 <fdev31@gmail.com>"]
 readme = "README.md"
 homepage = "https://github.com/fdev31/wlr-layout-ui"
 packages = [{include = "wlr_layout_ui", from = "src"}]
+license = {file = "LICENSE"}
 
 [tool.poetry.scripts]
 wlrlui = 'wlr_layout_ui:main'
