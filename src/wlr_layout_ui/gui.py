@@ -588,12 +588,12 @@ class UI(pyglet.window.Window):
             found = findScreen(screen_info["uid"])
             if found:
                 info = screen_info.copy()
+                found.screen.transform = info.get("transform", 0)
                 w, h = get_size(found.screen, scale=1)
                 rect = Rect(info["x"], -info["y"] - h, w, h)
                 srect = rect.scaled(1 / UI_RATIO)
                 info.pop("uid")
                 found.screen.active = info.pop("active")
-                found.screen.transform = info.get("transform", 0)
                 found.screen.mode = find_matching_mode(
                     found.screen.available,
                     (info["width"], info["height"]),
