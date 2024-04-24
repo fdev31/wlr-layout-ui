@@ -33,6 +33,7 @@ class Screen:
     mode: None | Mode = None
     scale: float = 1
     available: list[Mode] = field(default_factory=list)
+    transform: int = 0
 
     def __repr__(self):
         return "<Screen%s %s [%s]>" % ("*" if self.active else "", self.name, self.mode)
@@ -69,6 +70,7 @@ def load_from_hyprctl():
             position=(monitor["x"], monitor["y"]),
             available=modes,
             mode=modes[idx],
+            transform=monitor["transform"],
         )
         displayInfo.append(current_screen)
 

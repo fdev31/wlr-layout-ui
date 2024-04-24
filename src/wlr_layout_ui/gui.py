@@ -16,7 +16,19 @@ from .screens import displayInfo, load
 
 hex_re = re.compile("^[0-9x]+$")
 
-CONFIRM_DELAY = 10
+CONFIRM_DELAY = 20
+
+
+def get_size(screen, scale=0):
+    "Get the size of the window based on the screen size and UI_RATIO"
+    if not scale:
+        scale = UI_RATIO
+    w, h = ((screen.mode.width / scale) / screen.scale), (
+        (screen.mode.height / scale) / screen.scale
+    )
+    if screen.transform in (1, 3, 5, 7):
+        return (h, w)
+    return (w, h)
 
 
 class UI(pyglet.window.Window):
@@ -101,7 +113,24 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_mode,
             # invert=True,
         )
-        ref_rect.width //= 3
+        ref_rect.width //= 2
+        self.rotation = Dropdown(
+            ref_rect.copy(),
+            label="Rotation",
+            options=[
+                {"name": "0", "value": 0},
+                {"name": "90", "value": 1},
+                {"name": "180", "value": 2},
+                {"name": "270", "value": 3},
+                {"name": "flip", "value": 4},
+                {"name": "flip 90", "value": 5},
+                {"name": "flip 180", "value": 6},
+                {"name": "flip 270", "value": 7},
+            ],
+            onchange=self.action_update_rotation,
+            # invert=True,
+        )
+        ref_rect.width //= 2
         self.on_off_but = Button(
             ref_rect.copy(),
             label="On",
@@ -112,7 +141,7 @@ class UI(pyglet.window.Window):
         )
 
         self.settings_box = HBox(
-            widgets=[self.resolutions, self.freqs, self.on_off_but]
+            widgets=[self.resolutions, self.freqs, self.rotation, self.on_off_but]
         )
         self.require_selected_item.add(self.settings_box)
         # }}}
@@ -175,8 +204,19 @@ class UI(pyglet.window.Window):
             max_width = max(m.width for m in screen.available)
             max_height = max(m.height for m in screen.available)
 
+            is_rotated = screen.transform in (1, 3, 5, 7)
+
             if screen.mode:
-                h = int(screen.mode.height / UI_RATIO / screen.scale)
+
+                w, h = get_size(screen)
+                h = int(
+                    (screen.mode.height if is_rotated else screen.mode.height)
+                    / UI_RATIO
+                    / screen.scale
+                )
+                if is_rotated:
+                    y -= screen.mode.height - screen.mode.width
+
                 rect = Rect(
                     int(x / UI_RATIO),
                     -int(y / UI_RATIO) - h,
@@ -190,6 +230,8 @@ class UI(pyglet.window.Window):
                     int((max_width / UI_RATIO) / screen.scale),
                     int((max_height / UI_RATIO) / screen.scale),
                 )
+            if is_rotated:
+                rect.width, rect.height = rect.height, rect.width
             gs = GuiScreen(screen, rect)
             gs.genColor()
             gui_screens.append(gs)
@@ -511,6 +553,7 @@ class UI(pyglet.window.Window):
                     "x": rect.x,
                     "y": rect.y,
                     "uid": gs.screen.uid,
+                    "transform": gs.screen.transform,
                 }
             )
         return ret
@@ -545,15 +588,12 @@ class UI(pyglet.window.Window):
             found = findScreen(screen_info["uid"])
             if found:
                 info = screen_info.copy()
-                rect = Rect(
-                    info["x"],
-                    -info["y"] - info["height"],
-                    info["width"],
-                    info["height"],
-                )
+                w, h = get_size(found.screen, scale=1)
+                rect = Rect(info["x"], -info["y"] - h, w, h)
                 srect = rect.scaled(1 / UI_RATIO)
                 info.pop("uid")
                 found.screen.active = info.pop("active")
+                found.screen.transform = info.get("transform", 0)
                 found.screen.mode = find_matching_mode(
                     found.screen.available,
                     (info["width"], info["height"]),
@@ -580,6 +620,7 @@ class UI(pyglet.window.Window):
             [s.rect.scaled(UI_RATIO) for s in self.gui_screens],
             not LEGACY,
         )
+        print(cmd)
         if os.system(cmd):
             self.set_error("Failed applying the layout")
 
@@ -588,6 +629,14 @@ class UI(pyglet.window.Window):
     def action_toggle_screen_power(self):
         if self.selected_item:
             self.selected_item.screen.active = not self.selected_item.screen.active
+
+    def action_update_rotation(self):
+        "Update the rotation of the selected screen"
+        assert self.selected_item
+        self.selected_item.screen.transform = self.rotation.get_value()
+        self.selected_item.target_rect.width, self.selected_item.target_rect.height = (
+            get_size(self.selected_item.screen)
+        )
 
     def action_update_screen_spec(self):
         self.action_update_frequencies(self.selected_item, self.resolutions.get_value())
@@ -621,6 +670,7 @@ class UI(pyglet.window.Window):
             if r[0] == cur_mode.width and r[1] == cur_mode.height:
                 break
         self.resolutions.selected_index = i
+        self.rotation.selected_index = screen.screen.transform
         self.action_update_frequencies(screen)
 
     # }}}

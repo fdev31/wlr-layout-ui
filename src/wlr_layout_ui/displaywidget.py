@@ -126,10 +126,7 @@ class GuiScreen(Widget):
         # Second caption line
         if self.screen.active:
             assert self.screen.mode
-            label = "%dx%d" % (
-                self.screen.mode.width,
-                self.screen.mode.height,
-            )
+            label = f"{self.screen.mode.width}x{self.screen.mode.height}"
             Label(
                 label,
                 anchor_x="center",
@@ -140,7 +137,7 @@ class GuiScreen(Widget):
                 bold=self.screen.active,
             ).draw()
             Label(
-                "%dHz" % self.screen.mode.freq,
+                f"{self.screen.mode.freq}Hz",
                 anchor_x="center",
                 anchor_y="center",
                 x=tx,
