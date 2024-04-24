@@ -220,7 +220,7 @@ class UI(pyglet.window.Window):
                 rect = Rect(
                     int(x / UI_RATIO),
                     -int(y / UI_RATIO) - h,
-                    int((screen.mode.width / UI_RATIO) / screen.scale),
+                    w,
                     h,
                 )
             else:
