@@ -11,7 +11,7 @@ An simple GUI to setup the screens layout on wlroots based systems and X11 (usin
   - Refresh rate
 
 > [!note]
-> Non Hyprland should work without screen rotation support
+> Non Hyprland should work without screen rotation or scaling support
 
 ## Video / Demo
 
