@@ -6,7 +6,7 @@ An simple GUI to setup the screens layout on wlroots based systems and X11 (usin
 
 - Load and save profiles
 - Set the screen settings
-  - Layout: position, rotation (TODO: scale)
+  - Layout: position, rotation (unsupported: scale, will just be preserved)
   - Resolution
   - Refresh rate
 
