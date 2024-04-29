@@ -87,7 +87,7 @@ def load():
         minor = int(version[1])
         new_hyprland = major == 0 and minor >= 37 or major > 0
     except (KeyError, json.JSONDecodeError):
-        new_hyprland = False
+        new_hyprland = True
 
     if new_hyprland:
         config["hyprland"] = True
