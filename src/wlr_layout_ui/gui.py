@@ -20,6 +20,7 @@ from .settings import (
 from .utils import (
     Rect,
     compute_bounding_box,
+    config,
     find_matching_mode,
     make_command,
     sorted_frequencies,
@@ -120,6 +121,7 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_screen_spec,
             # invert=True,
         )
+        ref_rect.width = int(ref_rect.width * 0.7)
         self.freqs = Dropdown(
             ref_rect.copy(),
             label="Rate",
@@ -127,7 +129,7 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_mode,
             # invert=True,
         )
-        ref_rect.width //= 2
+
         self.rotation = Dropdown(
             ref_rect.copy(),
             label="Rotation",
@@ -144,9 +146,10 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_rotation,
             # invert=True,
         )
+        ref_rect.width = int(ref_rect.width * 0.8)
         self.scale_ratio = Dropdown(
             ref_rect.copy(),
-            label="Rotation",
+            label="Scale",
             options=[
                 {"name": "100%", "value": 1},
                 {"name": "90%", "value": 0.833333},
@@ -168,15 +171,16 @@ class UI(pyglet.window.Window):
             togglable=True,
         )
 
-        self.settings_box = HBox(
-            widgets=[
-                self.resolutions,
-                self.freqs,
-                self.rotation,
-                self.scale_ratio,
-                self.on_off_but,
-            ]
-        )
+        base_widgets: list[Widget] = [
+            self.resolutions,
+            self.freqs,
+            self.rotation,
+        ]
+        if config.get("hyprland"):
+            base_widgets.append(self.scale_ratio)
+        base_widgets.append(self.on_off_but)
+
+        self.settings_box = HBox(widgets=base_widgets)
         self.require_selected_item.add(self.settings_box)
         # }}}
 
