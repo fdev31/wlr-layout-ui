@@ -1,6 +1,21 @@
 # Wlr layout UI
 
-An simple GUI to setup the screens layout on wlroots based systems.
+An simple GUI to setup the screens layout on wlroots based systems and X11 (using xrandr), Hyprland is the first class user.
+
+## Features
+
+- Load and save profiles
+- Set the screen settings
+  - Layout: position, rotation (TODO: scale)
+  - Resolution
+  - Refresh rate
+
+> [!note]
+> Non Hyprland should work without screen rotation support
+
+## Video / Demo
+
+A bit outdated, but still relevant.
 
 [![Video](https://img.youtube.com/vi/bJxVIu9cMzg/0.jpg)](https://www.youtube.com/watch?v=bJxVIu9cMzg)
 
