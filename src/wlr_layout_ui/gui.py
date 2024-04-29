@@ -627,7 +627,7 @@ class UI(pyglet.window.Window):
             if found:
                 info = screen_info.copy()
                 found.screen.transform = info.get("transform", 0)
-                w, h = get_size(found.screen, scale=1)
+                w, h = get_size(found.screen, scale=info.get("scale", 1))
                 rect = Rect(info["x"], -info["y"] - h, w, h)
                 srect = rect.scaled(1 / UI_RATIO)
                 info.pop("uid")
