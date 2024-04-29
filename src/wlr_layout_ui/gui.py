@@ -174,9 +174,9 @@ class UI(pyglet.window.Window):
         base_widgets: list[Widget] = [
             self.resolutions,
             self.freqs,
-            self.rotation,
         ]
         if config.get("hyprland"):
+            base_widgets.append(self.rotation)
             base_widgets.append(self.scale_ratio)
         base_widgets.append(self.on_off_but)
 
