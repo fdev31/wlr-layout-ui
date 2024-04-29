@@ -5,9 +5,9 @@ import time
 import pyglet
 
 from .gui import UI
-from .settings import UI_RATIO, PROG_NAME, LEGACY, reload_pre_commands
 from .screens import displayInfo, load
-from .utils import make_command, Rect
+from .settings import LEGACY, PROG_NAME, UI_RATIO, reload_pre_commands
+from .utils import Rect, make_command
 
 try:
     import setproctitle

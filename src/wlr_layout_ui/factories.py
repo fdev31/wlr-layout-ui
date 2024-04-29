@@ -1,5 +1,6 @@
 from functools import cache
-from pyglet.shapes import Rectangle, Circle
+
+from pyglet.shapes import Circle, Rectangle
 from pyglet.text import Label
 
 

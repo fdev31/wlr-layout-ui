@@ -1,18 +1,32 @@
-import time
 import math
 import os
 import re
+import time
 
 import pyglet
 
-from .widgets import Button, HBox, VBox, Dropdown, Style, Widget
-from .settings import FONT, WINDOW_MARGIN, UI_RATIO, LEGACY, PROG_NAME
-from .settings import ALLOW_DESELECT, reload_pre_commands
 from .displaywidget import GuiScreen
-from .utils import sorted_resolutions, sorted_frequencies, find_matching_mode
-from .utils import compute_bounding_box, trim_rects_flip_y, make_command, Rect
-from .profiles import save_profile, load_profiles
+from .profiles import load_profiles, save_profile
 from .screens import displayInfo, load
+from .settings import (
+    ALLOW_DESELECT,
+    FONT,
+    LEGACY,
+    PROG_NAME,
+    UI_RATIO,
+    WINDOW_MARGIN,
+    reload_pre_commands,
+)
+from .utils import (
+    Rect,
+    compute_bounding_box,
+    find_matching_mode,
+    make_command,
+    sorted_frequencies,
+    sorted_resolutions,
+    trim_rects_flip_y,
+)
+from .widgets import Button, Dropdown, HBox, Style, VBox, Widget
 
 hex_re = re.compile("^[0-9x]+$")
 

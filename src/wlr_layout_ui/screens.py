@@ -1,12 +1,12 @@
+import difflib
+import json
 import os
 import re
-import json
-from typing import Tuple
 import subprocess
-import difflib
+from dataclasses import dataclass, field
+from typing import Tuple
 
 from .utils import config
-from dataclasses import dataclass, field
 
 __all__ = ["Mode", "Screen", "load", "LEGACY"]
 
@@ -85,7 +85,6 @@ def load():
         version = version[1:].split(".")
         major = int(version[0])
         minor = int(version[1])
-        _patch = int(version[2])
         new_hyprland = major == 0 and minor >= 37 or major > 0
     except (KeyError, json.JSONDecodeError):
         new_hyprland = False

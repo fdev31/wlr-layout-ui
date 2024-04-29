@@ -2,10 +2,10 @@ from dataclasses import dataclass
 
 from pyglet.shapes import Triangle
 
+from .factories import makeLabel, makeRectangle
 from .settings import FONT, WIDGETS_RADIUS
-from .utils import brighten, Rect
 from .shapes import RoundedRectangle
-from .factories import makeRectangle, makeLabel
+from .utils import Rect, brighten
 
 
 class Widget:
