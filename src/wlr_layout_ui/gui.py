@@ -144,6 +144,20 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_rotation,
             # invert=True,
         )
+        self.scale_ratio = Dropdown(
+            ref_rect.copy(),
+            label="Rotation",
+            options=[
+                {"name": "100%", "value": 1},
+                {"name": "90%", "value": 0.833333},
+                {"name": "80%", "value": 0.666667},
+                {"name": "120%", "value": 1.2},
+                {"name": "150%", "value": 1.5},
+                {"name": "200%", "value": 2.0},
+            ],
+            onchange=self.action_update_scale,
+            # invert=True,
+        )
         ref_rect.width //= 2
         self.on_off_but = Button(
             ref_rect.copy(),
@@ -155,7 +169,13 @@ class UI(pyglet.window.Window):
         )
 
         self.settings_box = HBox(
-            widgets=[self.resolutions, self.freqs, self.rotation, self.on_off_but]
+            widgets=[
+                self.resolutions,
+                self.freqs,
+                self.rotation,
+                self.scale_ratio,
+                self.on_off_but,
+            ]
         )
         self.require_selected_item.add(self.settings_box)
         # }}}
@@ -615,6 +635,12 @@ class UI(pyglet.window.Window):
                 )
                 found.target_rect = srect
         self.center_layout()
+
+    def action_update_scale(self):
+        monitor = self.selected_item
+        assert monitor
+        monitor.screen.scale = self.scale_ratio.get_value()
+        monitor.target_rect.width, monitor.target_rect.height = get_size(monitor.screen)
 
     def action_update_frequencies(self, screen, mode=None):
         if mode is None:

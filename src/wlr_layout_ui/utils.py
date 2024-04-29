@@ -20,7 +20,7 @@ def make_command_hyprland(screens, rects):
             command.append(f"keyword monitor {screen.uid},disable ;")
             continue
         command.append(
-            f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale},transform,{screen.transform} ;"
+            f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale:.6f},transform,{screen.transform} ;"
         )
 
     cmd = " ".join(command + ['"'])
