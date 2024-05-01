@@ -577,6 +577,7 @@ class UI(pyglet.window.Window):
         reload_pre_commands()
         time.sleep(0.5)
         self.reset_sel()
+        self.center_layout(immediate=True)
 
     def get_profile_data(self):
         screens_rect = [
