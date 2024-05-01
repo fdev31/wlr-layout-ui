@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wlr-layout-ui"
-version = "1.6.2"
+version = "1.6.3"
 description = "A tiny GUI to configure screen layouts on wayland"
 authors = ["fdev31 <fdev31@gmail.com>"]
 readme = "README.md"
