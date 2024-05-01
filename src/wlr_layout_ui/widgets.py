@@ -338,8 +338,10 @@ class Dropdown(Widget):  # {{{
 
 # }}}
 
+
 class Spacer(Widget):  # {{{
-    " Represents an empty space in the layout, with an optional label"
+    "Represents an empty space in the layout, with an optional label"
+
     def __init__(self, rect, label="", style=None):
         super().__init__(rect, style)
         self.label = label
