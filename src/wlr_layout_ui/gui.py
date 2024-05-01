@@ -109,7 +109,7 @@ class UI(pyglet.window.Window):
                 Spacer(
                     ref_rect.copy(),
                     label="Profiles:",
-                    style=act_but_style,
+                    style=Style(text_color=(255, 255, 255, 200)),
                 ),
                 p_new_but,
                 p_save_but,
