@@ -182,13 +182,13 @@ class UI(pyglet.window.Window):
         )
 
         base_widgets: list[Widget] = [
+            self.on_off_but,
             self.resolutions,
             self.freqs,
         ]
         if config.get("hyprland"):
             base_widgets.append(self.rotation)
             base_widgets.append(self.scale_ratio)
-        base_widgets.append(self.on_off_but)
 
         self.settings_box = HBox(widgets=base_widgets)
         self.require_selected_item.add(self.settings_box)
@@ -202,8 +202,8 @@ class UI(pyglet.window.Window):
             w.margin = WINDOW_MARGIN
 
         # alignment
-        self.settings_box.set_alignment("top", "left")
-        self.sidepanel.set_alignment("top", "right")
+        self.settings_box.set_alignment("top", "right")
+        self.sidepanel.set_alignment("top", "left")
 
         self.gui_screens: list[GuiScreen] = []
         self.load_screens()
