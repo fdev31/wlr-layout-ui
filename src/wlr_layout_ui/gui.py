@@ -71,6 +71,7 @@ class UI(pyglet.window.Window):
         ref_rect = Rect(0, 0, but_w, but_h)
         s_but_style = Style(color=(213, 139, 139))
         act_but_style = Style(color=(139, 233, 202))
+        main_but_style = Style(color=(255, 185, 50))
         p_new_but = Button(
             ref_rect.copy(),
             label="Save new",
@@ -97,13 +98,13 @@ class UI(pyglet.window.Window):
                     ref_rect.copy(),
                     label="Apply",
                     action=self.action_save_layout,
-                    style=act_but_style,
+                    style=main_but_style,
                 ),
                 Button(
                     ref_rect.copy(),
                     label="Reload",
                     action=self.action_reload,
-                    style=act_but_style,
+                    style=main_but_style,
                 ),
                 Spacer(
                     ref_rect.copy(),
