@@ -27,7 +27,7 @@ from .utils import (
     sorted_resolutions,
     trim_rects_flip_y,
 )
-from .widgets import Button, Dropdown, HBox, Style, VBox, Widget
+from .widgets import Button, Dropdown, HBox, Style, VBox, Widget, Spacer
 
 hex_re = re.compile("^[0-9x]+$")
 
@@ -88,15 +88,6 @@ class UI(pyglet.window.Window):
         self.profile_list = Dropdown(ref_rect.copy(), label="Profiles", options=[])
 
         self.sidepanel = VBox(
-            widgets=[p_new_but, p_save_but, p_load_but, self.profile_list]
-        )
-        self.sync_profiles()
-
-        # }}}
-
-        # make main buttons {{{
-        ref_rect = Rect(0, 0, but_w, but_h)
-        self.action_box = VBox(
             widgets=[
                 Button(
                     ref_rect.copy(),
@@ -110,8 +101,23 @@ class UI(pyglet.window.Window):
                     action=self.action_reload,
                     style=act_but_style,
                 ),
+                Spacer(
+                    ref_rect.copy(),
+                    label="Profiles:",
+                    style=act_but_style,
+                ),
+                p_new_but,
+                p_save_but,
+                p_load_but,
+                self.profile_list,
             ]
         )
+        self.sync_profiles()
+
+        # }}}
+
+        # make main buttons {{{
+        ref_rect = Rect(0, 0, but_w, but_h)
 
         ref_rect.width = int(ref_rect.width * 1.2)
         self.resolutions = Dropdown(
@@ -185,7 +191,6 @@ class UI(pyglet.window.Window):
         # }}}
 
         self._widgets: list[Widget] = [
-            self.action_box,
             self.settings_box,
             self.sidepanel,
         ]
@@ -193,8 +198,7 @@ class UI(pyglet.window.Window):
             w.margin = WINDOW_MARGIN
 
         # alignment
-        self.action_box.set_alignment("top", "left")
-        self.settings_box.set_alignment("top")
+        self.settings_box.set_alignment("top", "left")
         self.sidepanel.set_alignment("top", "right")
 
         self.gui_screens: list[GuiScreen] = []
