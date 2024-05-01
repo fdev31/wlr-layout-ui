@@ -34,6 +34,10 @@ hex_re = re.compile("^[0-9x]+$")
 CONFIRM_DELAY = 20
 
 
+def get_closest_match(float_list, value):
+    return min(float_list, key=lambda x: abs(x - value))
+
+
 def get_size(screen, scale=0):
     "Get the size of the window based on the screen size and UI_RATIO"
     if not scale:
@@ -251,14 +255,6 @@ class UI(pyglet.window.Window):
             if screen.mode:
 
                 w, h = get_size(screen)
-                h = int(
-                    (screen.mode.height if is_rotated else screen.mode.height)
-                    / UI_RATIO
-                    / screen.scale
-                )
-                if is_rotated:
-                    y -= screen.mode.height - screen.mode.width
-
                 rect = Rect(
                     int(x / UI_RATIO),
                     -int(y / UI_RATIO) - h,
@@ -272,8 +268,7 @@ class UI(pyglet.window.Window):
                     int((max_width / UI_RATIO) / screen.scale),
                     int((max_height / UI_RATIO) / screen.scale),
                 )
-            if is_rotated:
-                rect.width, rect.height = rect.height, rect.width
+
             gs = GuiScreen(screen, rect)
             gs.genColor()
             gui_screens.append(gs)
@@ -596,6 +591,7 @@ class UI(pyglet.window.Window):
                     "x": rect.x,
                     "y": rect.y,
                     "uid": gs.screen.uid,
+                    "scale": gs.screen.scale,
                     "transform": gs.screen.transform,
                 }
             )
@@ -714,6 +710,11 @@ class UI(pyglet.window.Window):
         self.resolutions.options = [
             {"name": f"{r[0]} x {r[1]}", "value": r} for r in res
         ]
+        self.rotation.selected_index = screen.screen.transform
+        values = [o["value"] for o in self.scale_ratio.options]
+        self.scale_ratio.selected_index = values.index(
+            get_closest_match(values, screen.screen.scale)
+        )
         i = -1
         for i, r in enumerate(res):
             if r[0] == cur_mode.width and r[1] == cur_mode.height:

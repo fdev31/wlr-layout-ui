@@ -45,9 +45,22 @@ Options:
                 raise SystemExit(1)
             load()
             p_by_id = {p["uid"]: p for p in profile}
-            rects = [Rect(i["x"], i["y"], i["width"], i["height"]) for i in profile]
-            for di in displayInfo:
+            rects = [
+                (
+                    Rect(-i["x"], i["y"], i["height"], i["width"])
+                    if i["transform"] in (1, 3, 5, 7)
+                    else Rect(-i["x"], i["y"], i["width"], i["height"])
+                )
+                for i in profile
+            ]
+
+            for i, di in enumerate(displayInfo):
                 di.active = p_by_id[di.uid]["active"]
+                di.transform = p_by_id[di.uid].get("transform", 0)
+                di.scale = p_by_id[di.uid].get("scale", 1.0)
+                if di.transform in (1, 3, 5, 7):
+                    rects[i].width, rects[i].height = rects[i].height, rects[i].width
+
             cmd = make_command(displayInfo, rects, not LEGACY)
             time.sleep(0.5)
             if os.system(cmd):
