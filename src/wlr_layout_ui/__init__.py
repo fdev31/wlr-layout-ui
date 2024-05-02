@@ -48,7 +48,7 @@ Options:
             rects = [
                 (
                     Rect(-i["x"], i["y"], i["height"], i["width"])
-                    if i["transform"] in (1, 3, 5, 7)
+                    if i.get("transform", 0) in (1, 3, 5, 7)
                     else Rect(-i["x"], i["y"], i["width"], i["height"])
                 )
                 for i in profile
