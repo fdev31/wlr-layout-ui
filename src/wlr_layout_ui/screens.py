@@ -65,7 +65,9 @@ def load_from_hyprctl():
         current_screen = Screen(
             uid=monitor["name"],
             name=monitor["description"],
-            active=monitor["activeWorkspace"]["id"] >= 0,
+            active=bool(
+                monitor["activeWorkspace"]["name"]
+            ),  # NOTE: move to "disabled" later
             scale=monitor["scale"],
             position=(monitor["x"], monitor["y"]),
             available=modes,
