@@ -1,6 +1,5 @@
 import random
 
-import pyglet
 from pyglet.shapes import BorderedRectangle
 from pyglet.text import Label
 
@@ -12,8 +11,8 @@ ANIMATION_LENGTH = 8
 
 
 def limit_size(text):
-    if len(text) > 17:
-        return text[:14] + "..."
+    if len(text) > 15:
+        return text[:12] + "..."
     return text
 
 
@@ -135,7 +134,7 @@ class GuiScreen(Widget):
         # Second caption line
         if self.screen.active:
             assert self.screen.mode
-            label = f"{self.screen.mode.width}x{self.screen.mode.height}@{self.screen.mode.freq}"
+            label = f"{self.screen.mode.width}x{self.screen.mode.height}@{int(self.screen.mode.freq)}"
             Label(
                 self.screen.uid,
                 anchor_x="center",

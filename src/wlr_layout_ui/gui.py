@@ -141,23 +141,24 @@ class UI(pyglet.window.Window):
             # invert=True,
         )
 
+        ref_rect.width = but_w
         self.rotation = Dropdown(
             ref_rect.copy(),
-            label="Rotation",
+            label="Transform",
             options=[
-                {"name": "0", "value": 0},
-                {"name": "90", "value": 1},
-                {"name": "180", "value": 2},
-                {"name": "270", "value": 3},
+                {"name": "original", "value": 0},
+                {"name": "rot 90°", "value": 1},
+                {"name": "rot 180°", "value": 2},
+                {"name": "rot 270°", "value": 3},
                 {"name": "flip", "value": 4},
-                {"name": "flip 90", "value": 5},
-                {"name": "flip 180", "value": 6},
-                {"name": "flip 270", "value": 7},
+                {"name": "rot 90° flip", "value": 5},
+                {"name": "rot 180° flip", "value": 6},
+                {"name": "rot 270° flip", "value": 7},
             ],
             onchange=self.action_update_rotation,
             # invert=True,
         )
-        ref_rect.width = int(ref_rect.width * 0.8)
+        ref_rect.width = but_w // 1.5
         self.scale_ratio = Dropdown(
             ref_rect.copy(),
             label="Scale",

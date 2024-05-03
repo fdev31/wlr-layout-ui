@@ -11,6 +11,8 @@ def simplify_model_name(name):
     for word in name.split():
         if not hex_re.match(word):
             words.append(word)
+    # remove duplicate words keeping order (comparing lowercase)
+    words = list(dict.fromkeys(words))
     return " ".join(words)
 
 
