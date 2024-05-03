@@ -78,11 +78,11 @@ class GuiScreen(Widget):
                 if abs(tv - cv) <= 1:
                     setattr(r, var, tv)
                 else:
-                    target = cv * ANIMATION_LENGTH + tv
+                    tgt = (cv * ANIMATION_LENGTH + tv) / (ANIMATION_LENGTH + 1)
                     if cv < tv:
-                        setattr(r, var, min(tv, target / ANIMATION_LENGTH + 1))
+                        setattr(r, var, min(tv, tgt))
                     elif cv > tv:
-                        setattr(r, var, max(tv, target / ANIMATION_LENGTH + 1))
+                        setattr(r, var, max(tv, tgt))
 
     def set_position(self, x, y):
         self.rect.x = x
