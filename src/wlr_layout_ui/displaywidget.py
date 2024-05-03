@@ -8,7 +8,7 @@ from .screens import Screen
 from .utils import Rect, brighten
 from .widgets import Widget
 
-ANIMATION_LENGTH = 10
+ANIMATION_LENGTH = 8
 
 
 class GuiScreen(Widget):
