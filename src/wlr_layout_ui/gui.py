@@ -20,6 +20,7 @@ from .settings import (
 from .utils import (
     Rect,
     compute_bounding_box,
+    simplify_model_name,
     config,
     find_matching_mode,
     make_command,
@@ -29,7 +30,6 @@ from .utils import (
 )
 from .widgets import Button, Dropdown, HBox, Style, VBox, Widget, Spacer
 
-hex_re = re.compile("^[0-9x]+$")
 
 CONFIRM_DELAY = 20
 
@@ -370,11 +370,7 @@ class UI(pyglet.window.Window):
         if self.text_input is not None:
             return f'Press ENTER to validate "{self.text_input}"'
         elif self.selected_item:
-            words = []
-            for word in self.selected_item.screen.name.split():
-                if not hex_re.match(word):
-                    words.append(word)
-            return " ".join(words)
+            return simplify_model_name(self.selected_item.screen.name)
         else:
             return "Select a monitor to edit its settings"
 

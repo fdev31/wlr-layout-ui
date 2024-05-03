@@ -1,6 +1,17 @@
+import re
 from dataclasses import dataclass
 
 config = {"hyprland": False}
+
+hex_re = re.compile("^[0-9x]+$")
+
+
+def simplify_model_name(name):
+    words = []
+    for word in name.split():
+        if not hex_re.match(word):
+            words.append(word)
+    return " ".join(words)
 
 
 def make_command(screens, rects, wayland=True):

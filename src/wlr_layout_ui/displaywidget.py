@@ -5,10 +5,16 @@ from pyglet.shapes import BorderedRectangle
 from pyglet.text import Label
 
 from .screens import Screen
-from .utils import Rect, brighten
+from .utils import Rect, brighten, simplify_model_name
 from .widgets import Widget
 
 ANIMATION_LENGTH = 8
+
+
+def limit_size(text):
+    if len(text) > 17:
+        return text[:14] + "..."
+    return text
 
 
 class GuiScreen(Widget):
@@ -117,7 +123,7 @@ class GuiScreen(Widget):
         # Render the screen uid as text
         tx, ty = self.rect.center
         Label(
-            self.screen.uid,
+            limit_size(simplify_model_name(self.screen.name)),
             anchor_x="center",
             anchor_y="center",
             x=tx,
@@ -129,9 +135,9 @@ class GuiScreen(Widget):
         # Second caption line
         if self.screen.active:
             assert self.screen.mode
-            label = f"{self.screen.mode.width}x{self.screen.mode.height}"
+            label = f"{self.screen.mode.width}x{self.screen.mode.height}@{self.screen.mode.freq}"
             Label(
-                label,
+                self.screen.uid,
                 anchor_x="center",
                 anchor_y="center",
                 x=tx,
@@ -140,7 +146,7 @@ class GuiScreen(Widget):
                 bold=self.screen.active,
             ).draw()
             Label(
-                f"{self.screen.mode.freq}Hz",
+                label,
                 anchor_x="center",
                 anchor_y="center",
                 x=tx,
