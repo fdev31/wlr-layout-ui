@@ -9,6 +9,7 @@ An simple GUI to setup the screens layout on wlroots based systems and X11 (usin
   - Layout: position, rotation and scale
   - Resolution
   - Refresh rate
+- Makes clean, easy to understand layouts, with no negative values of random offsets `</monk>`
 
 > [!note]
 > Non Hyprland should work without screen rotation or scaling support
