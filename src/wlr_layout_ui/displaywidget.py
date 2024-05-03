@@ -8,6 +8,8 @@ from .screens import Screen
 from .utils import Rect, brighten
 from .widgets import Widget
 
+ANIMATION_LENGTH = 10
+
 
 class GuiScreen(Widget):
     def __repr__(self):
@@ -76,10 +78,11 @@ class GuiScreen(Widget):
                 if abs(tv - cv) <= 1:
                     setattr(r, var, tv)
                 else:
+                    target = cv * ANIMATION_LENGTH + tv
                     if cv < tv:
-                        setattr(r, var, min(tv, (cv + tv) / 2))
+                        setattr(r, var, min(tv, target / ANIMATION_LENGTH + 1))
                     elif cv > tv:
-                        setattr(r, var, max(tv, (cv + tv) / 2))
+                        setattr(r, var, max(tv, target / ANIMATION_LENGTH + 1))
 
     def set_position(self, x, y):
         self.rect.x = x
