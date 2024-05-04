@@ -23,7 +23,23 @@ A bit outdated, but still relevant.
 ## Requires
 
 - wlr-randr (if not using Hyprland >= 0.37)
-- Python: pyglet, tomli
+- Python: pyglet, tomli, tomli-w
+
+## Installation
+
+### Archlinux
+
+`yay wlr-layout-ui-git`
+
+### Other distros
+
+```
+python -m venv myenv
+./myenv/bin/pip install wlr-layout-ui
+```
+
+This will create a "myenv" folder with the app installed.
+You will need to run the app with the full path to it.
 
 ## Usage
 
