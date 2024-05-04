@@ -66,3 +66,9 @@ To load the profile called "cinema":
 ```
 wlrlui cinema
 ```
+
+### GUI shortcuts
+
+- `ENTER`: applies the current settings
+- `ESC`: closes the app
+- `TAB`: switch between profiles
