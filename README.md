@@ -40,7 +40,7 @@ python -m venv myenv
 ```
 
 This will create a "myenv" folder with the app installed.
-You will need to run the app with the full path to it.
+You will need to run the app with the full path to it (/path/to/myenv/bin/wlrlui).
 
 ## Usage
 
