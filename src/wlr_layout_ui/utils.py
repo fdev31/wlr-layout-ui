@@ -25,7 +25,6 @@ def make_command(screens, rects, wayland=True):
 def make_command_hyprland(screens, rects):
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
-    print("# Screens layout:")
     command = ['hyprctl --batch "']
 
     for screen, rect in zip(screens, screens_rect):
@@ -43,7 +42,6 @@ def make_command_hyprland(screens, rects):
 def make_command_legacy(screens, rects, wayland=False):
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
-    print("# Screens layout:")
     command = ["wlr-randr" if wayland else "xrandr"]
 
     for screen, rect in zip(screens, screens_rect):
