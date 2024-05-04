@@ -28,11 +28,11 @@ A bit outdated, but still relevant.
 
 ## Installation
 
-### Archlinux
+Check your distro for the package:
 
-`yay wlr-layout-ui-git`
+[![Packaging status](https://repology.org/badge/vertical-allrepos/wlr-layout-ui.svg)](https://repology.org/project/wlr-layout-ui/versions)
 
-### Other distros
+or install with pip in a virtual environment:
 
 ```
 python -m venv myenv
