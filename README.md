@@ -5,8 +5,9 @@ An simple GUI to setup the screens layout on wlroots based systems and X11 (usin
 ## Features
 
 - Load and save profiles
+- No grid snapping, but anchors in a smart way on overlap
 - Set the screen settings
-  - Layout: position, rotation and scale
+  - Layout: position, rotation, scale and flipping
   - Resolution
   - Refresh rate
 - Makes clean, easy to understand layouts, with no negative values of random offsets `</monk>`
