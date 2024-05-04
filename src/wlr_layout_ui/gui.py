@@ -1,6 +1,5 @@
 import math
 import os
-import re
 import time
 
 import pyglet
@@ -20,18 +19,22 @@ from .settings import (
 from .utils import (
     Rect,
     compute_bounding_box,
-    simplify_model_name,
     config,
     find_matching_mode,
     make_command,
+    simplify_model_name,
     sorted_frequencies,
     sorted_resolutions,
     trim_rects_flip_y,
 )
-from .widgets import Button, Dropdown, HBox, Style, VBox, Widget, Spacer
-
+from .widgets import Button, Dropdown, HBox, Spacer, Style, VBox, Widget
 
 CONFIRM_DELAY = 20
+
+KEY_RETURN = 65293
+KEY_ESCAPE = 65307
+KEY_BACKSPACE = 65288
+KEY_TAB = 65289
 
 
 def get_closest_match(float_list, value):
@@ -383,24 +386,35 @@ class UI(pyglet.window.Window):
 
     def on_key_press(self, symbol, modifiers):
         if self.text_input is None:
-            if symbol == 65293:  # return
+            if symbol == KEY_RETURN:
                 if self.confirmation_needed:
                     self.confirmation_needed = False
                     self.set_current_modes_as_ref()
                 else:
                     self.action_save_layout()
-            elif symbol == 65307 and self.confirmation_needed:  # Escape
+            elif symbol == KEY_ESCAPE and self.confirmation_needed:
                 os.system(self.original_cmd)
                 self.confirmation_needed = False
                 self.reset_sel()
+            elif symbol == KEY_TAB:
+                # cycle through profiles
+                if not self.profile_list.options:
+                    return
+                index = self.profile_list.selected_index
+                index += 1
+                if index >= len(self.profile_list.options):
+                    index = 0
+                self.profile_list.selected_index = index
+                # load the profile
+                self.action_load_selected_profile()
             else:
                 super().on_key_press(symbol, modifiers)
         else:
-            if symbol == 65288:  # backspace
+            if symbol == KEY_BACKSPACE:
                 self.text_input = self.text_input[:-1]
-            elif symbol == 65293:  # return
+            elif symbol == KEY_RETURN:
                 self.validate_text_input()
-            elif symbol == 65307:  # Escape
+            elif symbol == KEY_ESCAPE:
                 self.text_input = None
 
     def on_mouse_motion(self, x, y, dx, dy):
