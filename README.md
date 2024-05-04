@@ -23,8 +23,9 @@ A bit outdated, but still relevant.
 
 ## Requires
 
-- wlr-randr (if not using Hyprland >= 0.37)
 - Python: pyglet, tomli, tomli-w
+- wlr-randr (if not using Hyprland >= 0.37)
+- xrandr (for X11 support)
 
 ## Installation
 
