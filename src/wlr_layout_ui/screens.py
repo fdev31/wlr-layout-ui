@@ -8,7 +8,7 @@ from typing import Tuple
 
 from .utils import config
 
-__all__ = ["Mode", "Screen", "load", "LEGACY"]
+__all__ = ["LEGACY", "Mode", "Screen", "load"]
 
 LEGACY = not os.environ.get("WAYLAND_DISPLAY", False)
 MODE_RE = re.compile(r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>[+-]\d+)(?P<y>[+-]\d+)$")
@@ -84,7 +84,7 @@ def load():
         version = version[1:].split(".")
         major = int(version[0])
         minor = int(version[1])
-        new_hyprland = major == 0 and minor >= 37 or major > 0
+        new_hyprland = (major == 0 and minor >= 37) or major > 0
     except (KeyError, json.JSONDecodeError):
         new_hyprland = True
 

@@ -28,7 +28,8 @@ class Widget:
         elif self.halign == "left":
             self.rect.x = self.margin
         else:
-            raise ValueError(f"Unknown horizontal alignment: {self.halign}")
+            msg = f"Unknown horizontal alignment: {self.halign}"
+            raise ValueError(msg)
 
         if self.valign == "center":
             self.rect.y = (height - self.rect.height) // 2
@@ -37,7 +38,8 @@ class Widget:
         elif self.valign == "bottom":
             self.rect.y = self.margin
         else:
-            raise ValueError(f"Unknown vertical alignment: {self.valign}")
+            msg = f"Unknown vertical alignment: {self.valign}"
+            raise ValueError(msg)
 
         self.rect.x += x
         self.rect.y += y

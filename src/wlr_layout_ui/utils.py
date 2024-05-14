@@ -7,12 +7,8 @@ hex_re = re.compile("^[0-9x]+$")
 
 
 def simplify_model_name(name):
-    words = []
-    for word in name.split():
-        if not hex_re.match(word):
-            words.append(word)
     # remove duplicate words keeping order (comparing lowercase)
-    words = list(dict.fromkeys(words))
+    words = list(dict.fromkeys(word for word in name.split() if not hex_re.match(word)))
     return " ".join(words)
 
 
@@ -35,7 +31,7 @@ def make_command_hyprland(screens, rects):
             f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale:.6f},transform,{screen.transform} ;"
         )
 
-    cmd = " ".join(command + ['"'])
+    cmd = " ".join([*command, '"'])
     return cmd
 
 

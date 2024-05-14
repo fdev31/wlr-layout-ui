@@ -36,11 +36,31 @@ exclude = ["*_v?.py", "tests", "scripts", "sample_extension", ".git"]
 
 [tool.ruff.lint]
 fixable = ["ALL"]
-ignore = ["E203", "D107", "D105"]
 select = [
     # pycodestyle
-    "E",
+    "E", # error
+    "W", # warn
+    # builtins
+    "A",
+    # bugbear
+    "B",
+    # comprehensions
+    "C",
+    # err msg
+    "EM",
+    # str concat
+    "ISC",
+    # import conventions
+    "ICN",
+    # flake8 log
+    "G",
+    "LOG",
+    # pep8 naming
     "D",
+    # pydocstyle
+    "D",
+    # mccabe
+    "C",
     # Pyflakes
     "F",
     # pyupgrade
@@ -51,8 +71,37 @@ select = [
     "SIM",
     # isort
     "I",
-    "W"
+    # flake-2020
+    "YTT",
+    # flake-annotations
+    "ANN",
+    # flake-async
+    "ASYNC",
+    # flake-blind-except
+    "BLE",
+    # flake-boolean-trap
+    "FBT",
+    # pytest
+    "PT",
+    # self
+    "SLF",
+    # tidy-imports
+    "TID",
+    # type checking
+    "TCH",
+    # unused arg
+    "ARG",
+    # pathlib
+    "PTH",
+    # pylint
+    "PL",
+    # perflnt
+    "PERF",
+    # ruf
+    "RUF",
 ]
+ignore = ["ANN201", "ANN001", "ANN002", "ANN202", "ARG002", "PLR", "C", "FBT002", "D107", "ANN204", "D"]
+
 [tool.ruff.format]
 indent-style = "space"
 line-ending = "auto"
