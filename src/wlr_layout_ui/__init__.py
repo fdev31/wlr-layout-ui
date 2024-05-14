@@ -24,7 +24,7 @@ def main():
         profiles = load_profiles()
         if sys.argv[1] == "-l":
             print("")
-            for p in profiles.keys():
+            for p in profiles:
                 print(f" - {p}")
         elif sys.argv[1][0] == "-":
             load()
@@ -41,7 +41,7 @@ Options:
             try:
                 profile = profiles[sys.argv[1]]
             except KeyError:
-                print("No such profile: %s" % sys.argv[1])
+                print(f"No such profile: {sys.argv[1]}")
                 raise SystemExit(1)
             load()
             p_by_id = {p["uid"]: p for p in profile}
@@ -67,35 +67,13 @@ Options:
                 print("Failed applying the layout")
         sys.exit(0)
     load()
-    max_width = int(
-        sum(
-            max(screen.available, key=lambda mode: mode.width).width
-            for screen in displayInfo
-        )
-        // UI_RATIO
-    )
-    max_height = int(
-        sum(
-            max(screen.available, key=lambda mode: mode.height).height
-            for screen in displayInfo
-        )
-        // UI_RATIO
-    )
+    max_width = int(sum(max(screen.available, key=lambda mode: mode.width).width for screen in displayInfo) // UI_RATIO)
+    max_height = int(sum(max(screen.available, key=lambda mode: mode.height).height for screen in displayInfo) // UI_RATIO)
     average_width = int(
-        sum(
-            max(screen.available, key=lambda mode: mode.width).width
-            for screen in displayInfo
-        )
-        / len(displayInfo)
-        // UI_RATIO
+        sum(max(screen.available, key=lambda mode: mode.width).width for screen in displayInfo) / len(displayInfo) // UI_RATIO
     )
     average_height = int(
-        sum(
-            max(screen.available, key=lambda mode: mode.height).height
-            for screen in displayInfo
-        )
-        / len(displayInfo)
-        // UI_RATIO
+        sum(max(screen.available, key=lambda mode: mode.height).height for screen in displayInfo) / len(displayInfo) // UI_RATIO
     )
 
     width = max_width + average_width * 2

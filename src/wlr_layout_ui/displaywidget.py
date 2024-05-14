@@ -18,7 +18,7 @@ def limit_size(text):
 
 class GuiScreen(Widget):
     def __repr__(self):
-        return "<Screen %s (%s) - %s>" % (self.rect, self.color, self.screen.name)
+        return f"<Screen {self.rect} ({self.color}) - {self.screen.name}>"
 
     __str__ = __repr__
 

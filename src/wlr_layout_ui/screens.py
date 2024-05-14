@@ -36,7 +36,7 @@ class Screen:
     transform: int = 0
 
     def __repr__(self):
-        return "<Screen%s %s [%s]>" % ("*" if self.active else "", self.name, self.mode)
+        return "<Screen{} {} [{}]>".format("*" if self.active else "", self.name, self.mode)
 
 
 displayInfo: list[Screen] = []
@@ -65,9 +65,7 @@ def load_from_hyprctl():
         current_screen = Screen(
             uid=monitor["name"],
             name=monitor["description"],
-            active=bool(
-                monitor["activeWorkspace"]["name"]
-            ),  # NOTE: move to "disabled" later
+            active=bool(monitor["activeWorkspace"]["name"]),  # NOTE: move to "disabled" later
             scale=monitor["scale"],
             position=(monitor["x"], monitor["y"]),
             available=modes,
@@ -78,7 +76,6 @@ def load_from_hyprctl():
 
 
 def load():
-
     if displayInfo:
         displayInfo.clear()
 
@@ -138,14 +135,12 @@ def load():
                     try:
                         res, freq = sline.split(",", 1)
                     except ValueError:
-                        print("Unable to parse: %s" % sline)
+                        print(f"Unable to parse: {sline}")
                     else:
                         res = res.split(None, 1)[0]
                         res = tuple(int(x) for x in res.split("x"))
                         freq, comment = freq.strip().split(None, 1)
-                        current_screen.available.append(
-                            Mode(res[0], res[1], float(freq))
-                        )
+                        current_screen.available.append(Mode(res[0], res[1], float(freq)))
                         if "current" in comment:
                             current_screen.mode = current_screen.available[-1]
 
@@ -154,9 +149,7 @@ def load():
                 elif sline.startswith("Enabled"):
                     current_screen.active = "yes" in sline
                 elif sline.startswith("Position"):
-                    current_screen.position = tuple(
-                        int(x) for x in sline.split(":")[1].strip().split(",")
-                    )
+                    current_screen.position = tuple(int(x) for x in sline.split(":")[1].strip().split(","))
     try:
         monitors = json.loads(subprocess.getoutput("hyprctl -j monitors all"))
     except json.decoder.JSONDecodeError:

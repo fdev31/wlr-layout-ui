@@ -26,3 +26,36 @@ black = "^23.3.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 140
+preview = true
+
+exclude = ["*_v?.py", "tests", "scripts", "sample_extension", ".git"]
+
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+ignore = ["E203", "D107", "D105"]
+select = [
+    # pycodestyle
+    "E",
+    "D",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    "W"
+]
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

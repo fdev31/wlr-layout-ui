@@ -50,9 +50,7 @@ def make_command_legacy(screens, rects, wayland=False):
             continue
         sep = "," if wayland else "x"
         mode = f"{int(screen.mode.width)}x{int(screen.mode.height)}"
-        command.append(
-            f"--output {screen.uid} --on --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}"
-        )
+        command.append(f"--output {screen.uid} --on --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}")
 
     cmd = " ".join(command)
     print(cmd)
@@ -154,9 +152,7 @@ class Rect:  # {{{
         return self.x + self.width // 2, self.y + self.height // 2
 
     def contains(self, x, y):
-        return collidepoint(
-            self.x, self.y, self.x + self.width, self.y + self.height, x, y
-        )
+        return collidepoint(self.x, self.y, self.x + self.width, self.y + self.height, x, y)
 
     def collide(self, rect):
         # return true if the two rectangles are overlapping in any way
@@ -166,9 +162,7 @@ class Rect:  # {{{
             return False
         if rect.top <= self.bottom:
             return False
-        if rect.bottom >= self.top:
-            return False
-        return True
+        return not rect.bottom >= self.top
 
     def copy(self):
         return Rect(self.x, self.y, self.width, self.height)
