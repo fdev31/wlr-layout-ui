@@ -15,5 +15,7 @@ def makeRectangle(x, y, w, h, color):
 
 
 @cache
-def makeLabel(text, x, y, color=[0, 0, 0], **kw):
+def makeLabel(text, x, y, color=None, **kw):
+    if color is None:
+        color = [0, 0, 0]
     return Label(text, x=x, y=y, color=color, **kw)

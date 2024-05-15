@@ -28,7 +28,8 @@ class Widget:
         elif self.halign == "left":
             self.rect.x = self.margin
         else:
-            raise ValueError(f"Unknown horizontal alignment: {self.halign}")
+            msg = f"Unknown horizontal alignment: {self.halign}"
+            raise ValueError(msg)
 
         if self.valign == "center":
             self.rect.y = (height - self.rect.height) // 2
@@ -37,7 +38,8 @@ class Widget:
         elif self.valign == "bottom":
             self.rect.y = self.margin
         else:
-            raise ValueError(f"Unknown vertical alignment: {self.valign}")
+            msg = f"Unknown vertical alignment: {self.valign}"
+            raise ValueError(msg)
 
         self.rect.x += x
         self.rect.y += y
@@ -69,7 +71,9 @@ class Widget:
 
 
 class _Box(Widget):
-    def __init__(self, rect=None, padding=4, widgets=[]):
+    def __init__(self, rect=None, padding=4, widgets=None):
+        if widgets is None:
+            widgets = []
         super().__init__(rect or Rect(0, 0, 0, 0), None)
         self.padding = padding
         self.rect.width = self.totalpadding
@@ -109,7 +113,7 @@ class HBox(_Box):
     def draw(self, cursor):
         super().draw(cursor)
         x_off = self.padding
-        for i, w in enumerate(self.widgets):
+        for _i, w in enumerate(self.widgets):
             w.rect.y = self.rect.y + self.padding
             w.rect.x = self.rect.x + x_off
             x_off += w.rect.width + self.padding
@@ -165,18 +169,12 @@ class Dropdown(Widget):  # {{{
     def contains(self, x, y):
         if self.expanded:
             if self.invert:
-                return (
-                    self.rect.x < x < self.rect.right
-                    and self.rect.y + self.rect.height
-                    < y
-                    < self.rect.y + (self.rect.height * (len(self.options) + 1))
+                return self.rect.x < x < self.rect.right and self.rect.y + self.rect.height < y < self.rect.y + (
+                    self.rect.height * (len(self.options) + 1)
                 )
             else:
-                return (
-                    self.rect.x < x < self.rect.right
-                    and self.rect.y + self.rect.height
-                    > y
-                    > self.rect.y - (self.rect.height * (len(self.options) + 1))
+                return self.rect.x < x < self.rect.right and self.rect.y + self.rect.height > y > self.rect.y - (
+                    self.rect.height * (len(self.options) + 1)
                 )
         else:
             return self.rect.contains(x, y)
@@ -188,9 +186,7 @@ class Dropdown(Widget):  # {{{
             show_down = not show_down
         if not show_down:
             margin = self.rect.height - self.triangle_size
-            triangle_y = (
-                self.rect.y + (self.rect.height // 2) - int(0.5 * self.triangle_size)
-            )
+            triangle_y = self.rect.y + (self.rect.height // 2) - int(0.5 * self.triangle_size)
             return Triangle(
                 triangle_x,
                 triangle_y + self.triangle_size,
@@ -262,18 +258,10 @@ class Dropdown(Widget):  # {{{
         if self.expanded:
             for i, option in enumerate(self.options):
                 option_x = self.rect.x
-                if self.invert:
-                    option_y = self.rect.y + ((i + 1) * self.rect.height)
-                else:
-                    option_y = self.rect.y - (i + 1) * self.rect.height
+                option_y = self.rect.y + (i + 1) * self.rect.height if self.invert else self.rect.y - (i + 1) * self.rect.height
                 option_height = self.rect.height
-                if x_match and option_y < cursor[1] < option_y + option_height:
-                    color = self.style.highlight
-                else:
-                    color = self.style.color
-                makeRectangle(
-                    option_x, option_y, self.rect.width, option_height, color=color
-                ).draw()
+                color = self.style.highlight if x_match and option_y < cursor[1] < option_y + option_height else self.style.color
+                makeRectangle(option_x, option_y, self.rect.width, option_height, color=color).draw()
 
                 label = option["name"]
 
@@ -312,18 +300,14 @@ class Dropdown(Widget):  # {{{
                 self.expanded = not self.expanded
             else:
                 # Check which option is clicked
-                for i, option in enumerate(self.options):
-                    if self.invert:
-                        option_y = self.rect.y + ((i + 1) * self.rect.height)
-                    else:
-                        option_y = self.rect.y - (i + 1) * self.rect.height
+                for i, _option in enumerate(self.options):
+                    option_y = self.rect.y + (i + 1) * self.rect.height if self.invert else self.rect.y - (i + 1) * self.rect.height
                     if option_y < y < option_y + self.rect.height:
                         self.selected_index = i
                         self.expanded = False
                         break
-            if old_index != self.selected_index:
-                if self.onchange:
-                    self.onchange()
+            if old_index != self.selected_index and self.onchange:
+                self.onchange()
             return True
 
     def get_value(self):
@@ -340,7 +324,7 @@ class Dropdown(Widget):  # {{{
 
 
 class Spacer(Widget):  # {{{
-    "Represents an empty space in the layout, with an optional label"
+    """Represents an empty space in the layout, with an optional label."""
 
     def __init__(self, rect, label="", style=None):
         super().__init__(rect, style)
@@ -397,10 +381,7 @@ class Button(Widget):  # {{{
             font_name=FONT,
         )
 
-        if self.togglable and self.toggled:
-            color = list(style.highlight)
-        else:
-            color = list(style.color)
+        color = list(style.highlight) if self.togglable and self.toggled else list(style.color)
 
         if self.rect.contains(*cursor):
             color = brighten(color)

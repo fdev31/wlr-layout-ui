@@ -1,3 +1,5 @@
+"""Screen widgets for the display manager."""
+
 import random
 
 from pyglet.shapes import BorderedRectangle
@@ -11,14 +13,17 @@ ANIMATION_LENGTH = 8
 
 
 def limit_size(text):
+    """Limit the size of the text to 15 characters."""
     if len(text) > 15:
         return text[:12] + "..."
     return text
 
 
 class GuiScreen(Widget):
+    """A widget representing a screen."""
+
     def __repr__(self):
-        return "<Screen %s (%s) - %s>" % (self.rect, self.color, self.screen.name)
+        return f"<Screen {self.rect} ({self.color}) - {self.screen.name}>"
 
     __str__ = __repr__
 
@@ -56,7 +61,7 @@ class GuiScreen(Widget):
                 255,
             )
         else:
-            self.color = list(self.all_colors[self.cur_color]) + [255]
+            self.color = [*list(self.all_colors[self.cur_color]), 255]
             GuiScreen.cur_color += 1
         self.drag_color = list(self.color)
         self.drag_color[-1] = 200

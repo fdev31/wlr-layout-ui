@@ -1,3 +1,5 @@
+"""GUI for managing monitor layouts."""
+
 import math
 import os
 import time
@@ -7,15 +9,7 @@ import pyglet
 from .displaywidget import GuiScreen
 from .profiles import load_profiles, save_profile
 from .screens import displayInfo, load
-from .settings import (
-    ALLOW_DESELECT,
-    FONT,
-    LEGACY,
-    PROG_NAME,
-    UI_RATIO,
-    WINDOW_MARGIN,
-    reload_pre_commands,
-)
+from .settings import ALLOW_DESELECT, FONT, LEGACY, PROG_NAME, UI_RATIO, WINDOW_MARGIN, reload_pre_commands
 from .utils import (
     Rect,
     compute_bounding_box,
@@ -38,15 +32,17 @@ KEY_TAB = 65289
 
 
 def get_closest_match(float_list, value):
+    """Return the closest value in float_list to value."""
     return min(float_list, key=lambda x: abs(x - value))
 
 
 def get_size(screen, scale=0):
-    "Get the size of the window based on the screen size and UI_RATIO"
+    """Get the size of the window based on the screen size and UI_RATIO."""
     if not scale:
         scale = UI_RATIO
-    w, h = ((screen.mode.width / scale) / screen.scale), (
-        (screen.mode.height / scale) / screen.scale
+    w, h = (
+        ((screen.mode.width / scale) / screen.scale),
+        ((screen.mode.height / scale) / screen.scale),
     )
     if screen.transform in (1, 3, 5, 7):
         return (h, w)
@@ -54,6 +50,8 @@ def get_size(screen, scale=0):
 
 
 class UI(pyglet.window.Window):
+    """Main class for the GUI. Handles the layout of the screens and the widgets."""
+
     def __init__(self, width, height):
         super().__init__(width, height, PROG_NAME, resizable=True)
         self.selected_item = None
@@ -63,9 +61,7 @@ class UI(pyglet.window.Window):
         self.text_input: str | None = None
         self.error_message = ""
         self.error_message_duration = 0
-        self.require_selected_item: set[Widget] = (
-            set()
-        )  # Items that can't be displayed without a selection
+        self.require_selected_item: set[Widget] = set()  # Items that can't be displayed without a selection
 
         but_w = 120
         but_h = 28
@@ -217,7 +213,7 @@ class UI(pyglet.window.Window):
         self.set_current_modes_as_ref()
 
     def set_current_modes_as_ref(self):
-        "Set original cmd to allow reverting the selected mode"
+        """Set original cmd to allow reverting the selected mode."""
         self.original_cmd = make_command(
             [s.screen for s in self.gui_screens],
             [s.rect.scaled(UI_RATIO) for s in self.gui_screens],
@@ -226,23 +222,26 @@ class UI(pyglet.window.Window):
 
     @property
     def widgets(self):
+        """Return all widgets and gui_screens."""
         return self.gui_screens + self._widgets
 
     def set_error(self, message, duration=200):
+        """Set an error message to be displayed for a certain duration."""
         self.error_message = message
         self.error_message_duration = duration
 
     def sync_profiles(self):
+        """Load profiles and update the profile list."""
         self.profiles = load_profiles()
-        self.profile_list.options = [
-            {"name": k, "value": v} for k, v in self.profiles.items()
-        ]
+        self.profile_list.options = [{"name": k, "value": v} for k, v in self.profiles.items()]
 
     def set_text_input(self, action):
+        """Set the text input to be validated by the given action."""
         self.validate_text_input = action
         self.text_input = ""
 
     def load_screens(self):
+        """Load the screens from the displayInfo and create the GuiScreen widgets."""
         width, height = self.get_size()
         gui_screens = self.gui_screens
         gui_screens.clear()
@@ -255,10 +254,7 @@ class UI(pyglet.window.Window):
             max_width = max(m.width for m in screen.available)
             max_height = max(m.height for m in screen.available)
 
-            is_rotated = screen.transform in (1, 3, 5, 7)
-
             if screen.mode:
-
                 w, h = get_size(screen)
                 rect = Rect(
                     int(x / UI_RATIO),
@@ -283,30 +279,30 @@ class UI(pyglet.window.Window):
         min_y = min(s.rect.top for s in gui_screens)
         max_y = max(s.rect.bottom for s in gui_screens)
 
-        offsetX = (width - (max_x - min_x)) // 2
-        offsetY = (height - (max_y - min_y)) // 2
+        offset_x = (width - (max_x - min_x)) // 2
+        offset_y = (height - (max_y - min_y)) // 2
 
         for screen in gui_screens:
-            screen.set_position(screen.rect.x + offsetX, screen.rect.y + offsetY)
+            screen.set_position(screen.rect.x + offset_x, screen.rect.y + offset_y)
         # }}}
 
     # Layout operations & snapping code {{{
     def center_layout(self, immediate=False):
+        """Center the layout in the window."""
         all_rects = [screen.target_rect for screen in self.gui_screens]
         avg_x, avg_y = Rect(*compute_bounding_box(all_rects)).center
         win_res = self.get_size()
-        offX = (win_res[0] // 2) - avg_x
-        offY = (win_res[1] // 2) - avg_y
+        off_x = (win_res[0] // 2) - avg_x
+        off_y = (win_res[1] // 2) - avg_y
         for screen in self.gui_screens:
             if immediate:
-                screen.set_position(
-                    screen.target_rect.x + offX, screen.target_rect.y + offY
-                )
+                screen.set_position(screen.target_rect.x + off_x, screen.target_rect.y + off_y)
             else:
-                screen.target_rect.x = screen.target_rect.x + offX
-                screen.target_rect.y = screen.target_rect.y + offY
+                screen.target_rect.x = screen.target_rect.x + off_x
+                screen.target_rect.y = screen.target_rect.y + off_y
 
     def snap_active_screen(self):
+        """Snap the active screen to the closest screen if it collides."""
         active_screen = self.gui_screens[-1]
 
         for wid in self.gui_screens[:-1]:
@@ -358,10 +354,7 @@ class UI(pyglet.window.Window):
                 closest_match = None
                 for coord in active_screen_coords:
                     for other_screen_coord in other_screen_coords:
-                        if (
-                            min_distance is None
-                            or distance(coord, other_screen_coord) < min_distance
-                        ):
+                        if min_distance is None or distance(coord, other_screen_coord) < min_distance:
                             min_distance = distance(coord, other_screen_coord)
                             closest_match = other_screen_coord, coord
                 assert closest_match is not None
@@ -371,6 +364,7 @@ class UI(pyglet.window.Window):
     # }}}
     # Gui getters & properties  {{{
     def get_status_text(self):
+        """Return the status text to be displayed."""
         if self.text_input is not None:
             return f'Press ENTER to validate "{self.text_input}"'
         elif self.selected_item:
@@ -381,10 +375,12 @@ class UI(pyglet.window.Window):
     # }}}
     # Event handler methods {{{
     def on_text(self, text):
+        """Handle text input."""
         if self.text_input is not None:
             self.text_input += text
 
     def on_key_press(self, symbol, modifiers):
+        """Handle key presses."""
         if self.text_input is None:
             if symbol == KEY_RETURN:
                 if self.confirmation_needed:
@@ -409,18 +405,19 @@ class UI(pyglet.window.Window):
                 self.action_load_selected_profile()
             else:
                 super().on_key_press(symbol, modifiers)
-        else:
-            if symbol == KEY_BACKSPACE:
-                self.text_input = self.text_input[:-1]
-            elif symbol == KEY_RETURN:
-                self.validate_text_input()
-            elif symbol == KEY_ESCAPE:
-                self.text_input = None
+        elif symbol == KEY_BACKSPACE:
+            self.text_input = self.text_input[:-1]
+        elif symbol == KEY_RETURN:
+            self.validate_text_input()
+        elif symbol == KEY_ESCAPE:
+            self.text_input = None
 
     def on_mouse_motion(self, x, y, dx, dy):
+        """Update the cursor coordinates."""
         self.cursor_coords = (x, y)
 
     def on_mouse_press(self, x, y, button, modifiers):
+        """Handle mouse presses."""
         active_widget = None
         for wid in self.widgets:
             if wid.on_mouse_press(x, y, button, modifiers):
@@ -440,14 +437,14 @@ class UI(pyglet.window.Window):
                 wid.unfocus()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        """Handle mouse dragging."""
         self.cursor_coords = (x, y)
 
         if self.selected_item and self.selected_item.dragging:
-            self.selected_item.set_position(
-                self.selected_item.rect.x + dx, self.selected_item.rect.y + dy
-            )
+            self.selected_item.set_position(self.selected_item.rect.x + dx, self.selected_item.rect.y + dy)
 
     def on_resize(self, width, height):
+        """Handle window resizing."""
         pyglet.window.Window.on_resize(self, width, height)
 
         for w in self._widgets:
@@ -458,6 +455,7 @@ class UI(pyglet.window.Window):
         self._confirm_labels = None
 
     def on_mouse_release(self, x, y, button, modifiers):
+        """Handle mouse releases."""
         if self.selected_item and self.selected_item.dragging:
             self.snap_active_screen()
             self.selected_item.dragging = False
@@ -466,6 +464,7 @@ class UI(pyglet.window.Window):
             self.on_off_but.toggled = not self.selected_item.screen.active
 
     def draw_countdown(self):
+        """Draw the countdown for the confirmation."""
         delay = time.time() - self.confirmation_needed
         if delay >= CONFIRM_DELAY:
             os.system(self.original_cmd)
@@ -505,10 +504,9 @@ class UI(pyglet.window.Window):
             lbl2.draw()
 
     def draw_text_input(self):
-        w, h = self.get_size()
-        pyglet.text.Label(
-            "Profile name: ", font_size=24, x=10, y=h // 2 + 40, align="left"
-        ).draw()
+        """Draw the text input."""
+        _w, h = self.get_size()
+        pyglet.text.Label("Profile name: ", font_size=24, x=10, y=h // 2 + 40, align="left").draw()
         text = self.text_input
         if int(time.time() * 1.5) % 2:
             text += "_"
@@ -521,9 +519,11 @@ class UI(pyglet.window.Window):
         ).draw()
 
     def _can_draw(self, widget):
+        """Return whether the widget can be drawn."""
         return self.selected_item or widget not in self.require_selected_item
 
     def draw_screens_and_widgets(self):
+        """Draw the screens and widgets."""
         # Update focus
         for screen in self.gui_screens:
             is_focused = screen == self.selected_item
@@ -536,11 +536,10 @@ class UI(pyglet.window.Window):
                 w.draw(self.cursor_coords)
 
     def on_draw(self):
+        """Draw the GUI."""
         self.clear()
         # Draw a grey background
-        pyglet.shapes.Rectangle(
-            0, 0, self.width, self.height, color=(50, 50, 50, 255)
-        ).draw()
+        pyglet.shapes.Rectangle(0, 0, self.width, self.height, color=(50, 50, 50, 255)).draw()
 
         # Higher priority modes
         if self.text_input is not None:
@@ -552,6 +551,7 @@ class UI(pyglet.window.Window):
             self.draw_status_label()
 
     def draw_status_label(self):
+        """Draw the status label."""
         text = None
         color = (200, 200, 200, 255)
 
@@ -575,61 +575,62 @@ class UI(pyglet.window.Window):
     # Button actions {{{
 
     def reset_sel(self):
+        """Reset the selected item."""
         self.selected_item = None
         load()
         GuiScreen.cur_color = 0
         self.load_screens()
 
     def action_reload(self):
+        """Reload the screens."""
         reload_pre_commands()
         time.sleep(0.5)
         self.reset_sel()
         self.center_layout(immediate=True)
 
     def get_profile_data(self):
-        screens_rect = [
-            screen.target_rect.scaled(UI_RATIO) for screen in self.gui_screens
-        ]
+        """Return the data for the current profile."""
+        screens_rect = [screen.target_rect.scaled(UI_RATIO) for screen in self.gui_screens]
         trim_rects_flip_y(screens_rect)
         ret = []
         for rect, gs in zip(screens_rect, self.gui_screens):
             assert gs.screen.mode
-            ret.append(
-                {
-                    "active": gs.screen.active,
-                    "width": gs.screen.mode.width,
-                    "height": gs.screen.mode.height,
-                    "freq": gs.screen.mode.freq,
-                    "x": rect.x,
-                    "y": rect.y,
-                    "uid": gs.screen.uid,
-                    "scale": gs.screen.scale,
-                    "transform": gs.screen.transform,
-                }
-            )
+            ret.append({
+                "active": gs.screen.active,
+                "width": gs.screen.mode.width,
+                "height": gs.screen.mode.height,
+                "freq": gs.screen.mode.freq,
+                "x": rect.x,
+                "y": rect.y,
+                "uid": gs.screen.uid,
+                "scale": gs.screen.scale,
+                "transform": gs.screen.transform,
+            })
         return ret
 
     def action_save_new_profile(self):
+        """Save a new profile."""
         assert self.text_input
         save_profile(self.text_input, self.get_profile_data())
         self.sync_profiles()
         self.text_input = None
 
     def action_save_profile(self):
+        """Save the current profile."""
         if self.profile_list.options:
-            save_profile(
-                self.profile_list.get_selected_option()["name"], self.get_profile_data()
-            )
+            save_profile(self.profile_list.get_selected_option()["name"], self.get_profile_data())
             self.sync_profiles()
         else:
             self.set_error("No profile selected!")
 
     def action_load_selected_profile(self):
+        """Load the selected profile."""
         if not self.profile_list.options:
             self.set_error("No profile selected!")
             return
 
         def findScreen(uid):
+            """Find the screen with the given uid."""
             for screen in self.gui_screens:
                 if screen.screen.uid == uid:
                     return screen
@@ -654,16 +655,15 @@ class UI(pyglet.window.Window):
         self.center_layout()
 
     def action_update_scale(self):
+        """Update the scale of the selected screen."""
         monitor = self.selected_item
         assert monitor
         monitor.screen.scale = self.scale_ratio.get_value()
         monitor.target_rect.width, monitor.target_rect.height = get_size(monitor.screen)
 
     def action_update_frequencies(self, screen, mode=None):
-        if mode is None:
-            cur_mode = screen.screen.mode.width, screen.screen.mode.height
-        else:
-            cur_mode = mode
+        """Update the frequencies of the selected screen."""
+        cur_mode = (screen.screen.mode.width, screen.screen.mode.height) if mode is None else mode
         freqs = sorted_frequencies(screen.screen.available, cur_mode[0], cur_mode[1])
         self.freqs.options = [{"name": f"{r:.2f} Hz", "value": r} for r in freqs]
         if mode is None:
@@ -672,6 +672,7 @@ class UI(pyglet.window.Window):
             self.freqs.selected_index = 0
 
     def action_save_layout(self):
+        """Save the current layout."""
         cmd = make_command(
             [s.screen for s in self.gui_screens],
             [s.rect.scaled(UI_RATIO) for s in self.gui_screens],
@@ -684,32 +685,32 @@ class UI(pyglet.window.Window):
         self.confirmation_needed = time.time()
 
     def action_toggle_screen_power(self):
+        """Toggle the power of the selected screen."""
         if self.selected_item:
             self.selected_item.screen.active = not self.selected_item.screen.active
 
     def action_update_rotation(self):
-        "Update the rotation of the selected screen"
+        """Update the rotation of the selected screen."""
         assert self.selected_item
         self.selected_item.screen.transform = self.rotation.get_value()
-        self.selected_item.target_rect.width, self.selected_item.target_rect.height = (
-            get_size(self.selected_item.screen)
-        )
+        self.selected_item.target_rect.width, self.selected_item.target_rect.height = get_size(self.selected_item.screen)
 
     def action_update_screen_spec(self):
+        """Update the screen specifications."""
         self.action_update_frequencies(self.selected_item, self.resolutions.get_value())
         self.action_update_mode()
         self.center_layout()
 
     def action_update_mode(self):
+        """Update the mode of the selected screen."""
         assert self.selected_item
         screen = self.selected_item.screen
-        screen.mode = find_matching_mode(
-            screen.available, self.resolutions.get_value(), self.freqs.get_value()
-        )
+        screen.mode = find_matching_mode(screen.available, self.resolutions.get_value(), self.freqs.get_value())
         self.selected_item.target_rect.width = screen.mode.width // UI_RATIO
         self.selected_item.target_rect.height = screen.mode.height // UI_RATIO
 
     def action_select_screen(self, screen):
+        """Select a screen."""
         self.selected_item = screen
         self.selected_item.dragging = True
         # make it last displayed + easy to find
@@ -719,16 +720,12 @@ class UI(pyglet.window.Window):
         cur_mode = screen.screen.mode
         # Update resolution
         res = sorted_resolutions(screen.screen.available)
-        self.resolutions.options = [
-            {"name": f"{r[0]} x {r[1]}", "value": r} for r in res
-        ]
+        self.resolutions.options = [{"name": f"{r[0]} x {r[1]}", "value": r} for r in res]
         self.rotation.selected_index = screen.screen.transform
         values = [o["value"] for o in self.scale_ratio.options]
-        self.scale_ratio.selected_index = values.index(
-            get_closest_match(values, screen.screen.scale)
-        )
+        self.scale_ratio.selected_index = values.index(get_closest_match(values, screen.screen.scale))
         i = -1
-        for i, r in enumerate(res):
+        for _, r in enumerate(res):
             if r[0] == cur_mode.width and r[1] == cur_mode.height:
                 break
         self.resolutions.selected_index = i
