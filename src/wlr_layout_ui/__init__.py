@@ -57,7 +57,7 @@ def main():
             for key in sorted(profiles.keys()):
                 prof_uids = {p["uid"] for p in profiles[key]}
                 # check that the two sets have the same elements
-                if len(prof_uids - current_uids) == 0:
+                if len(prof_uids & current_uids) == len(current_uids):
                     print(f"Matched profile {key}. Applying it...")
                     apply_profile(profiles[key])
                     sys.exit(0)
