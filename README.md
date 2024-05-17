@@ -69,7 +69,7 @@ wlrlui cinema
 
 ### Magic layout
 
-Applies the first profile matching the set of monitors currently active:
+Applies the first profile matching the set of monitors which are currently active:
 
 ```
 wlrlui -m
