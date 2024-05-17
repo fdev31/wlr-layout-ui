@@ -77,6 +77,6 @@ wlrlui -m
 
 ### GUI shortcuts
 
-- `ENTER`: applies the current settings
-- `ESC`: closes the app
+- `ENTER`: apply the current settings
+- `ESC`: close the app
 - `TAB`: switch between profiles
