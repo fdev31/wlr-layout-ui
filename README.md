@@ -67,6 +67,14 @@ To load the profile called "cinema":
 wlrlui cinema
 ```
 
+### Magic layout
+
+Applies the first profile matching the set of monitors currently active:
+
+```
+wlrlui -m
+```
+
 ### GUI shortcuts
 
 - `ENTER`: applies the current settings
