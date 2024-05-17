@@ -54,10 +54,10 @@ def main():
         elif sys.argv[1] == "-m":
             load()
             current_uids = set(di.uid for di in displayInfo)
-            for key in sorted(profiles.keys()):
+            for key in sorted(profiles):
                 prof_uids = {p["uid"] for p in profiles[key]}
                 # check that the two sets have the same elements
-                if len(prof_uids & current_uids) == len(current_uids):
+                if prof_uids == current_uids:
                     print(f"Matched profile {key}. Applying it...")
                     apply_profile(profiles[key])
                     sys.exit(0)
@@ -70,7 +70,7 @@ def main():
                 """With no options, launches the GUI
 Options:
              -l : list profiles
-             -m : find a profile that matches the current displays layout, and apply it. 
+             -m : find a profile that matches the currently plugged display set, and apply it. 
                   No-op if not found; will apply first in alphabetical order if multiple found.
  <profile name> : loads a profile
             """
@@ -83,7 +83,7 @@ Options:
                 print(f"No such profile: {sys.argv[1]}")
                 raise SystemExit(1)
             apply_profile(profile)
-        sys.exit(0)
+        return
     load()
     max_width = int(sum(max(screen.available, key=lambda mode: mode.width).width for screen in displayInfo) // UI_RATIO)
     max_height = int(sum(max(screen.available, key=lambda mode: mode.height).height for screen in displayInfo) // UI_RATIO)
