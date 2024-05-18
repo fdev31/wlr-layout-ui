@@ -71,7 +71,7 @@ wlrlui cinema
 
 _added in 1.6.11_
 
-Applies the first profile matching the set of monitors which are currently active:
+Applies the first profile (in alphabetical order) matching the set of monitors which are currently active:
 
 ```
 wlrlui -m
