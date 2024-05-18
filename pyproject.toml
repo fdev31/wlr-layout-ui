@@ -100,7 +100,7 @@ select = [
     # ruf
     "RUF",
 ]
-ignore = ["ANN201", "ANN001", "ANN002", "ANN202", "ARG002", "PLR", "C", "FBT002", "D107", "ANN204", "D"]
+ignore = ["ANN201", "ANN001", "ANN002", "ANN202", "ARG002", "PLR", "C", "FBT002", "D107", "ANN204", "D", "ISC001"]
 
 [tool.ruff.format]
 indent-style = "space"

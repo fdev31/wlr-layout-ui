@@ -5,6 +5,7 @@ import time
 import pyglet
 
 from .gui import UI
+from .profiles import load_profiles
 from .screens import displayInfo, load
 from .settings import LEGACY, PROG_NAME, UI_RATIO, reload_pre_commands
 from .utils import Rect, make_command
@@ -44,8 +45,6 @@ def apply_profile(profile):
 
 def main():
     if len(sys.argv) > 1:
-        from .profiles import load_profiles
-
         profiles = load_profiles()
         if sys.argv[1] == "-l":
             print("")
@@ -70,7 +69,7 @@ def main():
                 """With no options, launches the GUI
 Options:
              -l : list profiles
-             -m : find a profile that matches the currently plugged display set, and apply it. 
+             -m : find a profile that matches the currently plugged display set, and apply it.
                   No-op if not found; will apply first in alphabetical order if multiple found.
  <profile name> : loads a profile
             """
@@ -79,9 +78,9 @@ Options:
             reload_pre_commands()
             try:
                 profile = profiles[sys.argv[1]]
-            except KeyError:
+            except KeyError as e:
                 print(f"No such profile: {sys.argv[1]}")
-                raise SystemExit(1)
+                raise SystemExit(1) from e
             apply_profile(profile)
         return
     load()
