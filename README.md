@@ -69,7 +69,7 @@ wlrlui cinema
 
 ### Magic layout
 
-_added in 1.7.0_
+_added in 1.6.11_
 
 Applies the first profile matching the set of monitors which are currently active:
 
