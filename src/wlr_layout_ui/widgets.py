@@ -4,11 +4,13 @@ from pyglet.shapes import Triangle
 
 from .factories import makeLabel, makeRectangle
 from .settings import FONT, WIDGETS_RADIUS
-from .shapes import RoundedRectangle
+from .shapes import makeRoundedRectangle
 from .utils import Rect, brighten
 
 
 class Widget:
+    """Base class for all widgets."""
+
     def __init__(self, rect, style):
         self.rect = rect
         self.style = style if style else Style()
@@ -51,7 +53,7 @@ class Widget:
         raise NotImplementedError()
 
     def draw_shadow(self, offX=3, offY=3, color=(0, 0, 0, 80), radius=0):
-        r = RoundedRectangle(
+        r = makeRoundedRectangle(
             Rect(
                 self.rect.x + offX,
                 self.rect.y - offY,
@@ -218,7 +220,7 @@ class Dropdown(Widget):  # {{{
         if is_hovered:
             color = brighten(color)
 
-        r = RoundedRectangle(self.rect, self.radius, color)
+        r = makeRoundedRectangle(self.rect, self.radius, color)
         r.draw()
         rect = self.rect
 
@@ -386,7 +388,7 @@ class Button(Widget):  # {{{
         if self.rect.contains(*cursor):
             color = brighten(color)
 
-        r = RoundedRectangle(self.rect, self.radius, color)
+        r = makeRoundedRectangle(self.rect, self.radius, tuple(color))
         r.draw()
         self.text.draw()
 

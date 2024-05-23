@@ -111,6 +111,9 @@ class Rect:  # {{{
     width: int
     height: int
 
+    def __hash__(self):
+        return int("%d%d%d%d" % self.asTuple())
+
     @property
     def topleft(self):
         return (self.left, self.top)

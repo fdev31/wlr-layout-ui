@@ -53,7 +53,7 @@ class UI(pyglet.window.Window):
     """Main class for the GUI. Handles the layout of the screens and the widgets."""
 
     def __init__(self, width, height):
-        super().__init__(width, height, PROG_NAME, resizable=True)
+        super().__init__(width, height, PROG_NAME, resizable=True, vsync=True)
         self.selected_item = None
         self.scale_factor = 1
         self.cursor_coords = (0, 0)
