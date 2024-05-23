@@ -718,18 +718,20 @@ class UI(pyglet.window.Window):
         self.gui_screens.append(screen)
 
         cur_mode = screen.screen.mode
-        # Update resolution
-        res = sorted_resolutions(screen.screen.available)
-        self.resolutions.options = [{"name": f"{r[0]} x {r[1]}", "value": r} for r in res]
-        self.rotation.selected_index = screen.screen.transform
+        # update scale
         values = [o["value"] for o in self.scale_ratio.options]
         self.scale_ratio.selected_index = values.index(get_closest_match(values, screen.screen.scale))
+        # update resolution dropdown
+        res = sorted_resolutions(screen.screen.available)
+        self.resolutions.options = [{"name": f"{r[0]} x {r[1]}", "value": r} for r in res]
         i = -1
-        for _, r in enumerate(res):
+        for i, r in enumerate(res):  # noqa: B007
             if r[0] == cur_mode.width and r[1] == cur_mode.height:
                 break
         self.resolutions.selected_index = i
+        # update rotation / transform
         self.rotation.selected_index = screen.screen.transform
+        # update frequency
         self.action_update_frequencies(screen)
 
     # }}}
