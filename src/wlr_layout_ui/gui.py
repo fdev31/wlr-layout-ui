@@ -668,6 +668,7 @@ class UI(pyglet.window.Window):
         )
         if os.system(cmd):
             self.set_error("Failed applying the layout")
+        print(cmd)
 
         self.confirmation_needed = time.time()
 

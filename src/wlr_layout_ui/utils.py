@@ -31,7 +31,6 @@ def simplify_model_name(name):
 
 def make_command(screens: list[Screen], rects: list[Rect], wayland=True) -> str:
     cmd = make_command_hyprland(screens, rects) if wayland and config.get("hyprland") else make_command_legacy(screens, rects, wayland)
-    print(cmd)
     return cmd
 
 
@@ -61,6 +60,7 @@ def make_command_legacy(screens: list[Screen], rects: list[Rect], wayland=False)
         if not screen.active:
             command.append(f"--output {screen.uid} --off")
             continue
+        assert screen.mode
         sep = "," if wayland else "x"
         mode = f"{int(screen.mode.width)}x{int(screen.mode.height)}"
         command.append(f"--output {screen.uid} --on --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}")

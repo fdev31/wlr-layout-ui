@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from typing import cast
 
 import pyglet
 
@@ -19,27 +20,29 @@ except ImportError:
     pass
 
 
-def apply_profile(profile: list[dict[str, int]]):
+def apply_profile(profile: list[dict[str, float | bool | str]]):
     load()
     screen_info = {p["uid"]: p for p in profile}
     rects = []
     for di in displayInfo:
         si = screen_info[di.uid]
-        print(si)
-        di.scale = si.get("scale", 1)
-        di.transform = si.get("transform", 0)
-        di.active = si.get("active", False)
+        di.scale = cast(float | int, si.get("scale", 1))
+        di.transform = cast(int, si.get("transform", 0))
+        di.active = cast(bool, si.get("active", False))
         if di.active:
-            w, h = get_size(si["width"], si["height"], si.get("scale", 1), si.get("transform", 0))
-            di.mode = Mode(w, h, si["freq"])
-            rects.append(Rect(si["x"], -si["y"] - h, w, h))
+            w, h = get_size(
+                cast(int, si["width"]), cast(int, si["height"]), cast(float, si.get("scale", 1)), cast(int, si.get("transform", 0))
+            )
+            di.mode = Mode(w, h, cast(float, si["freq"]))
+            rects.append(Rect(int(si["x"]), -int(si["y"]) - h, w, h))
         else:
-            rects.append(None)
+            rects.append(Rect(0, 0, 0, 0))  # width & height not used
 
     cmd = make_command(displayInfo, rects, not LEGACY)
     time.sleep(0.5)
     if os.system(cmd):
         print("Failed applying the layout")
+    print(cmd)
 
 
 def main():
