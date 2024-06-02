@@ -1,9 +1,26 @@
 import re
-from dataclasses import dataclass
+
+from .types import Rect, Screen
 
 config = {"hyprland": False}
 
 hex_re = re.compile("^[0-9x]+$")
+
+
+def get_size(width: int, height: int, scale: float, transform: int, glob_scale: float = 1):
+    w, h = (
+        ((width / glob_scale) / scale),
+        ((height / glob_scale) / scale),
+    )
+    if transform in (1, 3, 5, 7):
+        return (h, w)
+    return (w, h)
+
+
+def get_screen_size(screen: Screen, scale: float = 1):
+    """Get the size of the window based on the screen size and UI_RATIO."""
+    assert screen.mode
+    return get_size(screen.mode.width, screen.mode.height, screen.scale, screen.transform, scale)
 
 
 def simplify_model_name(name):
@@ -12,13 +29,13 @@ def simplify_model_name(name):
     return " ".join(words)
 
 
-def make_command(screens, rects, wayland=True):
-    if wayland and config.get("hyprland"):
-        return make_command_hyprland(screens, rects)
-    return make_command_legacy(screens, rects, wayland)
+def make_command(screens: list[Screen], rects: list[Rect], wayland=True) -> str:
+    cmd = make_command_hyprland(screens, rects) if wayland and config.get("hyprland") else make_command_legacy(screens, rects, wayland)
+    print(cmd)
+    return cmd
 
 
-def make_command_hyprland(screens, rects):
+def make_command_hyprland(screens: list[Screen], rects: list[Rect]) -> str:
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     command = ['hyprctl --batch "']
@@ -35,7 +52,7 @@ def make_command_hyprland(screens, rects):
     return cmd
 
 
-def make_command_legacy(screens, rects, wayland=False):
+def make_command_legacy(screens: list[Screen], rects: list[Rect], wayland=False) -> str:
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     command = ["wlr-randr" if wayland else "xrandr"]
@@ -49,18 +66,11 @@ def make_command_legacy(screens, rects, wayland=False):
         command.append(f"--output {screen.uid} --on --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}")
 
     cmd = " ".join(command)
-    print(cmd)
     return cmd
 
 
 def brighten(color):
     return tuple(min(255, c + 20) for c in color)
-
-
-def collidepoint(x, y, x2, y2, xp, yp):
-    assert x < x2
-    assert y < y2
-    return x < xp < x2 and y < yp < y2
 
 
 def sorted_resolutions(modes):
@@ -102,80 +112,3 @@ def trim_rects_flip_y(rects):
     for rect in rects:
         rect.x = rect.x - min_x
         rect.y = max_y - (rect.y + rect.height)
-
-
-@dataclass
-class Rect:  # {{{
-    x: int
-    y: int
-    width: int
-    height: int
-
-    def __hash__(self):
-        return int("%d%d%d%d" % self.asTuple())
-
-    @property
-    def topleft(self):
-        return (self.left, self.top)
-
-    @property
-    def topright(self):
-        return (self.right, self.top)
-
-    @property
-    def bottomleft(self):
-        return (self.left, self.bottom)
-
-    @property
-    def bottomright(self):
-        return (self.right, self.bottom)
-
-    @property
-    def left(self):
-        return self.x
-
-    @property
-    def right(self):
-        return self.x + self.width
-
-    @property
-    def top(self):
-        return self.y + self.height
-
-    @property
-    def bottom(self):
-        return self.y
-
-    @property
-    def center(self):
-        return self.x + self.width // 2, self.y + self.height // 2
-
-    def contains(self, x, y):
-        return collidepoint(self.x, self.y, self.x + self.width, self.y + self.height, x, y)
-
-    def collide(self, rect):
-        # return true if the two rectangles are overlapping in any way
-        if rect.left >= self.right:
-            return False
-        if rect.right <= self.left:
-            return False
-        if rect.top <= self.bottom:
-            return False
-        return not rect.bottom >= self.top
-
-    def copy(self):
-        return Rect(self.x, self.y, self.width, self.height)
-
-    def asTuple(self):
-        return (self.x, self.y, self.width, self.height)
-
-    def scaled(self, factor):
-        return Rect(
-            self.x * factor,
-            self.y * factor,
-            self.width * factor,
-            self.height * factor,
-        )
-
-
-# }}}

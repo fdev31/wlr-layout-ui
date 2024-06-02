@@ -15,6 +15,7 @@ from .utils import (
     compute_bounding_box,
     config,
     find_matching_mode,
+    get_screen_size,
     make_command,
     simplify_model_name,
     sorted_frequencies,
@@ -34,19 +35,6 @@ KEY_TAB = 65289
 def get_closest_match(float_list, value):
     """Return the closest value in float_list to value."""
     return min(float_list, key=lambda x: abs(x - value))
-
-
-def get_size(screen, scale=0):
-    """Get the size of the window based on the screen size and UI_RATIO."""
-    if not scale:
-        scale = UI_RATIO
-    w, h = (
-        ((screen.mode.width / scale) / screen.scale),
-        ((screen.mode.height / scale) / screen.scale),
-    )
-    if screen.transform in (1, 3, 5, 7):
-        return (h, w)
-    return (w, h)
 
 
 class UI(pyglet.window.Window):
@@ -255,7 +243,7 @@ class UI(pyglet.window.Window):
             max_height = max(m.height for m in screen.available)
 
             if screen.mode:
-                w, h = get_size(screen)
+                w, h = get_screen_size(screen, scale=UI_RATIO)
                 rect = Rect(
                     int(x / UI_RATIO),
                     -int(y / UI_RATIO) - h,
@@ -641,7 +629,7 @@ class UI(pyglet.window.Window):
             if found:
                 info = screen_info.copy()
                 found.screen.transform = info.get("transform", 0)
-                w, h = get_size(found.screen, scale=info.get("scale", 1))
+                w, h = get_screen_size(found.screen, scale=info.get("scale", 1))
                 rect = Rect(info["x"], -info["y"] - h, w, h)
                 srect = rect.scaled(1 / UI_RATIO)
                 info.pop("uid")
@@ -659,7 +647,7 @@ class UI(pyglet.window.Window):
         monitor = self.selected_item
         assert monitor
         monitor.screen.scale = self.scale_ratio.get_value()
-        monitor.target_rect.width, monitor.target_rect.height = get_size(monitor.screen)
+        monitor.target_rect.width, monitor.target_rect.height = get_screen_size(monitor.screen, scale=UI_RATIO)
 
     def action_update_frequencies(self, screen, mode=None):
         """Update the frequencies of the selected screen."""
@@ -678,7 +666,6 @@ class UI(pyglet.window.Window):
             [s.rect.scaled(UI_RATIO) for s in self.gui_screens],
             not LEGACY,
         )
-        print(cmd)
         if os.system(cmd):
             self.set_error("Failed applying the layout")
 
@@ -693,7 +680,9 @@ class UI(pyglet.window.Window):
         """Update the rotation of the selected screen."""
         assert self.selected_item
         self.selected_item.screen.transform = self.rotation.get_value()
-        self.selected_item.target_rect.width, self.selected_item.target_rect.height = get_size(self.selected_item.screen)
+        self.selected_item.target_rect.width, self.selected_item.target_rect.height = get_screen_size(
+            self.selected_item.screen, scale=UI_RATIO
+        )
 
     def action_update_screen_spec(self):
         """Update the screen specifications."""

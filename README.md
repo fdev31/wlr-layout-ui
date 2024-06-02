@@ -1,6 +1,8 @@
 # Wlr layout UI
 
-An simple GUI to setup the screens layout on wlroots based systems and X11 (using xrandr), Hyprland is the first class user.
+An simple GUI to setup the screens layout.
+Works best on Hyprland but should support most systems in a slightly degraded way
+(Wayland and Xorg are supported via 3rd party applications)
 
 ## Features
 
@@ -23,9 +25,14 @@ A bit outdated, but still relevant.
 
 ## Requires
 
-- Python: pyglet, tomli, tomli-w
-- wlr-randr (if not using Hyprland >= 0.37)
-- xrandr (for X11 support)
+- Python
+  - pyglet
+  - tomli
+  - tomli-w
+- One of:
+  - Hyprland >= 0.37
+  - wlr-randr (for other wayland systems)
+  - xrandr (for X11 / Xorg)
 
 ## Installation
 
@@ -35,7 +42,7 @@ Check your distro for the package:
 
 or install with pip in a virtual environment:
 
-```
+```bash
 python -m venv myenv
 ./myenv/bin/pip install wlr-layout-ui
 ```
@@ -47,7 +54,7 @@ You will need to run the app with the full path to it (/path/to/myenv/bin/wlrlui
 
 ### Start the GUI
 
-```
+```bash
 wlrlui
 ```
 
@@ -55,7 +62,7 @@ Note that a `.desktop` file is provided in the `files` folder for an easy integr
 
 ### List available profiles (CLI)
 
-```
+```bash
 wlrlui -l
 ```
 
@@ -63,7 +70,7 @@ wlrlui -l
 
 To load the profile called "cinema":
 
-```
+```bash
 wlrlui cinema
 ```
 
@@ -73,7 +80,7 @@ _added in 1.6.11_
 
 Applies the first profile (in alphabetical order) matching the set of monitors which are currently active:
 
-```
+```bash
 wlrlui -m
 ```
 

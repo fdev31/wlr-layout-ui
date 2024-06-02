@@ -8,7 +8,8 @@ from .gui import UI
 from .profiles import load_profiles
 from .screens import displayInfo, load
 from .settings import LEGACY, PROG_NAME, UI_RATIO, reload_pre_commands
-from .utils import Rect, make_command
+from .types import Mode
+from .utils import Rect, get_size, make_command
 
 try:
     import setproctitle
@@ -18,24 +19,22 @@ except ImportError:
     pass
 
 
-def apply_profile(profile):
+def apply_profile(profile: list[dict[str, int]]):
     load()
-    p_by_id = {p["uid"]: p for p in profile}
-    rects = [
-        (
-            Rect(-i["x"], i["y"], i["height"], i["width"])
-            if i.get("transform", 0) in (1, 3, 5, 7)
-            else Rect(-i["x"], i["y"], i["width"], i["height"])
-        )
-        for i in profile
-    ]
-
-    for i, di in enumerate(displayInfo):
-        di.active = p_by_id[di.uid]["active"]
-        di.transform = p_by_id[di.uid].get("transform", 0)
-        di.scale = p_by_id[di.uid].get("scale", 1.0)
-        if di.transform in (1, 3, 5, 7):
-            rects[i].width, rects[i].height = rects[i].height, rects[i].width
+    screen_info = {p["uid"]: p for p in profile}
+    rects = []
+    for di in displayInfo:
+        si = screen_info[di.uid]
+        print(si)
+        di.scale = si.get("scale", 1)
+        di.transform = si.get("transform", 0)
+        di.active = si.get("active", False)
+        if di.active:
+            w, h = get_size(si["width"], si["height"], si.get("scale", 1), si.get("transform", 0))
+            di.mode = Mode(w, h, si["freq"])
+            rects.append(Rect(si["x"], -si["y"] - h, w, h))
+        else:
+            rects.append(None)
 
     cmd = make_command(displayInfo, rects, not LEGACY)
     time.sleep(0.5)

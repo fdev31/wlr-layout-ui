@@ -3,40 +3,14 @@ import json
 import os
 import re
 import subprocess
-from dataclasses import dataclass, field
-from typing import Tuple
 
+from .types import Mode, Screen
 from .utils import config
 
 __all__ = ["LEGACY", "Mode", "Screen", "load"]
 
 LEGACY = not os.environ.get("WAYLAND_DISPLAY", False)
 MODE_RE = re.compile(r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>[+-]\d+)(?P<y>[+-]\d+)$")
-
-
-@dataclass
-class Mode:
-    width: int
-    height: int
-    freq: float
-
-    def __repr__(self):
-        return "%dx%d@%.2fHz" % (self.width, self.height, self.freq)
-
-
-@dataclass
-class Screen:
-    uid: str
-    name: str
-    active: bool = False
-    position: Tuple[int, int] = (0, 0)
-    mode: None | Mode = None
-    scale: float = 1
-    available: list[Mode] = field(default_factory=list)
-    transform: int = 0
-
-    def __repr__(self):
-        return "<Screen{} {} [{}]>".format("*" if self.active else "", self.name, self.mode)
 
 
 displayInfo: list[Screen] = []
