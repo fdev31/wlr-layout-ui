@@ -107,8 +107,10 @@ def compute_bounding_box(rects):
 
 
 def trim_rects_flip_y(rects):
-    min_x = min([r.x for r in rects])
-    max_y = max([r.y + r.height for r in rects])
+    min_x = min([r.x for r in rects if r])
+    max_y = max([r.y + r.height for r in rects if r])
     for rect in rects:
+        if rect is None:
+            continue
         rect.x = rect.x - min_x
         rect.y = max_y - (rect.y + rect.height)
