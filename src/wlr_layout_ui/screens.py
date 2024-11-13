@@ -54,8 +54,9 @@ def load():
         displayInfo.clear()
 
     try:
-        version = json.loads(subprocess.getoutput("hyprctl -j version"))["tag"]
-        version = version[1:].split(".")
+        data = json.loads(subprocess.getoutput("hyprctl -j version"))
+        version = data["tag"] or data["version"]
+        version = (version[1:] if version.startswith("v") else version).split(".")
         major = int(version[0])
         minor = int(version[1])
         new_hyprland = (major == 0 and minor >= 37) or major > 0
