@@ -60,7 +60,7 @@ def load():
         major = int(version[0])
         minor = int(version[1])
         new_hyprland = (major == 0 and minor >= 37) or major > 0
-    except (KeyError, json.JSONDecodeError):
+    except (KeyError, json.JSONDecodeError, ValueError):
         new_hyprland = not LEGACY
 
     if new_hyprland:
