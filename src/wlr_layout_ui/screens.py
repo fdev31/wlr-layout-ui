@@ -34,7 +34,7 @@ def load_from_hyprctl():
         modes_str = [repr(m) for m in modes]
         try:
             idx = modes_str.index(cur_mode)
-        except IndexError:
+        except (IndexError, ValueError):
             idx = modes_str.index(difflib.get_close_matches(cur_mode, modes_str)[0])
         current_screen = Screen(
             uid=monitor["name"],
