@@ -9,7 +9,7 @@ from .gui import UI
 from .profiles import load_profiles
 from .screens import displayInfo, load
 from .settings import LEGACY, PROG_NAME, UI_RATIO, reload_pre_commands
-from .types import Mode
+from .custom_types import Mode
 from .utils import Rect, get_size, make_command
 
 try:

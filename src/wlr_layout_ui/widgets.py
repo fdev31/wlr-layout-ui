@@ -148,7 +148,7 @@ class Style:
     text_color: tuple[int, int, int, int] = (50, 50, 50, 255)
     color: tuple[int, int, int] = (200, 200, 200)
     highlight: tuple[int, int, int] = (200, 255, 200)
-    bold: bool = False
+    # bold: bool = False
 
 
 class Dropdown(Widget):  # {{{
@@ -274,7 +274,7 @@ class Dropdown(Widget):  # {{{
                     color=self.style.text_color,
                     anchor_x="left",
                     anchor_y="center",
-                    bold=i == self.selected_index,
+                    # bold=i == self.selected_index,
                     font_name=FONT,
                 ).draw()
 
@@ -379,7 +379,7 @@ class Button(Widget):  # {{{
             anchor_x="center",
             anchor_y="center",
             color=style.text_color,
-            bold=style.bold,
+            # bold=style.bold,
             font_name=FONT,
         )
 

@@ -13,7 +13,7 @@ wlrlui = 'wlr_layout_ui:main'
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pyglet = "^2.0.0"
+pyglet = "^2.1.0"
 tomli = "^2.0.1"
 tomli-w = "^1.0.0"
 

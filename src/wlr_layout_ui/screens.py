@@ -4,7 +4,7 @@ import os
 import re
 import subprocess
 
-from .types import Mode, Screen
+from .custom_types import Mode, Screen
 from .utils import config
 
 __all__ = ["LEGACY", "Mode", "Screen", "load"]

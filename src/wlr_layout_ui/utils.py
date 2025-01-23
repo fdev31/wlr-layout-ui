@@ -1,6 +1,6 @@
 import re
 
-from .types import Rect, Screen
+from .custom_types import Rect, Screen
 
 config = {"hyprland": False}
 
