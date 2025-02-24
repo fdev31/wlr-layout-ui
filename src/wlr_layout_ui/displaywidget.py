@@ -147,7 +147,7 @@ class GuiScreen(Widget):
                 x=tx,
                 y=ty + 20,
                 color=txt_color,
-                bold=self.screen.active,
+                weight="bold" if self.screen.active else "normal",
             ).draw()
             Label(
                 label,
@@ -156,5 +156,5 @@ class GuiScreen(Widget):
                 x=tx,
                 y=ty - 20,
                 color=txt_color,
-                bold=self.screen.active,
+                weight="bold" if self.screen.active else "normal",
             ).draw()
