@@ -584,6 +584,7 @@ class UI(pyglet.window.Window):
         for rect, gs in zip(screens_rect, self.gui_screens):
             assert gs.screen.mode
             ret.append({
+                "name": gs.screen.name,
                 "active": gs.screen.active,
                 "width": gs.screen.mode.width,
                 "height": gs.screen.mode.height,
