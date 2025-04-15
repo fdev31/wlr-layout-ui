@@ -61,7 +61,7 @@ class UI(pyglet.window.Window):
         main_but_style = Style(color=(255, 185, 50))
         p_new_but = Button(
             ref_rect.copy(),
-            label="Save new",
+            label="Create",
             style=s_but_style,
             action=lambda: self.set_text_input(self.action_save_new_profile),
         )
@@ -73,7 +73,7 @@ class UI(pyglet.window.Window):
         )
         p_load_but = Button(
             ref_rect.copy(),
-            label="Load",
+            label="Load/Reset",
             style=act_but_style,
             action=self.action_load_selected_profile,
         )
