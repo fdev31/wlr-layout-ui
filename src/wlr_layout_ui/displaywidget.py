@@ -99,8 +99,14 @@ class GuiScreen(Widget):
         self.target_rect.x = x
         self.rect.y = y
         self.target_rect.y = y
+        self.cur_border = 2.0
 
     def draw(self, cursor):
+        if self.highlighted and self.cur_border <= 9:
+            self.cur_border += 0.2
+        if not self.highlighted and self.cur_border >= 2:
+            self.cur_border -= 0.2
+
         if self.rect != self.target_rect:
             self._animation_step()
 
@@ -120,7 +126,7 @@ class GuiScreen(Widget):
             self.rect.y,
             self.rect.width,
             self.rect.height,
-            border=9 if self.highlighted else 2,
+            border=int(self.cur_border),
             color=color,
             border_color=border_color,
         ).draw()
