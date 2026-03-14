@@ -1,0 +1,64 @@
+# Separator page -- horizontal and vertical separators with labels.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Label"
+  text = "Above the horizontal separator"
+  width = 600
+  height = 24
+
+  [[widget.children]]
+  type = "Separator"
+  id = "sep_h"
+  orientation = "horizontal"
+  width = 600
+  height = 4
+
+  [[widget.children]]
+  type = "Label"
+  text = "Below the horizontal separator"
+  width = 600
+  height = 24
+
+  # Vertical separator demo: HBox with label | separator | label
+  [[widget.children]]
+  type = "HBox"
+  padding = 10
+  align = "top"
+
+    [[widget.children.children]]
+    type = "Label"
+    text = "Left of vertical"
+    width = 200
+    height = 100
+    anchor_x = "center"
+
+    [[widget.children.children]]
+    type = "Separator"
+    id = "sep_v"
+    orientation = "vertical"
+    width = 4
+    height = 100
+    color = [200, 100, 100]
+
+    [[widget.children.children]]
+    type = "Label"
+    text = "Right of vertical"
+    width = 200
+    height = 100
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "sep_h"
+text = "Separator(horizontal)\nThin horizontal line across full width"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "sep_v"
+text = "Separator(vertical, color=(200,100,100))\nThin red vertical line"
+delay = 0.3

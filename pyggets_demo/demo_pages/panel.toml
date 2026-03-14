@@ -1,0 +1,87 @@
+# Panel page -- vertical and horizontal panels side by side.
+
+[[widget]]
+type = "HBox"
+padding = 20
+align = "top"
+
+  # Left: vertical Settings panel
+  [[widget.children]]
+  type = "Panel"
+  id = "panel_vert"
+  title = "Settings Panel"
+  padding = 6
+
+    [[widget.children.children]]
+    type = "Checkbox"
+    label = "Option A"
+    checked = true
+    width = 250
+    height = 24
+
+    [[widget.children.children]]
+    type = "Checkbox"
+    label = "Option B"
+    width = 250
+    height = 24
+
+    [[widget.children.children]]
+    type = "Separator"
+    orientation = "horizontal"
+    width = 250
+    height = 4
+
+    [[widget.children.children]]
+    type = "Toggle"
+    label = "Advanced mode"
+    width = 250
+    height = 24
+
+  # Right: horizontal panel
+  [[widget.children]]
+  type = "VBox"
+  padding = 10
+
+    [[widget.children.children]]
+    type = "Panel"
+    id = "panel_horiz"
+    title = "Horizontal"
+    padding = 6
+    orientation = "horizontal"
+
+      [[widget.children.children.children]]
+      type = "Button"
+      label = "One"
+      width = 80
+      height = 28
+
+      [[widget.children.children.children]]
+      type = "Button"
+      label = "Two"
+      width = 80
+      height = 28
+
+      [[widget.children.children.children]]
+      type = "Button"
+      label = "Three"
+      width = 80
+      height = 28
+
+    [[widget.children.children]]
+    type = "Label"
+    text = "Panels are bordered containers with optional title. Vertical or horizontal."
+    width = 400
+    height = 24
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "panel_vert"
+text = "Panel(title='Settings', vertical)\nBordered box with title bar and stacked children"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "panel_horiz"
+text = "Panel(title='Horizontal', horizontal)\nSide-by-side children layout"
+delay = 0.3

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Lid -->
+  <line x1="4" y1="7" x2="20" y2="7"/>
+  <path d="M9 7 V4 H15 V7"/>
+  <!-- Body -->
+  <path d="M6 7 L7 20 H17 L18 7"/>
+  <!-- Inner lines -->
+  <line x1="10" y1="10" x2="10" y2="17"/>
+  <line x1="14" y1="10" x2="14" y2="17"/>
+</svg>

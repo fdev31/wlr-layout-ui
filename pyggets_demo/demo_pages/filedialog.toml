@@ -1,0 +1,55 @@
+# File Dialog page -- three buttons for native file dialogs + result label.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_open"
+  label = "Open File"
+  width = 160
+  height = 32
+  action = "on_open_file"
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_save"
+  label = "Save File"
+  width = 160
+  height = 32
+  action = "on_save_file"
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_pick_dir"
+  label = "Pick Directory"
+  width = 160
+  height = 32
+  action = "on_pick_dir"
+
+  [[widget.children]]
+  type = "Label"
+  id = "fd_result"
+  text = "Click a button to open a native file dialog."
+  width = 600
+  height = 72
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "btn_open"
+text = "open_file(filters=[Images, All])\nOpens native file picker via XDG Portal"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "btn_save"
+text = "save_file(current_name='untitled.txt')\nOpens native save dialog via XDG Portal"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "btn_pick_dir"
+text = "pick_directory()\nOpens native folder picker via XDG Portal"
+delay = 0.3

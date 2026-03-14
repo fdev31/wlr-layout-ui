@@ -1,0 +1,311 @@
+# ScrollBox page -- two scrollboxes: fill-width labels vs fixed-width labels.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Label"
+  text = "Left: Labels with fill='width' stretch to VBox width. Right: fixed-width labels."
+  width = 600
+  height = 24
+
+  [[widget.children]]
+  type = "HBox"
+  padding = 20
+  align = "top"
+
+    # Left ScrollBox: labels with fill="width"
+    [[widget.children.children]]
+    type = "ScrollBox"
+    id = "sb_fill"
+    width = 350
+    height = 200
+
+      [[widget.children.children.children]]
+      type = "VBox"
+      padding = 2
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 1: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 2: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 3: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 4: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 5: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 6: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 7: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 8: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 9: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 10: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 11: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 12: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 13: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 14: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 15: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 16: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 17: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 18: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 19: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 20: fill='width'"
+        width = 100
+        height = 24
+        fill = "width"
+
+    # Right ScrollBox: fixed-width labels
+    [[widget.children.children]]
+    type = "ScrollBox"
+    id = "sb_fixed"
+    width = 350
+    height = 200
+
+      [[widget.children.children.children]]
+      type = "VBox"
+      padding = 2
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 1: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 2: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 3: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 4: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 5: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 6: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 7: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 8: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 9: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 10: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 11: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 12: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 13: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 14: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 15: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 16: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 17: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 18: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 19: fixed width"
+        width = 350
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Label"
+        text = "  Item 20: fixed width"
+        width = 350
+        height = 24
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "sb_fill"
+text = "ScrollBox + VBox(fill='width' labels)\nLabels stretch to fill VBox width"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "sb_fixed"
+text = "ScrollBox + VBox(fixed-width labels)\nOriginal fixed-width behavior"
+delay = 0.3

@@ -1,0 +1,56 @@
+[window]
+width = 400
+height = 250
+title = "pyggets - Simple Demo (TOML)"
+resizable = false
+
+[theme]
+font_name = "Free Sans"
+widget_radius = 4
+
+[theme.style]
+text_color = [220, 220, 220, 255]
+color = [90, 90, 90]
+highlight = [100, 190, 130]
+
+[[widget]]
+type = "VBox"
+x = 20
+y = 20
+padding = 8
+
+  [[widget.children]]
+  type = "Label"
+  width = 360
+  height = 32
+  text = "pyggets"
+  font_size = 22
+  weight = "bold"
+
+  [[widget.children]]
+  type = "Label"
+  width = 360
+  height = 20
+  text = "A lightweight widget toolkit for pyglet."
+
+  [[widget.children]]
+  type = "Label"
+  width = 360
+  height = 20
+  text = "No dependencies beyond pyglet itself."
+
+  [[widget.children]]
+  type = "Toggle"
+  id = "dark_mode"
+  width = 250
+  height = 28
+  label = "Dark mode"
+  toggled = true
+
+  [[widget.children]]
+  type = "Button"
+  id = "close_btn"
+  width = 120
+  height = 32
+  label = "Close"
+  action = "on_close"

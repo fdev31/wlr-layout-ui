@@ -1,0 +1,59 @@
+# RadioGroup page -- vertical and horizontal radio groups side by side.
+
+[[widget]]
+type = "HBox"
+padding = 40
+align = "top"
+
+  # Left column: vertical radio group
+  [[widget.children]]
+  type = "VBox"
+  padding = 4
+
+    [[widget.children.children]]
+    type = "Label"
+    text = "Vertical:"
+    width = 200
+    height = 24
+
+    [[widget.children.children]]
+    type = "RadioGroup"
+    id = "rg_size"
+    options = ["Small", "Medium", "Large", "Extra Large"]
+    selected_index = 1
+    width = 200
+    height = 120
+    onchange = "on_rg_size"
+
+  # Right column: horizontal radio group
+  [[widget.children]]
+  type = "VBox"
+  padding = 4
+
+    [[widget.children.children]]
+    type = "Label"
+    text = "Horizontal:"
+    width = 200
+    height = 24
+
+    [[widget.children.children]]
+    type = "RadioGroup"
+    id = "rg_color"
+    options = ["Red", "Green", "Blue"]
+    orientation = "horizontal"
+    width = 400
+    height = 32
+    onchange = "on_rg_color"
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "rg_size"
+text = "RadioGroup(vertical, 4 options, selected=1)\nStacked circles, filled dot when selected"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "rg_color"
+text = "RadioGroup(horizontal, 3 options)\nSide-by-side circles with labels"
+delay = 0.3

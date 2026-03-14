@@ -1,15 +1,20 @@
 """Screen widgets for the display manager."""
 
+import logging
+import math
 import random
 
-from pyglet.shapes import BorderedRectangle
+import pyglet
+from pyglet.shapes import BorderedRectangle, Box
 from pyglet.text import Label
 
 from .screens import Screen
-from .utils import Rect, brighten, simplify_model_name
-from .widgets import Widget
+from .utils import simplify_model_name
+from .widgets import Rect, Widget, brighten
 
 ANIMATION_LENGTH = 8
+
+log = logging.getLogger(__name__)
 
 
 def limit_size(text):
@@ -51,6 +56,7 @@ class GuiScreen(Widget):
         self.color = color
         self.dragging = False
         self.highlighted = False
+        self.preview_sprite: pyglet.sprite.Sprite | None = None
 
     def genColor(self):
         if self.cur_color >= len(self.all_colors):
@@ -65,6 +71,15 @@ class GuiScreen(Widget):
             GuiScreen.cur_color += 1
         self.drag_color = list(self.color)
         self.drag_color[-1] = 200
+
+    def set_preview(self, path: str):
+        """Load a screenshot preview image.  Silently no-ops on failure."""
+        try:
+            img = pyglet.image.load(path)
+            self.preview_sprite = pyglet.sprite.Sprite(img)
+        except Exception:
+            log.debug("Failed to load preview from %s", path, exc_info=True)
+            self.preview_sprite = None
 
     @property
     def current_color(self):
@@ -85,14 +100,14 @@ class GuiScreen(Widget):
             cv = getattr(r, var)
             tv = getattr(t, var)
             if cv != tv:
-                if abs(tv - cv) <= 1:
+                if abs(tv - cv) < 2:
                     setattr(r, var, tv)
                 else:
                     tgt = (cv * ANIMATION_LENGTH + tv) / (ANIMATION_LENGTH + 1)
                     if cv < tv:
-                        setattr(r, var, min(tv, tgt))
+                        setattr(r, var, min(tv, math.ceil(tgt)))
                     elif cv > tv:
-                        setattr(r, var, max(tv, tgt))
+                        setattr(r, var, max(tv, math.floor(tgt)))
 
     def set_position(self, x, y):
         self.rect.x = x
@@ -110,7 +125,7 @@ class GuiScreen(Widget):
         if self.rect != self.target_rect:
             self._animation_step()
 
-        txt_color = (0, 0, 0, 200) if self.screen.active else (255, 255, 255, 120)
+        txt_color = (240, 240, 240, 255) if self.screen.active else (255, 255, 255, 120)
         border_color = (100, 100, 155)
         if not self.screen.active:
             border_color = (70, 70, 70)
@@ -130,6 +145,32 @@ class GuiScreen(Widget):
             color=color,
             border_color=border_color,
         ).draw()
+
+        # Draw screenshot preview (active monitors only)
+        if self.preview_sprite and self.screen.active:
+            sprite = self.preview_sprite
+            img_w = sprite.image.width
+            img_h = sprite.image.height
+            if img_w > 0 and img_h > 0 and self.rect.width > 0 and self.rect.height > 0:
+                sprite.update(
+                    x=self.rect.x,
+                    y=self.rect.y,
+                    scale_x=self.rect.width / img_w,
+                    scale_y=self.rect.height / img_h,
+                )
+                # Dim the screenshot so text labels remain readable
+                sprite.color = (100, 100, 100, 255)
+                sprite.draw()
+                # Redraw border on top of the screenshot
+                Box(
+                    self.rect.x,
+                    self.rect.y,
+                    self.rect.width,
+                    self.rect.height,
+                    thickness=int(self.cur_border),
+                    color=border_color,
+                ).draw()
+
         # Render the screen uid as text
         tx, ty = self.rect.center
         Label(

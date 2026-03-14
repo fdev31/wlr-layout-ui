@@ -1,0 +1,44 @@
+# Modal page -- button to open modal dialog with text input.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_open_modal"
+  label = "Open Modal"
+  width = 200
+  height = 32
+  action = "on_open_modal"
+
+  [[widget.children]]
+  type = "Label"
+  id = "modal_result"
+  text = "Click the button to open a modal dialog."
+  width = 600
+  height = 24
+
+# Modal (top-level so it overlays everything)
+[[widget]]
+type = "Modal"
+id = "modal"
+title = "Example Modal"
+width = 800
+height = 600
+on_close = "on_modal_close"
+
+  [[widget.children]]
+  type = "TextInput"
+  id = "modal_input"
+  placeholder = "Enter your name..."
+  width = 300
+  height = 28
+  onsubmit = "on_modal_submit"
+
+# Tooltip
+[[widget]]
+type = "Tooltip"
+target = "btn_open_modal"
+text = "Modal(title=..., content=TextInput)\nClick to show centered overlay dialog"
+delay = 0.3

@@ -13,10 +13,6 @@ repos:
     hooks:
       - id: prettier
         exclude: "main.*"
-  - repo: https://github.com/lovesegfault/beautysh
-    rev: "v6.2.1"
-    hooks:
-      - id: beautysh
   - repo: https://github.com/adrienverge/yamllint
     rev: "v1.30.0"
     hooks:
@@ -25,10 +21,14 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
-        args: [--max-line-length=140]
+        args:
+          [
+            --max-line-length=140,
+            "--per-file-ignores=demo.py:E402 simple_demo.py:E402 simple_demo_toml.py:E402 demo_toml.py:E402",
+          ]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: "v0.4.4"
+    rev: "v0.11.13"
     hooks:
       # Run the linter.
       - id: ruff

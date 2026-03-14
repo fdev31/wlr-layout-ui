@@ -9,7 +9,7 @@ from .utils import config
 
 __all__ = ["LEGACY", "Mode", "Screen", "load"]
 
-LEGACY = not os.environ.get("WAYLAND_DISPLAY", False)
+LEGACY = not os.environ.get("WAYLAND_DISPLAY")
 MODE_RE = re.compile(r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>[+-]\d+)(?P<y>[+-]\d+)$")
 
 
@@ -26,11 +26,7 @@ def load_from_hyprctl():
     monitors = json.loads(subprocess.getoutput("hyprctl -j monitors all"))
     for monitor in monitors:
         modes = [Mode(*_parseMode(m)) for m in monitor["availableModes"]]
-        cur_mode = "%dx%d@%.2fHz" % (
-            monitor["width"],
-            monitor["height"],
-            monitor["refreshRate"],
-        )
+        cur_mode = f"{monitor['width']}x{monitor['height']}@{monitor['refreshRate']:.2f}Hz"
         modes_str = [repr(m) for m in modes]
         try:
             idx = modes_str.index(cur_mode)
@@ -69,7 +65,7 @@ def load():
         return
 
     out = subprocess.getoutput("xrandr" if LEGACY else "wlr-randr")
-    current_screen: None | Screen = None
+    current_screen: Screen | None = None
     mode_mode = False
     for line in out.splitlines():
         if LEGACY and ("disconnected" in line or line.startswith("Screen")):

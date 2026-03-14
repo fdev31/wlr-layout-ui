@@ -1,0 +1,49 @@
+# Toggle page -- three toggle switches with onchange callbacks.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Toggle"
+  id = "tgl_wifi"
+  label = "Wi-Fi"
+  toggled = true
+  width = 250
+  height = 28
+  onchange = "on_wifi"
+
+  [[widget.children]]
+  type = "Toggle"
+  id = "tgl_bluetooth"
+  label = "Bluetooth"
+  width = 250
+  height = 28
+  onchange = "on_bluetooth"
+
+  [[widget.children]]
+  type = "Toggle"
+  id = "tgl_airplane"
+  label = "Airplane mode"
+  width = 250
+  height = 28
+  onchange = "on_airplane"
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "tgl_wifi"
+text = "Toggle(toggled=True, onchange=...)\nPill track with knob on right, green"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "tgl_bluetooth"
+text = "Toggle(label='Bluetooth')\nGrey pill track, knob on left"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "tgl_airplane"
+text = "Toggle(label='Airplane mode')\nSame as above, independent state"
+delay = 0.3

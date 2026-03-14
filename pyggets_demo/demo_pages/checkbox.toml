@@ -1,0 +1,49 @@
+# Checkbox page -- three checkboxes with onchange callbacks.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Checkbox"
+  id = "cb_notifications"
+  label = "Enable notifications"
+  width = 250
+  height = 28
+  onchange = "on_notifications"
+
+  [[widget.children]]
+  type = "Checkbox"
+  id = "cb_darkmode"
+  label = "Dark mode"
+  checked = true
+  width = 250
+  height = 28
+  onchange = "on_dark_mode"
+
+  [[widget.children]]
+  type = "Checkbox"
+  id = "cb_autosave"
+  label = "Auto-save"
+  width = 250
+  height = 28
+  onchange = "on_auto_save"
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "cb_notifications"
+text = "Checkbox(label=..., onchange=...)\nBox with inner fill when checked"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "cb_darkmode"
+text = "Checkbox(checked=True)\nStarts checked, inner square visible"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "cb_autosave"
+text = "Checkbox(label='Auto-save')\nUnchecked box, click to toggle"
+delay = 0.3

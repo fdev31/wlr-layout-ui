@@ -1,0 +1,75 @@
+# Label page -- labels with different anchors and font sizes.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Label"
+  id = "lbl_left"
+  text = "Left-anchored label (default)"
+  width = 600
+  height = 28
+
+  [[widget.children]]
+  type = "Label"
+  id = "lbl_center"
+  text = "Center-anchored label"
+  width = 600
+  height = 28
+  anchor_x = "center"
+
+  [[widget.children]]
+  type = "Label"
+  id = "lbl_right"
+  text = "Right-anchored label"
+  width = 600
+  height = 28
+  anchor_x = "right"
+
+  [[widget.children]]
+  type = "Label"
+  id = "lbl_large"
+  text = "Large font (20pt)"
+  width = 600
+  height = 36
+  font_size = 20
+
+  [[widget.children]]
+  type = "Label"
+  id = "lbl_small"
+  text = "Small font (10pt)"
+  width = 600
+  height = 24
+  font_size = 10
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "lbl_left"
+text = "Label(anchor_x='left')\nDefault left-aligned text"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "lbl_center"
+text = "Label(anchor_x='center')\nText centered in rect width"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "lbl_right"
+text = "Label(anchor_x='right')\nText right-aligned in rect"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "lbl_large"
+text = "Label(font_size=20)\nLarger 20pt text"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "lbl_small"
+text = "Label(font_size=10)\nSmaller 10pt text"
+delay = 0.3

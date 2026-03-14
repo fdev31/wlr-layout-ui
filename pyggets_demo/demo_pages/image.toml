@@ -1,0 +1,97 @@
+# Image page -- displays images at various sizes.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "HBox"
+  padding = 20
+
+    [[widget.children.children]]
+    type = "VBox"
+    padding = 6
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "200 x 150:"
+      width = 200
+      height = 20
+      font_size = 11
+
+      [[widget.children.children.children]]
+      type = "Image"
+      id = "img_large"
+      path = "demo_assets/sample.png"
+      width = 200
+      height = 150
+
+    [[widget.children.children]]
+    type = "VBox"
+    padding = 6
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "64 x 64:"
+      width = 100
+      height = 20
+      font_size = 11
+
+      [[widget.children.children.children]]
+      type = "Image"
+      id = "img_medium"
+      path = "demo_assets/sample.png"
+      width = 64
+      height = 64
+
+    [[widget.children.children]]
+    type = "VBox"
+    padding = 6
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "Icons (24 x 24):"
+      width = 120
+      height = 20
+      font_size = 11
+
+      [[widget.children.children.children]]
+      type = "HBox"
+      padding = 8
+
+        [[widget.children.children.children.children]]
+        type = "Image"
+        path = "demo_assets/folder.png"
+        width = 24
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Image"
+        path = "demo_assets/settings.png"
+        width = 24
+        height = 24
+
+        [[widget.children.children.children.children]]
+        type = "Image"
+        path = "demo_assets/star.png"
+        width = 24
+        height = 24
+
+  [[widget.children]]
+  type = "Label"
+  text = "Image widget loads a PNG file and scales to fit, preserving aspect ratio."
+  width = 600
+  height = 24
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "img_large"
+text = "Image(path='sample.png', 200x150)\nScaled to fit, aspect ratio preserved"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "img_medium"
+text = "Image(path='sample.png', 64x64)\nSame image, smaller target rect"
+delay = 0.3

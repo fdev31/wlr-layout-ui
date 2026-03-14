@@ -1,0 +1,91 @@
+# Button page -- buttons with text, icons, toggle, and custom styles.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_click"
+  label = "Click me"
+  width = 160
+  height = 32
+  action = "on_btn_click"
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_toggle"
+  label = "Toggle me"
+  width = 160
+  height = 32
+  togglable = true
+  toggled_label = "Toggled ON"
+  action = "on_btn_toggle"
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_bold"
+  label = "Bold style"
+  width = 200
+  height = 32
+  action = "on_btn_bold"
+
+    [widget.children.style]
+    text_color = [255, 255, 100, 255]
+    color = [80, 60, 120]
+    highlight = [140, 100, 200]
+    weight = "bold"
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_icon_text"
+  label = "Open Folder"
+  icon = "demo_assets/folder.png"
+  width = 200
+  height = 32
+  action = "on_btn_click"
+
+  [[widget.children]]
+  type = "Button"
+  id = "btn_icon_only"
+  icon = "demo_assets/settings.png"
+  width = 40
+  height = 40
+  action = "on_btn_click"
+
+  [[widget.children]]
+  type = "Label"
+  text = "Buttons support click actions, toggle mode, custom styles, and icons."
+  width = 600
+  height = 24
+
+# Tooltips (top-level, referencing by id)
+[[widget]]
+type = "Tooltip"
+target = "btn_click"
+text = "Button(rect, 'Click me', action=...)\nRounded rect, brightens on hover"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "btn_toggle"
+text = "Button(togglable=True, toggled_label=...)\nAlternates label, green when toggled"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "btn_bold"
+text = "Button(style=Style(weight='bold'))\nCustom purple/yellow bold text"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "btn_icon_text"
+text = "Button(icon='folder.png', label='Open Folder')\nIcon on the left, text on the right"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "btn_icon_only"
+text = "Button(icon='settings.png')\nIcon only, no text label"
+delay = 0.3

@@ -1,31 +1,70 @@
-[tool.poetry]
+[project]
 name = "wlr-layout-ui"
 version = "1.6.16"
 description = "A tiny GUI to configure screen layouts on wayland"
-authors = ["fdev31 <fdev31@gmail.com>"]
+authors = [{ name = "fdev31", email = "fdev31@gmail.com" }]
 readme = "README.md"
-homepage = "https://github.com/fdev31/wlr-layout-ui"
-packages = [{include = "wlr_layout_ui", from = "src"}]
 license = "MIT"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "pyglet>2.1.0",
+    "tomli>=2.0.1",
+    "tomli-w>=1.0.0",
+    "jeepney>=0.8.0",
+]
 
-[tool.poetry.scripts]
-wlrlui = 'wlr_layout_ui:main'
+[project.urls]
+Homepage = "https://github.com/fdev31/wlr-layout-ui"
 
-[tool.poetry.dependencies]
-python = "^3.8"
-pyglet = "^2.0.0"
-tomli = "^2.0.1"
-tomli-w = "^1.0.0"
+[project.scripts]
+wlrlui = "wlr_layout_ui:main"
 
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.2.0"
-vulture = "^2.7"
-pydantic = "^1.10.7"
-black = "^23.3.0"
+[dependency-groups]
+dev = [
+    "mypy>1.2.0",
+    "vulture>2.7",
+    "pydantic>1.10.7",
+    "black>23.3.0",
+]
+
+[tool.uv]
+default-groups = "all"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/pyggets",
+    "src/wlr_layout_ui",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "src/pyggets",
+    "src/wlr_layout_ui",
+]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/pyggets" = "pyggets"
+"src/wlr_layout_ui" = "wlr_layout_ui"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 140
@@ -100,11 +139,26 @@ select = [
     # ruf
     "RUF",
 ]
-ignore = ["ANN201", "ANN001", "ANN002", "ANN202", "ARG002", "PLR", "C", "FBT002", "D107", "ANN204", "D", "ISC001"]
+ignore = [
+    "ANN201",
+    "ANN001",
+    "ANN002",
+    "ANN202",
+    "ARG002",
+    "PLR",
+    "C",
+    "FBT002",
+    "D107",
+    "ANN204",
+    "D",
+    "ISC001",
+    "SLF001",
+    "BLE001",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.format]
 indent-style = "space"
 line-ending = "auto"
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"

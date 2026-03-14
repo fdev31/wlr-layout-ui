@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 24 24"
+   fill="none"
+   stroke="black"
+   stroke-width="2"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="icon_load.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="37.166667"
+     inkscape:cx="12"
+     inkscape:cy="12"
+     inkscape:window-width="3440"
+     inkscape:window-height="1440"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <!-- Floppy disk body -->
+  <path
+     d="M5 3 H16 L21 8 V19 C21 20.1 20.1 21 19 21 H5 C3.9 21 3 20.1 3 19 V5 C3 3.9 3.9 3 5 3Z"
+     id="path1" />
+  <!-- Label area -->
+  <rect
+     x="7"
+     y="4"
+     width="10"
+     height="5"
+     rx="0.5"
+     id="rect1" />
+  <!-- Arrow going out of floppy (upward) -->
+  <line
+     x1="12"
+     y1="19.777779"
+     x2="12"
+     y2="11.222222"
+     id="line1"
+     style="stroke-width:2.44444" />
+  <polyline
+     points="9,6.5 12,4 15,6.5"
+     id="polyline1"
+     transform="matrix(1.2222222,0,0,1.2222222,-2.6666667,6.3333333)" />
+</svg>
