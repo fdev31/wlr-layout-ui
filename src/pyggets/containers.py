@@ -30,6 +30,11 @@ class _Box(Widget):
         for w in widgets:
             self.add(w)
 
+    def add(self, widget):
+        """Add a widget to the container. Subclasses must override."""
+        msg = "Subclasses must implement add()"
+        raise NotImplementedError(msg)
+
     def __repr__(self):
         return f"<Box = {self.widgets}>"
 
