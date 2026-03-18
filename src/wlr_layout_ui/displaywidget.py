@@ -48,12 +48,12 @@ class GuiScreen(Widget):
         self,
         screen: Screen,
         rect: Rect,
-        color: tuple[int, int, int] = (100, 100, 100),
+        color: tuple[int, ...] = (100, 100, 100),
     ):
         super().__init__(rect, None)
         self.screen = screen
-        self.target_rect = rect.copy()
-        self.color = color
+        self.target_rect: Rect = rect.copy()
+        self.color: tuple[int, ...] = color
         self.dragging = False
         self.highlighted = False
         self.preview_sprite: pyglet.sprite.Sprite | None = None
@@ -67,10 +67,9 @@ class GuiScreen(Widget):
                 255,
             )
         else:
-            self.color = [*list(self.all_colors[self.cur_color]), 255]
+            self.color = (*self.all_colors[self.cur_color], 255)
             GuiScreen.cur_color += 1
-        self.drag_color = list(self.color)
-        self.drag_color[-1] = 200
+        self.drag_color: tuple[int, ...] = (*self.color[:3], 200)
 
     def set_preview(self, path: str):
         """Load a screenshot preview image.  Silently no-ops on failure."""
@@ -87,7 +86,8 @@ class GuiScreen(Widget):
         color = self.drag_color if self.dragging else self.color
         if self.screen.active:
             return color
-        return [color[0] // 3, color[1] // 3, color[2] // 3, color[3]]
+        alpha = color[3] if len(color) > 3 else 255
+        return (color[0] // 3, color[1] // 3, color[2] // 3, alpha)
 
     @property
     def statusInfo(self):
@@ -149,8 +149,9 @@ class GuiScreen(Widget):
         # Draw screenshot preview (active monitors only)
         if self.preview_sprite and self.screen.active:
             sprite = self.preview_sprite
-            img_w = sprite.image.width
-            img_h = sprite.image.height
+            img = sprite.image
+            img_w = getattr(img, "width", 0)
+            img_h = getattr(img, "height", 0)
             if img_w > 0 and img_h > 0 and self.rect.width > 0 and self.rect.height > 0:
                 sprite.update(
                     x=self.rect.x,
