@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, fields
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -166,7 +166,7 @@ def _parse_toml(toml_source: str | Path) -> dict:
     return tomli.loads(toml_source)
 
 
-def _resolve_handler(name: str, controller: object | None, widget_desc: str) -> Callable:  # type: ignore[type-arg]
+def _resolve_handler(name: str, controller: object | None, widget_desc: str) -> Callable[..., Any]:
     """Resolve a handler string to a method on the controller."""
     if controller is None:
         msg = f"Widget {widget_desc} references handler '{name}' but no controller was provided"
@@ -182,22 +182,22 @@ def _build_style(spec: dict, *, base: Style | None = None) -> Style:
     """Build a ``Style`` from a TOML dict, optionally merging over a base."""
     if base is not None:
         # Start from a copy of base, override with spec values.
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         for f in fields(Style):
             if f.name in spec:
                 val = spec[f.name]
                 kwargs[f.name] = tuple(val) if isinstance(val, list) else val
             else:
                 kwargs[f.name] = getattr(base, f.name)
-        return Style(**kwargs)  # type: ignore[arg-type]
+        return Style(**kwargs)
 
     # No base -- original behavior.
-    kwargs = {}
+    kwargs_: dict[str, Any] = {}
     for f in fields(Style):
         if f.name in spec:
             val = spec[f.name]
-            kwargs[f.name] = tuple(val) if isinstance(val, list) else val
-    return Style(**kwargs)  # type: ignore[arg-type]
+            kwargs_[f.name] = tuple(val) if isinstance(val, list) else val
+    return Style(**kwargs_)
 
 
 def _build_rect(spec: dict) -> Rect:
