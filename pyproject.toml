@@ -7,13 +7,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
 classifiers = [
-    "Programming Language :: Python :: 2",
-    "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.4",
-    "Programming Language :: Python :: 3.5",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -40,7 +34,6 @@ dev = [
     "mypy>1.2.0",
     "vulture>2.7",
     "pydantic>1.10.7",
-    "black>23.3.0",
 ]
 
 [tool.uv]
