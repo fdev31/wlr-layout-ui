@@ -62,7 +62,7 @@ class UI(pyglet.window.Window):
         self.selected_item = None
         self.scale_factor = 1
         self.cursor_coords = (0, 0)
-        self.confirmation_needed = False
+        self.confirmation_needed = 0.0
         self.error_message = ""
         self.error_message_duration = 0
         self.require_selected_item: set[Widget] = set()  # Items that can't be displayed without a selection
@@ -198,7 +198,7 @@ class UI(pyglet.window.Window):
             onchange=self.action_update_rotation,
             # invert=True,
         )
-        ref_rect.width = but_w // 1.5
+        ref_rect.width = int(but_w // 1.5)
         self.scale_ratio = Dropdown(
             ref_rect.copy(),
             label="Scale",
@@ -475,13 +475,13 @@ class UI(pyglet.window.Window):
             return
         if symbol == KEY_RETURN:
             if self.confirmation_needed:
-                self.confirmation_needed = False
+                self.confirmation_needed = 0.0
                 self.set_current_modes_as_ref()
             else:
                 self.action_save_layout()
         elif symbol == KEY_ESCAPE and self.confirmation_needed:
             os.system(self.original_cmd)
-            self.confirmation_needed = False
+            self.confirmation_needed = 0.0
             self.reset_sel()
         elif symbol == KEY_TAB:
             # cycle through profiles
@@ -560,7 +560,7 @@ class UI(pyglet.window.Window):
         delay = time.time() - self.confirmation_needed
         if delay >= CONFIRM_DELAY:
             os.system(self.original_cmd)
-            self.confirmation_needed = False
+            self.confirmation_needed = 0.0
         else:
             w, h = self.get_size()
             remaining = CONFIRM_DELAY - delay
