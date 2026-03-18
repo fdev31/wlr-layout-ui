@@ -351,7 +351,7 @@ class UI(pyglet.window.Window):
             if path:
                 gs.set_preview(path)
 
-    def _refresh_screenshots(self, dt=None):
+    def _refresh_screenshots(self, _dt=None):
         """Periodic callback to refresh screenshots."""
         self._start_screenshot_worker()
 

@@ -6,6 +6,7 @@ dist/
 build/
 .mypy_cache/
 .ruff_cache/
+.opencode/
 nohup.out
 foo.py
 update/

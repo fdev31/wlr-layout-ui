@@ -41,3 +41,21 @@ build:
 # Clean build artifacts
 clean:
     rm -rf dist/ build/ *.egg-info src/*.egg-info
+
+# Release: run all checks, build, and publish to PyPI
+release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Ensure clean working tree
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "ERROR: Working tree is not clean. Commit or stash changes first."
+        exit 1
+    fi
+    # Run checks
+    uv run ruff check src/
+    uv run ruff format --check src/
+    uv run mypy
+    # Build and publish
+    rm -rf dist/
+    uv build
+    uv publish
