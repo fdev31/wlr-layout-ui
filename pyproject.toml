@@ -1,6 +1,6 @@
 [project]
 name = "wlr-layout-ui"
-version = "1.6.16"
+version = "2.0.0"
 description = "A tiny GUI to configure screen layouts on wayland"
 authors = [{ name = "fdev31", email = "fdev31@gmail.com" }]
 readme = "README.md"
