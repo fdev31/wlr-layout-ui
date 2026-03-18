@@ -66,6 +66,18 @@ include = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.mypy]
+mypy_path = "src"
+packages = ["pyggets", "wlr_layout_ui"]
+
+[[tool.mypy.overrides]]
+module = [
+    "jeepney",
+    "jeepney.*",
+    "setproctitle",
+]
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 140
 preview = true
