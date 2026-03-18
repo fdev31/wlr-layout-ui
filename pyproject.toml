@@ -69,6 +69,7 @@ build-backend = "hatchling.build"
 [tool.mypy]
 mypy_path = "src"
 packages = ["pyggets", "wlr_layout_ui"]
+check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = [
