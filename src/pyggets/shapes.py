@@ -1,20 +1,26 @@
+"""Rounded rectangle shape for pyggets widgets."""
+
 from functools import cache
 
-from .factories import makeCircle, makeRectangle
+from .primitives import makeCircle, makeRectangle
 
 
 @cache
 def makeRoundedRectangle(rect, radius, color):
+    """Create a cached RoundedRectangle."""
     return RoundedRectangle(rect, radius, color)
 
 
 class RoundedRectangle:
+    """A rectangle with rounded corners, composed of circles and rectangles."""
+
     def __init__(self, rect, radius, color):
         self.rect = rect
         self.radius = radius
         self.color = tuple(color)
 
     def draw(self):
+        """Draw the rounded rectangle."""
         if not self.radius:
             makeRectangle(
                 self.rect.x,

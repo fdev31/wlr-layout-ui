@@ -1,0 +1,58 @@
+# Dropdown page -- normal and inverted dropdowns.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "Label"
+  text = "Normal dropdown (expands down) and inverted (expands up)"
+  width = 600
+  height = 24
+
+  [[widget.children]]
+  type = "Dropdown"
+  id = "dd_fruit"
+  label = "Fruit"
+  width = 200
+  height = 28
+  onchange = "on_dropdown_fruit"
+  options = [
+    { name = "Apple", value = "apple" },
+    { name = "Banana", value = "banana" },
+    { name = "Cherry", value = "cherry" },
+    { name = "Date", value = "date" },
+  ]
+
+  [[widget.children]]
+  type = "Spacer"
+  width = 10
+  height = 100
+
+  [[widget.children]]
+  type = "Dropdown"
+  id = "dd_inverted"
+  label = "Inverted"
+  width = 200
+  height = 28
+  invert = true
+  onchange = "on_dropdown_inverted"
+  options = [
+    { name = "Apple", value = "apple" },
+    { name = "Banana", value = "banana" },
+    { name = "Cherry", value = "cherry" },
+    { name = "Date", value = "date" },
+  ]
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "dd_fruit"
+text = "Dropdown('Fruit', options=[...], onchange=...)\nExpands option list downward on click"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "dd_inverted"
+text = "Dropdown('Inverted', invert=True)\nExpands option list upward on click"
+delay = 0.3

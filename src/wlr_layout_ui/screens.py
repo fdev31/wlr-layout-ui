@@ -9,7 +9,7 @@ from .utils import config
 
 __all__ = ["LEGACY", "Mode", "Screen", "load"]
 
-LEGACY = not os.environ.get("WAYLAND_DISPLAY", False)
+LEGACY = not os.environ.get("WAYLAND_DISPLAY")
 MODE_RE = re.compile(r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>[+-]\d+)(?P<y>[+-]\d+)$")
 
 
@@ -26,11 +26,7 @@ def load_from_hyprctl():
     monitors = json.loads(subprocess.getoutput("hyprctl -j monitors all"))
     for monitor in monitors:
         modes = [Mode(*_parseMode(m)) for m in monitor["availableModes"]]
-        cur_mode = "%dx%d@%.2fHz" % (
-            monitor["width"],
-            monitor["height"],
-            monitor["refreshRate"],
-        )
+        cur_mode = f"{monitor['width']}x{monitor['height']}@{monitor['refreshRate']:.2f}Hz"
         modes_str = [repr(m) for m in modes]
         try:
             idx = modes_str.index(cur_mode)
@@ -69,7 +65,7 @@ def load():
         return
 
     out = subprocess.getoutput("xrandr" if LEGACY else "wlr-randr")
-    current_screen: None | Screen = None
+    current_screen: Screen | None = None
     mode_mode = False
     for line in out.splitlines():
         if LEGACY and ("disconnected" in line or line.startswith("Screen")):
@@ -99,10 +95,10 @@ def load():
             if LEGACY:
                 res, freq = sline.split(None, 1)
                 if not res.endswith("i"):
-                    res = tuple(int(x) for x in res.split("x"))
+                    w, h = (int(x) for x in res.split("x"))
                     current = "*" in freq
                     freq = freq.split(None, 1)[0].rstrip("*+")
-                    current_screen.available.append(Mode(res[0], res[1], float(freq)))
+                    current_screen.available.append(Mode(w, h, float(freq)))
                     if current:
                         current_screen.mode = current_screen.available[-1]
             else:
@@ -113,9 +109,9 @@ def load():
                         print(f"Unable to parse: {sline}")
                     else:
                         res = res.split(None, 1)[0]
-                        res = tuple(int(x) for x in res.split("x"))
+                        w, h = (int(x) for x in res.split("x"))
                         freq, comment = freq.strip().split(None, 1)
-                        current_screen.available.append(Mode(res[0], res[1], float(freq)))
+                        current_screen.available.append(Mode(w, h, float(freq)))
                         if "current" in comment:
                             current_screen.mode = current_screen.available[-1]
 
@@ -124,7 +120,8 @@ def load():
                 elif sline.startswith("Enabled"):
                     current_screen.active = "yes" in sline
                 elif sline.startswith("Position"):
-                    current_screen.position = tuple(int(x) for x in sline.split(":")[1].strip().split(","))
+                    pos_parts = [int(x) for x in sline.split(":")[1].strip().split(",")]
+                    current_screen.position = (pos_parts[0], pos_parts[1])
     try:
         monitors = json.loads(subprocess.getoutput("hyprctl -j monitors all"))
     except json.decoder.JSONDecodeError:

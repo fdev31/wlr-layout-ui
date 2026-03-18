@@ -1,0 +1,44 @@
+# Tooltip page -- two buttons side by side with different tooltip delays.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "HBox"
+  padding = 20
+
+    [[widget.children.children]]
+    type = "Button"
+    id = "btn_hover"
+    label = "Hover over me"
+    width = 200
+    height = 32
+    action = "on_tooltip_btn"
+
+    [[widget.children.children]]
+    type = "Button"
+    id = "btn_quick"
+    label = "Quick tooltip"
+    width = 200
+    height = 32
+    action = "on_tooltip_btn2"
+
+  [[widget.children]]
+  type = "Label"
+  text = "Hover over the buttons to see tooltips appear after a delay."
+  width = 600
+  height = 24
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "btn_hover"
+text = "This is a tooltip! It appears after 0.5s hover."
+delay = 0.5
+
+[[widget]]
+type = "Tooltip"
+target = "btn_quick"
+text = "Instant tooltip!"
+delay = 0.1

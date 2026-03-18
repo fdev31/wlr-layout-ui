@@ -1,0 +1,274 @@
+# Containers page -- HBox & VBox demos with nested layout.
+
+[[widget]]
+type = "VBox"
+id = "page_root"
+padding = 20
+
+  # Nested layout section: 3 VBoxes (A=10, B=1, C=5) in HBox
+  [[widget.children]]
+  type = "HBox"
+  id = "nested"
+  padding = 8
+  align = "top"
+
+    # Description column
+    [[widget.children.children]]
+    type = "VBox"
+    valign = "top"
+    padding = 4
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "Nested layout:"
+      width = 180
+      height = 20
+      font_size = 11
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "3 VBoxes in HBox"
+      width = 180
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "align='top'"
+      width = 180
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "B: valign=bottom"
+      width = 180
+      height = 18
+      font_size = 10
+
+    # Column A (10 items)
+    [[widget.children.children]]
+    type = "VBox"
+    padding = 2
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-1"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-2"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-3"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-4"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-5"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-6"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-7"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-8"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-9"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "A-10"
+      width = 90
+      height = 18
+      font_size = 10
+
+    # Column B (1 item, valign=bottom)
+    [[widget.children.children]]
+    type = "VBox"
+    padding = 2
+    valign = "bottom"
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "B-1"
+      width = 90
+      height = 18
+      font_size = 10
+
+    # Column C (5 items)
+    [[widget.children.children]]
+    type = "VBox"
+    padding = 2
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "C-1"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "C-2"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "C-3"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "C-4"
+      width = 90
+      height = 18
+      font_size = 10
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "C-5"
+      width = 90
+      height = 18
+      font_size = 10
+
+  # HBox + VBox button demos side by side
+  [[widget.children]]
+  type = "HBox"
+  padding = 20
+  align = "top"
+
+    # HBox demo
+    [[widget.children.children]]
+    type = "VBox"
+    padding = 4
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "HBox (left to right):"
+      width = 200
+      height = 24
+
+      [[widget.children.children.children]]
+      type = "HBox"
+      id = "hbox_demo"
+      padding = 6
+
+        [[widget.children.children.children.children]]
+        type = "Button"
+        label = "H-1"
+        width = 80
+        height = 28
+
+        [[widget.children.children.children.children]]
+        type = "Button"
+        label = "H-2"
+        width = 80
+        height = 28
+
+        [[widget.children.children.children.children]]
+        type = "Button"
+        label = "H-3"
+        width = 80
+        height = 28
+
+    # VBox demo
+    [[widget.children.children]]
+    type = "VBox"
+    padding = 4
+
+      [[widget.children.children.children]]
+      type = "Label"
+      text = "VBox (bottom to top):"
+      width = 200
+      height = 24
+
+      [[widget.children.children.children]]
+      type = "VBox"
+      id = "vbox_demo"
+      padding = 6
+
+        [[widget.children.children.children.children]]
+        type = "Button"
+        label = "V-1"
+        width = 120
+        height = 28
+
+        [[widget.children.children.children.children]]
+        type = "Button"
+        label = "V-2"
+        width = 120
+        height = 28
+
+        [[widget.children.children.children.children]]
+        type = "Button"
+        label = "V-3"
+        width = 120
+        height = 28
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "page_root"
+text = "Page laid out with a VBox -- no manual y-offsets"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "hbox_demo"
+text = "HBox(padding=6, widgets=[3 buttons])\nLeft-to-right layout with shadow outline"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "vbox_demo"
+text = "VBox(padding=6, widgets=[3 buttons])\nBottom-to-top layout with shadow outline"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "nested"
+text = "HBox(widgets=[VBox(10), VBox(1), VBox(5)])\nNested layout with varying child counts"
+delay = 0.3

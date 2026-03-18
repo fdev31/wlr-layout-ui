@@ -1,0 +1,98 @@
+# Spacer page -- fill spacers vs fixed spacers in HBox layouts.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  # Top row: HBox with fill spacers (needs explicit width)
+  [[widget.children]]
+  type = "HBox"
+  id = "hbox_fill"
+  padding = 4
+  width = 760
+  height = 28
+
+    [[widget.children.children]]
+    type = "Button"
+    label = "Left"
+    width = 100
+    height = 28
+
+    [[widget.children.children]]
+    type = "Spacer"
+    label = "---"
+    width = 10
+    height = 28
+    fill = "width"
+
+    [[widget.children.children]]
+    type = "Button"
+    label = "Middle"
+    width = 100
+    height = 28
+
+    [[widget.children.children]]
+    type = "Spacer"
+    width = 10
+    height = 28
+    fill = "width"
+
+    [[widget.children.children]]
+    type = "Button"
+    label = "Right"
+    width = 100
+    height = 28
+
+  # Bottom row: same layout with fixed spacers (no fill)
+  [[widget.children]]
+  type = "HBox"
+  id = "hbox_fixed"
+  padding = 4
+
+    [[widget.children.children]]
+    type = "Button"
+    label = "Left"
+    width = 100
+    height = 28
+
+    [[widget.children.children]]
+    type = "Spacer"
+    label = "---"
+    width = 60
+    height = 28
+
+    [[widget.children.children]]
+    type = "Button"
+    label = "Middle"
+    width = 100
+    height = 28
+
+    [[widget.children.children]]
+    type = "Spacer"
+    width = 60
+    height = 28
+
+    [[widget.children.children]]
+    type = "Button"
+    label = "Right"
+    width = 100
+    height = 28
+
+  [[widget.children]]
+  type = "Label"
+  text = "Top: Spacers with fill='width' stretch to fill the HBox (explicit width).\nBottom: Same layout without fill (fixed 60px spacers)."
+  width = 600
+  height = 48
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "hbox_fill"
+text = "HBox(width=L.w) + Spacer(fill='width')\nSpacers stretch to fill remaining space"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "hbox_fixed"
+text = "HBox with fixed-size Spacers (no fill)\nSame layout, spacers stay at 60px"
+delay = 0.3

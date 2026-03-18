@@ -4,13 +4,13 @@ from .types import Rect, Screen
 
 config = {"hyprland": False}
 
-hex_re = re.compile("^[0-9x]+$")
+hex_re = re.compile(r"^[0-9x]+$")
 
 
 def get_size(width: int, height: int, scale: float, transform: int, glob_scale: float = 1):
     w, h = (
-        ((width / glob_scale) / scale),
-        ((height / glob_scale) / scale),
+        int((width / glob_scale) / scale),
+        int((height / glob_scale) / scale),
     )
     if transform in (1, 3, 5, 7):
         return (h, w)
@@ -37,17 +37,17 @@ def make_command(screens: list[Screen], rects: list[Rect], wayland=True) -> str:
 def make_command_hyprland(screens: list[Screen], rects: list[Rect]) -> str:
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
-    command = ['hyprctl --batch "']
+    keywords = []
 
     for screen, rect in zip(screens, screens_rect):
         if not screen.active:
-            command.append(f"keyword monitor {screen.uid},disable ;")
+            keywords.append(f"keyword monitor {screen.uid},disable")
             continue
-        command.append(
-            f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale:.6f},transform,{screen.transform} ;"
+        keywords.append(
+            f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale:.6f},transform,{screen.transform}"
         )
 
-    cmd = " ".join([*command, '"'])
+    cmd = 'hyprctl --batch "' + " ; ".join(keywords) + '"'
     return cmd
 
 
@@ -67,10 +67,6 @@ def make_command_legacy(screens: list[Screen], rects: list[Rect], wayland=False)
 
     cmd = " ".join(command)
     return cmd
-
-
-def brighten(color):
-    return tuple(min(255, c + 20) for c in color)
 
 
 def sorted_resolutions(modes):
@@ -96,6 +92,10 @@ def find_matching_mode(modes, res, freq):
     for mode in modes:
         if mode.width == res[0] and mode.height == res[1] and mode.freq == freq:
             return mode
+    # Fallback: same resolution, closest frequency
+    candidates = [m for m in modes if m.width == res[0] and m.height == res[1]]
+    if candidates:
+        return min(candidates, key=lambda m: abs(m.freq - freq))
 
 
 def compute_bounding_box(rects):

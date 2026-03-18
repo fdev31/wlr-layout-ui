@@ -1,0 +1,81 @@
+# TOML Loader page -- Settings panel loaded from TOML (same content as demo.py's _LOADER_TOML).
+
+[[widget]]
+type = "Label"
+text = "This entire UI is loaded from a TOML string:"
+width = 400
+height = 20
+font_size = 11
+
+[[widget]]
+type = "Panel"
+title = "Settings (from TOML)"
+padding = 6
+orientation = "vertical"
+
+  [[widget.children]]
+  type = "TextInput"
+  id = "name_input"
+  placeholder = "Enter your name..."
+  width = 280
+  height = 28
+  onsubmit = "on_name_submit"
+
+  [[widget.children]]
+  type = "Checkbox"
+  id = "dark_mode"
+  label = "Dark mode"
+  checked = false
+  width = 250
+  height = 28
+  onchange = "on_dark_mode"
+
+  [[widget.children]]
+  type = "Toggle"
+  label = "Notifications"
+  width = 200
+  height = 24
+  onchange = "on_notifications"
+
+  [[widget.children]]
+  type = "Slider"
+  id = "volume"
+  min_val = 0
+  max_val = 100
+  value = 60
+  width = 260
+  height = 24
+  onchange = "on_volume"
+
+  [[widget.children]]
+  type = "Separator"
+  orientation = "horizontal"
+  width = 260
+  height = 10
+
+  [[widget.children]]
+  type = "RadioGroup"
+  options = ["Low", "Medium", "High"]
+  selected_index = 1
+  width = 200
+  height = 72
+  onchange = "on_quality"
+  orientation = "vertical"
+
+  [[widget.children]]
+  type = "HBox"
+  padding = 4
+
+    [[widget.children.children]]
+    type = "Button"
+    label = "Apply"
+    width = 100
+    height = 28
+    action = "on_apply"
+
+    [[widget.children.children]]
+    type = "Button"
+    label = "Reset"
+    width = 100
+    height = 28
+    action = "on_reset"

@@ -1,0 +1,59 @@
+# Slider page -- two sliders (one with value label, one with custom style).
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "HBox"
+  padding = 20
+
+    [[widget.children.children]]
+    type = "Slider"
+    id = "slider_main"
+    min_val = 0
+    max_val = 100
+    value = 50
+    width = 400
+    height = 28
+    onchange = "on_slide"
+
+    [[widget.children.children]]
+    type = "Label"
+    id = "value_label"
+    text = "Value: 50"
+    width = 120
+    height = 28
+
+  [[widget.children]]
+  type = "Slider"
+  id = "slider_red"
+  min_val = -50
+  max_val = 50
+  value = 0
+  width = 400
+  height = 28
+
+    [widget.children.style]
+    text_color = [220, 220, 220, 255]
+    color = [70, 70, 70]
+    highlight = [200, 100, 100]
+
+  [[widget.children]]
+  type = "Label"
+  text = "Drag the handle to change the value. Second slider has custom red style."
+  width = 600
+  height = 24
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "slider_main"
+text = "Slider(0..100, value=50, onchange=...)\nTrack with draggable white circle handle"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "slider_red"
+text = "Slider(-50..50, style=Style(highlight=red))\nRed-tinted fill and track"
+delay = 0.3

@@ -1,0 +1,69 @@
+# ProgressBar page -- three progress bars and a controlling slider.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "ProgressBar"
+  id = "pb_static"
+  value = 75
+  show_text = true
+  width = 400
+  height = 24
+
+  [[widget.children]]
+  type = "ProgressBar"
+  id = "pb_dynamic"
+  value = 30
+  width = 400
+  height = 24
+
+  [[widget.children]]
+  type = "ProgressBar"
+  id = "pb_full"
+  value = 100
+  show_text = true
+  width = 400
+  height = 16
+
+  [[widget.children]]
+  type = "Slider"
+  id = "pb_slider"
+  min_val = 0
+  max_val = 100
+  value = 30
+  width = 400
+  height = 28
+  onchange = "on_pb_slide"
+
+  [[widget.children]]
+  type = "Label"
+  text = "Use the slider to control the middle bar. Top and bottom are static."
+  width = 600
+  height = 24
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "pb_static"
+text = "ProgressBar(value=75, show_text=True)\nFilled bar with '75%' text centered"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "pb_dynamic"
+text = "ProgressBar(value=30)\nPartially filled bar, no text"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "pb_full"
+text = "ProgressBar(value=100, show_text=True)\nFully filled, shorter height"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "pb_slider"
+text = "Slider controlling pb2\nDrag to update the middle bar"
+delay = 0.3

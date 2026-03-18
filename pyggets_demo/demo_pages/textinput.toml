@@ -1,0 +1,41 @@
+# TextInput page -- two text inputs and a result label.
+
+[[widget]]
+type = "VBox"
+padding = 10
+
+  [[widget.children]]
+  type = "TextInput"
+  id = "text_input1"
+  placeholder = "Type something here..."
+  width = 350
+  height = 28
+  onsubmit = "on_text_submit"
+
+  [[widget.children]]
+  type = "TextInput"
+  id = "text_input2"
+  placeholder = "Another input (no submit handler)"
+  text = "Pre-filled"
+  width = 350
+  height = 28
+
+  [[widget.children]]
+  type = "Label"
+  id = "result_label"
+  text = "Type and press Enter to submit"
+  width = 600
+  height = 24
+
+# Tooltips
+[[widget]]
+type = "Tooltip"
+target = "text_input1"
+text = "TextInput(placeholder=..., onsubmit=...)\nBordered field with blinking cursor when focused"
+delay = 0.3
+
+[[widget]]
+type = "Tooltip"
+target = "text_input2"
+text = "TextInput(text='Pre-filled')\nPre-populated editable field, click to focus"
+delay = 0.3
