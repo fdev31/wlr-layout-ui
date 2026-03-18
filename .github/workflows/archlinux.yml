@@ -1,0 +1,127 @@
+name: Arch Linux AUR tests
+
+on:
+  push:
+    branches: [main, 2.x]
+  pull_request:
+    branches: [main, 2.x]
+
+jobs:
+  aur-release:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm base-devel python python-build python-installer \
+            python-hatchling python-pyglet python-tomli python-tomli-w
+
+      - uses: actions/checkout@v4
+
+      - name: Prepare source tarball
+        run: |
+          version=$(grep '^version' pyproject.toml | head -n1 | sed 's/.*"\(.*\)"/\1/')
+          mkdir -p /tmp/build
+          tar czf "/tmp/build/wlr-layout-ui-${version}.tar.gz" \
+            --transform "s,^\\.,wlr-layout-ui-${version}," \
+            --exclude=.git .
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
+      - name: Write PKGBUILD
+        run: |
+          cat > /tmp/build/PKGBUILD << 'EOF'
+          pkgname=wlr-layout-ui
+          pkgrel=1
+          pkgdesc="GUI to configure your screens"
+          arch=(any)
+          license=('MIT')
+          depends=('python' 'python-pyglet' 'python-tomli-w' 'python-tomli')
+          makedepends=('python-build' 'python-installer' 'python-hatchling')
+          md5sums=('SKIP')
+
+          build() {
+            cd "$srcdir/${pkgname}-${pkgver}"
+            python -m build --wheel --no-isolation
+          }
+
+          package() {
+            cd "$srcdir/${pkgname}-${pkgver}"
+            python -m installer --destdir="$pkgdir" dist/*.whl
+            install -Dm644 "${srcdir}/${pkgname}-${pkgver}/files/wlr-layout-ui.desktop" \
+              "${pkgdir}/usr/share/applications/wlr-layout-ui.desktop"
+          }
+          EOF
+          # Inject version-dependent fields
+          sed -i "1a pkgver=${VERSION}" /tmp/build/PKGBUILD
+          sed -i "/^md5sums/a source=(\"wlr-layout-ui-${VERSION}.tar.gz\")" /tmp/build/PKGBUILD
+
+      - name: Build and install package
+        run: |
+          useradd -m builder
+          chown -R builder:builder /tmp/build
+          cd /tmp/build
+          su builder -c "makepkg --noconfirm --skipchecksums"
+          pacman -U --noconfirm /tmp/build/wlr-layout-ui-*.pkg.tar.zst
+
+      - name: Verify installation
+        run: wlrlui -h
+
+  aur-git:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm base-devel git python python-build python-installer \
+            python-hatchling python-pyglet python-tomli python-tomli-w
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare build directory
+        run: |
+          cp -a "$GITHUB_WORKSPACE" /tmp/wlr-layout-ui
+          mkdir -p /tmp/build
+          cat > /tmp/build/PKGBUILD << 'EOF'
+          pkgname=wlr-layout-ui-git
+          pkgver=0
+          pkgrel=1
+          pkgdesc="GUI to configure your screens"
+          arch=(any)
+          license=('MIT')
+          depends=('python' 'python-pyglet' 'python-tomli-w' 'python-tomli')
+          makedepends=('git' 'python-build' 'python-installer' 'python-hatchling')
+          provides=("${pkgname%-git}")
+          conflicts=("${pkgname%-git}")
+          source=("${pkgname%-git}::git+file:///tmp/wlr-layout-ui")
+          md5sums=('SKIP')
+
+          pkgver() {
+            cd "$srcdir/${pkgname%-git}"
+            printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+          }
+
+          build() {
+            cd "$srcdir/${pkgname%-git}"
+            python -m build --wheel --no-isolation
+          }
+
+          package() {
+            cd "$srcdir/${pkgname%-git}"
+            python -m installer --destdir="$pkgdir" dist/*.whl
+            install -Dm644 "${srcdir}/${pkgname%-git}/files/wlr-layout-ui.desktop" \
+              "${pkgdir}/usr/share/applications/wlr-layout-ui.desktop"
+          }
+          EOF
+
+      - name: Build and install package
+        run: |
+          useradd -m builder
+          chown -R builder:builder /tmp/build /tmp/wlr-layout-ui
+          cd /tmp/build
+          su builder -c "makepkg --noconfirm"
+          pacman -U --noconfirm /tmp/build/wlr-layout-ui-git-*.pkg.tar.zst
+
+      - name: Verify installation
+        run: wlrlui -h
