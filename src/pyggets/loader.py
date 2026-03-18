@@ -25,6 +25,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, fields
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 import tomli
 
@@ -156,10 +160,13 @@ def _parse_toml(toml_source: str | Path) -> dict:
 
     if source_path is not None:
         return tomli.loads(source_path.read_text(encoding="utf-8"))
+    if not isinstance(toml_source, str):
+        msg = f"Expected a TOML string or file path, got {type(toml_source)}"
+        raise TypeError(msg)
     return tomli.loads(toml_source)
 
 
-def _resolve_handler(name: str, controller: object | None, widget_desc: str) -> callable:
+def _resolve_handler(name: str, controller: object | None, widget_desc: str) -> Callable:  # type: ignore[type-arg]
     """Resolve a handler string to a method on the controller."""
     if controller is None:
         msg = f"Widget {widget_desc} references handler '{name}' but no controller was provided"
@@ -182,7 +189,7 @@ def _build_style(spec: dict, *, base: Style | None = None) -> Style:
                 kwargs[f.name] = tuple(val) if isinstance(val, list) else val
             else:
                 kwargs[f.name] = getattr(base, f.name)
-        return Style(**kwargs)
+        return Style(**kwargs)  # type: ignore[arg-type]
 
     # No base -- original behavior.
     kwargs = {}
@@ -190,7 +197,7 @@ def _build_style(spec: dict, *, base: Style | None = None) -> Style:
         if f.name in spec:
             val = spec[f.name]
             kwargs[f.name] = tuple(val) if isinstance(val, list) else val
-    return Style(**kwargs)
+    return Style(**kwargs)  # type: ignore[arg-type]
 
 
 def _build_rect(spec: dict) -> Rect:
@@ -563,7 +570,9 @@ def load_ui(
         if target_id and target_id in refs:
             wid = spec.get("id")
             if wid and wid in refs:
-                refs[wid].target = refs[target_id]
+                tooltip = refs[wid]
+                if isinstance(tooltip, Tooltip):
+                    tooltip.target = refs[target_id]
 
     return UIResult(widgets=widgets, refs=refs, window=window_spec, themes=themes)
 
@@ -602,7 +611,7 @@ def run_ui(result: UIResult) -> None:
 
     # Create window --------------------------------------------------------
     ws = result.window or WindowSpec()
-    window = pyglet.window.Window(ws.width, ws.height, ws.title, resizable=ws.resizable)
+    window = pyglet.window.Window(ws.width, ws.height, ws.title, resizable=ws.resizable)  # type: ignore[abstract]
 
     # The root widget is the first (and usually only) top-level widget.
     ui = result.widgets[0]
