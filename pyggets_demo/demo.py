@@ -1037,7 +1037,7 @@ class DemoApp(pyglet.window.Window):
         # Navigation buttons + theme dropdown
         self.btn_prev.draw(cursor)
         self.btn_next.draw(cursor)
-        if not self.theme_dropdown.expanded and self.theme_dropdown._expand_t <= 0:
+        if not self.theme_dropdown.expanded and self.theme_dropdown._expand.value <= 0:
             self.theme_dropdown.draw(cursor)
 
         # Status bar (just above the nav separator) -- drawn before overlays
@@ -1068,7 +1068,7 @@ class DemoApp(pyglet.window.Window):
                 modals.append(w)
             elif isinstance(w, Tooltip):
                 tooltips.append(w)
-            elif isinstance(w, Dropdown) and (w.expanded or w._expand_t > 0):
+            elif isinstance(w, Dropdown) and (w.expanded or w._expand.value > 0):
                 overlays.append(w)
             else:
                 w.draw(cursor)
@@ -1076,7 +1076,7 @@ class DemoApp(pyglet.window.Window):
             w.draw(cursor)
 
         # Theme dropdown drawn after page widgets when expanded/collapsing
-        if self.theme_dropdown.expanded or self.theme_dropdown._expand_t > 0:
+        if self.theme_dropdown.expanded or self.theme_dropdown._expand.value > 0:
             self.theme_dropdown.draw(cursor)
 
         for m in modals:

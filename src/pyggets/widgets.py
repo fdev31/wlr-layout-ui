@@ -47,6 +47,83 @@ class _TrackedProperty:
                 obj.invalidate()
 
 
+class _AnimatedFloat:
+    """A float value that smoothly interpolates toward a target each frame.
+
+    Create via :meth:`Widget._anim` inside ``__init__``.  Each call to
+    :meth:`advance` moves the current value one frame closer to *target*
+    using exponential ease-out (same formula as rect animation).
+
+    Attributes:
+        value: The current (interpolated) display value.
+        target: The value to animate toward.
+        snap: When ``abs(target - value) < snap``, snap to the target.
+    """
+
+    __slots__ = ("_speed", "snap", "target", "value")
+
+    def __init__(self, initial, speed, snap=0.001):
+        self.value = float(initial)
+        self.target = float(initial)
+        self.snap = snap
+        self._speed = speed
+
+    def advance(self):
+        """Move *value* one frame toward *target*. Return True if still animating."""
+        if abs(self.target - self.value) < self.snap:
+            if self.value != self.target:
+                self.value = self.target
+                return True
+            return False
+        self.value = (self.value * self._speed + self.target) / (self._speed + 1)
+        return True
+
+    def snap_to(self, val):
+        """Immediately set both *value* and *target* (skip animation)."""
+        self.value = float(val)
+        self.target = float(val)
+
+
+class _AnimatedColor:
+    """An RGB color tuple that smoothly interpolates toward a target each frame.
+
+    Create via :meth:`Widget._anim_color` inside ``__init__``.  Per-channel
+    interpolation with ``snap=0.5`` (sub-pixel precision for 0-255 values).
+
+    Attributes:
+        value: The current (interpolated) RGB tuple of floats.
+        target: The RGB tuple to animate toward.
+    """
+
+    __slots__ = ("_speed", "target", "value")
+
+    def __init__(self, initial, speed):
+        self.value = tuple(float(c) for c in initial)
+        self.target = tuple(float(c) for c in initial)
+        self._speed = speed
+
+    def advance(self):
+        """Move *value* one frame toward *target*. Return True if still animating."""
+        s = self._speed
+        changed = False
+        new = []
+        for cv, tv in zip(self.value, self.target, strict=False):
+            if abs(tv - cv) < 0.5:
+                new.append(tv)
+                if cv != tv:
+                    changed = True
+            else:
+                new.append((cv * s + tv) / (s + 1))
+                changed = True
+        self.value = tuple(new)
+        return changed
+
+    @property
+    def ints(self):
+        """Return the current color as an integer RGB tuple for rendering."""
+        return tuple(int(c) for c in self.value)
+
+
 class Widget:
     """Base class for all pyggets widgets.
 
@@ -64,6 +141,8 @@ class Widget:
         _dirty: Whether the widget needs to be re-rendered.
         _parent: The parent container widget, if any.
         _hovered: Whether the mouse cursor is currently over this widget.
+        _animations: Registry of :class:`_AnimatedFloat` / :class:`_AnimatedColor`
+            instances, keyed by name.
     """
 
     ANIMATION_SPEED = 8  # frames to approach target (higher = slower)
@@ -80,6 +159,7 @@ class Widget:
         self._dirty = True
         self._parent = None
         self._hovered = False
+        self._animations: dict[str, _AnimatedFloat | _AnimatedColor] = {}
 
     @property
     def style(self):
@@ -118,6 +198,48 @@ class Widget:
         if was != self._hovered:
             self.invalidate()
         return self._hovered
+
+    # -- Animation helpers --------------------------------------------------
+
+    def _anim(self, name, initial, snap=0.001):
+        """Register and return a new :class:`_AnimatedFloat`.
+
+        Call in ``__init__`` to create a named scalar animation::
+
+            self._expand = self._anim("expand", 0.0)
+
+        The animation is automatically advanced by :meth:`_advance_animations`.
+        """
+        a = _AnimatedFloat(initial, speed=self.ANIMATION_SPEED, snap=snap)
+        self._animations[name] = a
+        return a
+
+    def _anim_color(self, name, initial):
+        """Register and return a new :class:`_AnimatedColor`.
+
+        Call in ``__init__`` to create a named color animation::
+
+            self._track_col = self._anim_color("track_col", style.color)
+
+        The animation is automatically advanced by :meth:`_advance_animations`.
+        """
+        a = _AnimatedColor(initial, speed=self.ANIMATION_SPEED)
+        self._animations[name] = a
+        return a
+
+    def _advance_animations(self):
+        """Advance all registered animations one frame.
+
+        Call at the top of ``draw()`` before reading animation values.
+        Returns True if any animation is still in progress.
+        """
+        still_going = False
+        for a in self._animations.values():
+            if a.advance():
+                still_going = True
+        return still_going
+
+    # -- Alignment -----------------------------------------------------------
 
     def set_alignment(self, vert="center", horiz="center"):
         """Set the widget's alignment within its parent."""
@@ -171,20 +293,6 @@ class Widget:
             self.target_rect.width = width
         if height is not None:
             self.target_rect.height = height
-
-    def _lerp(self, current, target, snap=0.001):
-        """Advance a float value one frame toward *target* (exponential ease-out).
-
-        Uses the same speed constant as rect animation.  Suitable for
-        normalised 0-1 ratios, pixel positions, or color channel values.
-        """
-        if abs(target - current) < snap:
-            return target
-        return (current * self.ANIMATION_SPEED + target) / (self.ANIMATION_SPEED + 1)
-
-    def _lerp_color(self, current, target):
-        """Advance an RGB tuple one frame toward *target*."""
-        return tuple(self._lerp(c, t, snap=0.5) for c, t in zip(current, target, strict=False))
 
     def _animation_step(self):
         """Advance rect one frame toward target_rect.
@@ -305,7 +413,7 @@ class Dropdown(Widget):
         self.options = options
         self.selected_index = 0
         self.expanded = False
-        self._expand_t = 0.0
+        self._expand = self._anim("expand", 0.0)
         self.label = label
         self.onchange = onchange
         self.radius = get_default_theme().widget_radius
@@ -318,7 +426,7 @@ class Dropdown(Widget):
 
     def contains(self, x, y):
         if self.expanded:
-            visible_h = self._expand_t * self.rect.height * len(self.options)
+            visible_h = self._expand.value * self.rect.height * len(self.options)
             if self.invert:
                 return self.rect.x < x < self.rect.right and self.rect.y < y < self.rect.y + self.rect.height + visible_h
             else:
@@ -357,9 +465,9 @@ class Dropdown(Widget):
             )
 
     def draw(self, cursor):
-        # Animate expand/collapse fraction
-        target_t = 1.0 if self.expanded else 0.0
-        self._expand_t = self._lerp(self._expand_t, target_t)
+        # Set animation targets and advance
+        self._expand.target = 1.0 if self.expanded else 0.0
+        self._advance_animations()
 
         color = self.style.color
 
@@ -371,7 +479,7 @@ class Dropdown(Widget):
         r.draw()
         rect = self.rect
 
-        if self._expand_t > 0:
+        if self._expand.value > 0:
             # Fill rounded corners at the junction between button and options
             if self.invert:
                 # Options expand above: fill top corners of button
@@ -436,9 +544,9 @@ class Dropdown(Widget):
         font_name = get_default_theme().font_name
 
         # Expanded options (drawn during expand AND collapse animation)
-        if self._expand_t > 0:
+        if self._expand.value > 0:
             total_options_h = self.rect.height * len(self.options)
-            visible_h = int(self._expand_t * total_options_h)
+            visible_h = int(self._expand.value * total_options_h)
 
             # Compute reveal scissor region
             if self.invert:
@@ -803,7 +911,7 @@ class Checkbox(Widget):
         self.onchange = onchange
         self._box_size = min(rect.height, rect.width, 20)
         # Animation state
-        self._check_t = 1.0 if checked else 0.0
+        self._check = self._anim("check", 1.0 if checked else 0.0)
 
         # Owned pyglet primitives for the animated check indicator
         self._check_shape = Rectangle(0, 0, 1, 1, color=self.style.highlight)
@@ -841,14 +949,14 @@ class Checkbox(Widget):
         makeRoundedRectangle(box, get_default_theme().widget_radius, outline_color).draw()
 
         # Animate check indicator scale (0.0 = hidden, 1.0 = full size)
-        target_t = 1.0 if self.checked else 0.0
-        self._check_t = self._lerp(self._check_t, target_t)
+        self._check.target = 1.0 if self.checked else 0.0
+        self._advance_animations()
 
-        # Draw check indicator (inner filled square, scaled by _check_t)
-        if self._check_t > 0.01:
+        # Draw check indicator (inner filled square, scaled by _check.value)
+        if self._check.value > 0.01:
             full_margin = max(3, self._box_size // 5)
             # Invert t: margin shrinks from center as t grows
-            margin = int(full_margin + (1.0 - self._check_t) * (self._box_size // 2 - full_margin))
+            margin = int(full_margin + (1.0 - self._check.value) * (self._box_size // 2 - full_margin))
             ix = box.x + margin
             iy = box.y + margin
             iw = box.width - 2 * margin
@@ -892,17 +1000,23 @@ class Toggle(Widget):
         self._track_width = rect.height  # pill width matches height
         self._knob_radius = self._track_height // 2
         # Animation state
-        self._knob_t = 1.0 if toggled else 0.0
-        self._track_color = tuple(float(c) for c in (self.style.highlight if toggled else self.style.color))
-        self._knob_color_anim = tuple(float(c) for c in (self.style.knob_color if toggled else (160, 160, 160)))
+        self._knob = self._anim("knob", 1.0 if toggled else 0.0)
+        self._track_col = self._anim_color(
+            "track_col",
+            self.style.highlight if toggled else self.style.color,
+        )
+        self._knob_col = self._anim_color(
+            "knob_col",
+            self.style.knob_color if toggled else (160, 160, 160),
+        )
 
         # Owned pyglet primitives — created once, updated in-place each frame
         r = self._knob_radius
-        init_color = tuple(int(c) for c in self._track_color)
+        init_color = self._track_col.ints
         self._track_left = Circle(0, 0, r, color=init_color)
         self._track_right = Circle(0, 0, r, color=init_color)
         self._track_fill = Rectangle(0, 0, max(1, self._track_width - 2 * r), self._track_height, color=init_color)
-        knob_init = tuple(int(c) for c in self._knob_color_anim)
+        knob_init = self._knob_col.ints
         self._knob_shape = Circle(0, 0, max(1, r - 2), color=knob_init)
         self._label_shape = None
         if self.label:
@@ -923,14 +1037,13 @@ class Toggle(Widget):
         is_hovered = self.rect.contains(*cursor)
         track_y = self.rect.y + (self.rect.height - self._track_height) // 2
 
-        # Animate knob position (0.0 = off/left, 1.0 = on/right)
-        target_t = 1.0 if self.toggled else 0.0
-        self._knob_t = self._lerp(self._knob_t, target_t)
+        # Set animation targets and advance all at once
+        self._knob.target = 1.0 if self.toggled else 0.0
+        self._track_col.target = self.style.highlight if self.toggled else self.style.color
+        self._knob_col.target = self.style.knob_color if self.toggled else (160, 160, 160)
+        self._advance_animations()
 
-        # Animate track color
-        target_color = self.style.highlight if self.toggled else self.style.color
-        self._track_color = self._lerp_color(self._track_color, target_color)
-        track_color = tuple(int(c) for c in self._track_color)
+        track_color = self._track_col.ints
         if is_hovered:
             track_color = brighten(track_color)
 
@@ -952,12 +1065,10 @@ class Toggle(Widget):
         self._track_fill.draw()
 
         # Knob — interpolate x between off and on positions
-        target_knob = self.style.knob_color if self.toggled else (160, 160, 160)
-        self._knob_color_anim = self._lerp_color(self._knob_color_anim, target_knob)
-        knob_color = tuple(int(c) for c in self._knob_color_anim)
+        knob_color = self._knob_col.ints
         off_x = self.rect.x + r
         on_x = self.rect.x + self._track_width - r
-        knob_x = int(off_x + self._knob_t * (on_x - off_x))
+        knob_x = int(off_x + self._knob.value * (on_x - off_x))
         self._knob_shape.x = knob_x
         self._knob_shape.y = track_y + r
         self._knob_shape.color = knob_color
@@ -989,7 +1100,7 @@ class ProgressBar(Widget):
         self.show_text = show_text
         self.radius = get_default_theme().widget_radius
         # Animation state
-        self._display_ratio = value / max_value if max_value else 0.0
+        self._ratio = self._anim("ratio", value / max_value if max_value else 0.0)
 
         # Owned primitives for the animated fill bar (avoids cache thrash)
         self._fill_rect = Rect(rect.x, rect.y, 1, rect.height)
@@ -1023,12 +1134,12 @@ class ProgressBar(Widget):
         makeRoundedRectangle(self.rect, self.radius, self.style.color).draw()
 
         # Animate fill ratio
-        target_ratio = min(self.value / self.max_value, 1.0) if self.max_value > 0 else 0.0
-        self._display_ratio = self._lerp(self._display_ratio, target_ratio)
+        self._ratio.target = min(self.value / self.max_value, 1.0) if self.max_value > 0 else 0.0
+        self._advance_animations()
 
         # Filled portion — update owned shape in place
-        if self._display_ratio > 0.005:
-            fill_width = max(int(self.rect.width * self._display_ratio), self.radius * 2)
+        if self._ratio.value > 0.005:
+            fill_width = max(int(self.rect.width * self._ratio.value), self.radius * 2)
             self._fill_rect.x = self.rect.x
             self._fill_rect.y = self.rect.y
             self._fill_rect.width = fill_width
@@ -1064,7 +1175,7 @@ class RadioGroup(Widget):
         else:
             self._radio_radius = 8
         # Animation state: per-option dot scale (0.0 = hidden, 1.0 = full)
-        self._dot_t = [1.0 if i == selected_index else 0.0 for i in range(len(self.options))]
+        self._dots = [self._anim(f"dot_{i}", 1.0 if i == selected_index else 0.0) for i in range(len(self.options))]
 
     def __repr__(self):
         sel = self.options[self.selected_index] if self.options else None
@@ -1098,6 +1209,11 @@ class RadioGroup(Widget):
         r = self._radio_radius
         font_name = get_default_theme().font_name
 
+        # Set all dot targets, then advance all at once
+        for i in range(len(self.options)):
+            self._dots[i].target = 1.0 if i == self.selected_index else 0.0
+        self._advance_animations()
+
         for i, item_rect in self._item_rects():
             cy = item_rect.y + item_rect.height // 2
             cx = item_rect.x + r + 2
@@ -1105,13 +1221,9 @@ class RadioGroup(Widget):
             # Outer circle (outline)
             makeCircle(cx, cy, r, color=self.style.color).draw()
 
-            # Animate inner dot scale
-            target_t = 1.0 if i == self.selected_index else 0.0
-            self._dot_t[i] = self._lerp(self._dot_t[i], target_t)
-
-            # Inner circle (scaled by _dot_t)
-            if self._dot_t[i] > 0.01:
-                inner_r = max(1, int((r - 3) * self._dot_t[i]))
+            # Inner circle (scaled by dot animation value)
+            if self._dots[i].value > 0.01:
+                inner_r = max(1, int((r - 3) * self._dots[i].value))
                 makeCircle(cx, cy, inner_r, color=self.style.highlight).draw()
 
             # Label
@@ -1153,7 +1265,7 @@ class Slider(Widget):
         self._handle_radius = min(rect.height // 2, 8)
         self._track_height = max(rect.height // 4, 2)
         # Animation state
-        self._display_value = float(value)
+        self._display = self._anim("display", float(value), snap=0.5)
 
         # Owned pyglet primitives
         self._track_bg = Rectangle(0, 0, max(1, rect.width), self._track_height, color=self.style.color)
@@ -1196,11 +1308,12 @@ class Slider(Widget):
 
         # Animate display value (snap immediately during drag)
         if self._dragging:
-            self._display_value = float(self.value)
+            self._display.snap_to(float(self.value))
         else:
-            self._display_value = self._lerp(self._display_value, float(self.value), snap=0.5)
+            self._display.target = float(self.value)
+            self._advance_animations()
 
-        handle_x = self._value_to_x(self._display_value)
+        handle_x = self._value_to_x(self._display.value)
 
         # Background track
         self._track_bg.x = self.rect.x
