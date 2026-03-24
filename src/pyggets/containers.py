@@ -1,8 +1,26 @@
 """Layout container widgets for pyggets."""
 
+from __future__ import annotations
+
+import logging
 from dataclasses import replace
 
 import pyglet
+from pyglet.gl import (
+    GL_BLEND,
+    GL_COLOR_BUFFER_BIT,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+    glBlendFunc,
+    glClear,
+    glClearColor,
+    glDisable,
+    glEnable,
+    glViewport,
+)
+from pyglet.image import Texture
+from pyglet.image.buffer import Framebuffer
+from pyglet.math import Mat4
 
 from .color import brighten
 from .geometry import Rect
@@ -11,7 +29,189 @@ from .shapes import makeRoundedRectangle
 from .theme import get_default_theme
 from .widgets import Widget, _TrackedProperty
 
+_log = logging.getLogger(__name__)
+
 _DEPTH_THRESHOLD = 2
+
+
+# ---------------------------------------------------------------------------
+# FBO surface cache
+# ---------------------------------------------------------------------------
+
+
+def _get_window():
+    """Return the active pyglet Window (first in ``pyglet.app.windows``).
+
+    Returns ``None`` if no window exists yet (e.g. during tests).
+    """
+    for w in pyglet.app.windows:
+        return w
+    return None
+
+
+class _FBOCache:
+    """Off-screen framebuffer cache for a container widget.
+
+    Renders the container's children into a texture once while the subtree
+    is clean, then blits the cached texture on subsequent frames to avoid
+    redundant draw calls.
+
+    Usage inside a container's ``draw()``::
+
+        if self._fbo_cache.can_blit():
+            self._fbo_cache.blit()
+        else:
+            self._fbo_cache.begin(self.rect)
+            # ... draw children normally ...
+            self._fbo_cache.end()
+            self._fbo_cache.blit()
+
+    The cache is invalidated (via :meth:`invalidate`) whenever the
+    container's ``_dirty`` flag is set, or when the container's rect
+    changes size.
+    """
+
+    __slots__ = ("_fbo", "_rect_snap", "_saved_proj", "_saved_viewport", "_tex", "_th", "_tw", "_valid")
+
+    def __init__(self):
+        self._fbo: Framebuffer | None = None
+        self._tex: Texture | None = None
+        self._tw = 0
+        self._th = 0
+        self._valid = False
+        self._saved_proj = None
+        self._saved_viewport = None
+        # Snapshot of the container rect when we last rendered into the FBO.
+        # If the rect moves (but doesn't resize), we just need to re-blit at
+        # the new position — no re-render needed.
+        self._rect_snap: tuple[int, int, int, int] | None = None
+
+    # -- lifecycle --
+
+    def _ensure(self, width: int, height: int) -> bool:
+        """Ensure the FBO/texture exist at the required size.
+
+        Returns True if a new FBO was allocated (caller must re-render).
+        """
+        w = max(1, int(width))
+        h = max(1, int(height))
+        if self._fbo is not None and self._tw == w and self._th == h:
+            return False
+        self._destroy()
+        self._tex = Texture.create(w, h)
+        self._fbo = Framebuffer()
+        self._fbo.attach_texture(self._tex)
+        if not self._fbo.is_complete:
+            _log.warning("FBO incomplete (%dx%d), disabling cache", w, h)
+            self._destroy()
+            return False
+        self._tw, self._th = w, h
+        self._valid = False
+        return True
+
+    def _destroy(self):
+        if self._fbo is not None:
+            self._fbo.delete()
+            self._fbo = None
+        if self._tex is not None:
+            self._tex.delete()
+            self._tex = None
+        self._tw = self._th = 0
+        self._valid = False
+        self._rect_snap = None
+
+    def delete(self):
+        """Release GL resources.  Safe to call multiple times."""
+        self._destroy()
+
+    # -- render cycle --
+
+    def can_blit(self) -> bool:
+        """Return True if the cached texture is still valid and can be blitted."""
+        return self._valid and self._fbo is not None
+
+    def invalidate(self):
+        """Mark the cached surface as stale (needs re-render)."""
+        self._valid = False
+
+    def begin(self, rect: Rect) -> bool:
+        """Begin rendering into the off-screen framebuffer.
+
+        Sets up the FBO, viewport, and projection so that child widgets
+        can draw at their normal absolute screen coordinates while the
+        output goes into the FBO texture.
+
+        Returns True if the FBO is ready; False if FBO setup failed
+        (caller should fall back to direct rendering).
+        """
+        window = _get_window()
+        if window is None:
+            return False
+
+        self._ensure(rect.width, rect.height)
+        if self._fbo is None:
+            return False
+
+        # Save window state
+        self._saved_proj = window.projection
+        self._saved_viewport = window.viewport
+
+        # Bind FBO
+        self._fbo.bind()
+
+        # Set viewport to FBO size
+        glViewport(0, 0, self._tw, self._th)
+
+        # Set projection so that absolute coords (rect.x .. rect.x+w,
+        # rect.y .. rect.y+h) map into the FBO's (0,0)..(w,h) viewport.
+        window.projection = Mat4.orthogonal_projection(
+            float(rect.x),
+            float(rect.x + rect.width),
+            float(rect.y),
+            float(rect.y + rect.height),
+            -8192,
+            8192,
+        )
+
+        # Clear to transparent
+        glClearColor(0.0, 0.0, 0.0, 0.0)
+        glClear(GL_COLOR_BUFFER_BIT)
+
+        self._rect_snap = (rect.x, rect.y, rect.width, rect.height)
+        return True
+
+    def end(self):
+        """Finish rendering into the FBO and restore window state."""
+        window = _get_window()
+        if window is None:
+            return
+
+        self._fbo.unbind()
+
+        # Restore window state
+        window.projection = self._saved_proj
+        vp = self._saved_viewport
+        glViewport(int(vp[0]), int(vp[1]), int(vp[2]), int(vp[3]))
+
+        self._valid = True
+
+    def blit(self, rect: Rect | None = None):
+        """Blit the cached texture to the screen at the container's position.
+
+        If *rect* is provided, uses its x/y for the blit position (allows
+        the container to move without re-rendering the FBO contents).
+        """
+        if self._tex is None or self._rect_snap is None:
+            return
+        if rect is not None:
+            x, y = rect.x, rect.y
+        else:
+            x, y = self._rect_snap[0], self._rect_snap[1]
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self._tex.blit(x, y)
+        glDisable(GL_BLEND)
 
 
 # -- Shared layout computation functions --
@@ -85,9 +285,16 @@ def _layout_vertical(widgets, container_rect, padding, totalpadding):
 
 
 class _Box(Widget):
-    """Abstract base class for box layout containers."""
+    """Abstract base class for box layout containers.
 
-    def __init__(self, rect=None, padding=4, widgets=None, align=None):
+    Parameters:
+        cached: If True, the container renders its children into an
+            off-screen FBO and blits the cached texture on subsequent
+            frames when the subtree is clean.  This can dramatically
+            reduce GL draw calls for large, mostly-static widget trees.
+    """
+
+    def __init__(self, rect=None, padding=4, widgets=None, align=None, cached=False):
         if widgets is None:
             widgets = []
         super().__init__(rect or Rect(0, 0, 0, 0), None)
@@ -95,6 +302,8 @@ class _Box(Widget):
         self.align = align
         self._depth = 0
         self._needs_layout = True
+        self._cached = cached
+        self._fbo_cache: _FBOCache | None = _FBOCache() if cached else None
         self.rect.width = self.totalpadding
         self.rect.height = self.totalpadding
         self.widgets = []
@@ -130,6 +339,8 @@ class _Box(Widget):
     def invalidate(self):
         """Mark as dirty and needing re-layout."""
         self._needs_layout = True
+        if self._fbo_cache is not None:
+            self._fbo_cache.invalidate()
         super().invalidate()
 
     def unfocus(self):
@@ -170,10 +381,54 @@ class _Box(Widget):
         """Compute child positions.  Subclasses must override."""
         self._needs_layout = False
 
-    def draw(self, cursor):
+    def _subtree_animating(self):
+        """Return True if any widget in this subtree has active animations."""
+        if self._is_animating():
+            return True
+        for w in self.widgets:
+            if isinstance(w, _Box):
+                if w._subtree_animating():
+                    return True
+            elif w._is_animating():
+                return True
+        return False
+
+    def _draw_contents(self, cursor):
+        """Draw container background and children.
+
+        Subclasses override this instead of :meth:`draw` so that the
+        FBO caching layer in :meth:`draw` can wrap the entire output.
+        """
         self.draw_shadow(0, 0, radius=0)
         if self._needs_layout:
             self.layout()
+        for w in self.widgets:
+            self._draw_child(w, cursor)
+
+    def draw(self, cursor):
+        fbo = self._fbo_cache
+        if fbo is None:
+            # No caching — draw directly (the old path).
+            self._draw_contents(cursor)
+            self._dirty = False
+            return
+
+        # --- FBO-cached path ---
+        # Can we reuse the cached surface?
+        if fbo.can_blit() and not self._dirty and not self._subtree_animating():
+            fbo.blit(self.rect)
+            return
+
+        # Need to (re-)render into the FBO.
+        if fbo.begin(self.rect):
+            self._draw_contents(cursor)
+            fbo.end()
+            self._dirty = False
+            fbo.blit(self.rect)
+        else:
+            # FBO setup failed — fall back to direct rendering.
+            self._draw_contents(cursor)
+            self._dirty = False
 
     def _register_child(self, widget):
         """Track nesting depth and parent reference for child widgets."""
@@ -223,11 +478,6 @@ class HBox(_Box):
             w.valign = saved
         self._needs_layout = False
 
-    def draw(self, cursor):
-        super().draw(cursor)
-        for w in self.widgets:
-            self._draw_child(w, cursor)
-
 
 class VBox(_Box):
     """Vertical box layout container. Children are placed bottom-to-top."""
@@ -254,11 +504,6 @@ class VBox(_Box):
             w.halign = saved
         self._needs_layout = False
 
-    def draw(self, cursor):
-        super().draw(cursor)
-        for w in self.widgets:
-            self._draw_child(w, cursor)
-
 
 class Panel(_Box):
     """A titled container with a visible border.
@@ -267,11 +512,11 @@ class Panel(_Box):
     with an optional title drawn at the top.
     """
 
-    def __init__(self, title="", padding=4, widgets=None, style=None, orientation="vertical"):
+    def __init__(self, title="", padding=4, widgets=None, style=None, orientation="vertical", cached=False):
         self._title = title
         self._orientation = orientation
         self._title_height = 22 if title else 0
-        super().__init__(padding=padding, widgets=widgets)
+        super().__init__(padding=padding, widgets=widgets, cached=cached)
         if style:
             self.style = style
         self.radius = get_default_theme().widget_radius
@@ -316,7 +561,7 @@ class Panel(_Box):
             _layout_horizontal(self.widgets, layout_rect, self.padding, self.totalpadding)
         self._needs_layout = False
 
-    def draw(self, cursor):
+    def _draw_contents(self, cursor):
         # Bordered background
         is_hovered = self.rect.contains(*cursor)
         bg_color = brighten(self.style.color, 5) if is_hovered else self.style.color

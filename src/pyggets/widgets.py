@@ -239,6 +239,14 @@ class Widget:
                 still_going = True
         return still_going
 
+    def _is_animating(self):
+        """Return True if this widget has any in-progress animations.
+
+        Does **not** advance them — use for read-only queries (e.g. the
+        FBO cache needs to know if the subtree is still moving).
+        """
+        return any(a.value != a.target for a in self._animations.values())
+
     # -- Alignment -----------------------------------------------------------
 
     def set_alignment(self, vert="center", horiz="center"):
