@@ -1,25 +1,31 @@
 """Cached factory functions for pyglet drawing primitives."""
 
-from functools import cache
+from functools import lru_cache
 
 import pyglet
 from pyglet.shapes import Circle, Rectangle
 from pyglet.text import Label
 
+# Max entries for shape/label caches.  High enough to cover a typical UI
+# frame without thrashing, low enough to bound memory during animations
+# where colour/position values change every frame.
+_SHAPE_CACHE_SIZE = 512
+_LABEL_CACHE_SIZE = 256
 
-@cache
+
+@lru_cache(maxsize=_SHAPE_CACHE_SIZE)
 def makeCircle(x, y, r, color):
     """Create a cached pyglet Circle."""
     return Circle(x, y, r, color=color)
 
 
-@cache
+@lru_cache(maxsize=_SHAPE_CACHE_SIZE)
 def makeRectangle(x, y, w, h, color):
     """Create a cached pyglet Rectangle."""
     return Rectangle(x, y, w, h, color=color)
 
 
-@cache
+@lru_cache(maxsize=_LABEL_CACHE_SIZE)
 def makeLabel(text, x, y, color=None, **kw):  # noqa: ANN003
     """Create a cached pyglet Label."""
     if color is None:
@@ -27,13 +33,13 @@ def makeLabel(text, x, y, color=None, **kw):  # noqa: ANN003
     return Label(text, x=x, y=y, color=color, **kw)
 
 
-@cache
+@lru_cache(maxsize=None)
 def _loadImage(path):
     """Load and cache a pyglet image from a file path."""
     return pyglet.image.load(path)
 
 
-@cache
+@lru_cache(maxsize=_SHAPE_CACHE_SIZE)
 def makeSprite(path, x, y, width=None, height=None):
     """Create a cached pyglet Sprite from an image file.
 

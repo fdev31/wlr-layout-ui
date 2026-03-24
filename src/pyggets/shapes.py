@@ -1,11 +1,13 @@
 """Rounded rectangle shape for pyggets widgets."""
 
-from functools import cache
+from functools import lru_cache
 
 from .primitives import makeCircle, makeRectangle
 
+_SHAPE_CACHE_SIZE = 512
 
-@cache
+
+@lru_cache(maxsize=_SHAPE_CACHE_SIZE)
 def makeRoundedRectangle(rect, radius, color):
     """Create a cached RoundedRectangle."""
     return RoundedRectangle(rect, radius, color)
