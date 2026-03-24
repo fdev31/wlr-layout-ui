@@ -356,6 +356,18 @@ class UI(pyglet.window.Window):
         self._start_screenshot_worker()
 
     # Layout operations & snapping code {{{
+
+    # Attraction weight multipliers for snap distance sorting.
+    # Same-type reference-point pairs (e.g. left/left, center/center) get a
+    # reduced effective distance so they "attract" more strongly.
+    #  - Both axes match (e.g. topleft↔topleft): strongest attraction
+    #  - One axis matches (e.g. topleft↔bottomleft, both "left"): moderate
+    #  - No match: no bonus (weight = 1.0)
+    #  - Corner↔corner with no shared axis (point-touch only): penalty
+    SNAP_WEIGHT_BOTH = 0.25
+    SNAP_WEIGHT_SINGLE = 0.5
+    SNAP_PENALTY_CORNER = 2.0
+
     def center_layout(self, immediate=False):
         """Center the layout in the window."""
         all_rects = [screen.target_rect for screen in self.gui_screens]
@@ -381,25 +393,35 @@ class UI(pyglet.window.Window):
 
     @staticmethod
     def _ref_points(rect) -> list[tuple]:
-        """Return 8 reference points for magnet snapping: 4 corners + 4 edge midpoints."""
+        """Return 8 reference points with semantic labels for magnet snapping.
+
+        Each entry is ``((x, y), (x_type, y_type))`` where ``x_type`` /
+        ``y_type`` identify which edge or centre the point represents on each
+        axis.  Same-type pairs (e.g. left/left) are given higher attraction
+        priority than cross-type pairs (e.g. left/centre_x).
+        """
+        cx = rect.x + rect.width / 2
+        cy = rect.y + rect.height / 2
         return [
-            rect.topleft,
-            rect.topright,
-            rect.bottomright,
-            rect.bottomleft,
-            (rect.x + rect.width / 2, rect.y),
-            (rect.x + rect.width / 2, rect.y + rect.height),
-            (rect.x, rect.y + rect.height / 2),
-            (rect.x + rect.width, rect.y + rect.height / 2),
+            (rect.topleft, ("left", "top")),
+            (rect.topright, ("right", "top")),
+            (rect.bottomright, ("right", "bottom")),
+            (rect.bottomleft, ("left", "bottom")),
+            ((cx, rect.y), ("center_x", "bottom")),
+            ((cx, rect.y + rect.height), ("center_x", "top")),
+            ((rect.x, cy), ("left", "center_y")),
+            ((rect.x + rect.width, cy), ("right", "center_y")),
         ]
 
     def _snap_to_best_non_overlapping(self, active, candidates):
         """Find the closest anchor-point pair that doesn't cause overlap, and apply it.
 
-        Collects all (distance, translation) pairs between the active screen's
-        reference points and those of every candidate neighbor, sorted by
-        distance.  The first translation that does not cause the active screen
-        to overlap *any* other screen is applied.
+        Collects all (weighted_distance, translation) pairs between the active
+        screen's reference points and those of every candidate neighbor, sorted
+        by weighted distance.  Same-type reference points (e.g. left↔left,
+        center↔center) receive a lower effective distance so they attract more
+        strongly than cross-type pairs.  The first translation that does not
+        cause the active screen to overlap *any* other screen is applied.
 
         Args:
             active: the GuiScreen being moved.
@@ -408,19 +430,36 @@ class UI(pyglet.window.Window):
         ar = active.target_rect
         active_coords = self._ref_points(ar)
 
-        # Collect all candidate pairs: (distance, dx, dy)
+        # Collect all candidate pairs: (weighted_distance, dx, dy)
         pairs: list[tuple[float, float, float]] = []
         for other in candidates:
             orect = other.target_rect
             other_coords = self._ref_points(orect)
-            for ac in active_coords:
-                for oc in other_coords:
-                    dx = ac[0] - oc[0]
-                    dy = ac[1] - oc[1]
+            for ac_coord, ac_types in active_coords:
+                for oc_coord, oc_types in other_coords:
+                    dx = ac_coord[0] - oc_coord[0]
+                    dy = ac_coord[1] - oc_coord[1]
                     dist = math.sqrt(dx**2 + dy**2)
-                    pairs.append((dist, dx, dy))
 
-        # Sort by distance (closest first)
+                    # Count matching axis types for priority weighting
+                    matches = (ac_types[0] == oc_types[0]) + (ac_types[1] == oc_types[1])
+                    if matches == 2:
+                        weight = self.SNAP_WEIGHT_BOTH
+                    elif matches == 1:
+                        weight = self.SNAP_WEIGHT_SINGLE
+                    elif (
+                        ac_types[0] != "center_x" and ac_types[1] != "center_y" and oc_types[0] != "center_x" and oc_types[1] != "center_y"
+                    ):
+                        # Both points are corners with zero shared axis:
+                        # the snap would place screens touching at a single
+                        # point with no shared border -- penalise it.
+                        weight = self.SNAP_PENALTY_CORNER
+                    else:
+                        weight = 1.0
+
+                    pairs.append((dist * weight, dx, dy))
+
+        # Sort by weighted distance (closest / most attractive first)
         pairs.sort(key=lambda p: p[0])
 
         # Try each pair; accept the first one that doesn't cause any overlap
