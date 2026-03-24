@@ -9,7 +9,7 @@ from .geometry import Rect
 from .primitives import makeLabel, makeRectangle
 from .shapes import makeRoundedRectangle
 from .theme import get_default_theme
-from .widgets import Widget
+from .widgets import Widget, _TrackedProperty
 
 _DEPTH_THRESHOLD = 2
 
@@ -441,6 +441,8 @@ class Modal(Widget):
     Blocks interaction with background widgets.
     """
 
+    _visible = _TrackedProperty(default=False)
+
     def __init__(self, rect, title="", content=None, style=None, on_close=None):
         super().__init__(rect, style)
         self.title = title
@@ -459,12 +461,10 @@ class Modal(Widget):
     def show(self):
         """Make the modal visible."""
         self._visible = True
-        self.invalidate()
 
     def hide(self):
         """Hide the modal."""
         self._visible = False
-        self.invalidate()
         if self.content:
             self.content.unfocus()
 

@@ -13,6 +13,40 @@ from .shapes import RoundedRectangle, makeRoundedRectangle
 from .theme import get_default_theme
 
 
+class _TrackedProperty:
+    """Descriptor that auto-calls ``invalidate()`` when a value changes.
+
+    Usage::
+
+        class MyWidget(Widget):
+            checked = _TrackedProperty(default=False)
+
+    Writing ``self.checked = True`` will store the value in the instance
+    dict under ``_tp_checked`` and call ``self.invalidate()`` if the new
+    value differs from the old one.
+    """
+
+    def __init__(self, default=None):
+        self._default = default
+        self._attr: str = ""  # set by __set_name__
+
+    def __set_name__(self, owner, name):
+        self._attr = f"_tp_{name}"
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return getattr(obj, self._attr, self._default)
+
+    def __set__(self, obj, value):
+        old = getattr(obj, self._attr, self._default)
+        if value != old:
+            object.__setattr__(obj, self._attr, value)
+            # Only call invalidate after __init__ has set up the flag
+            if hasattr(obj, "_dirty"):
+                obj.invalidate()
+
+
 class Widget:
     """Base class for all pyggets widgets.
 
@@ -262,6 +296,9 @@ class Widget:
 class Dropdown(Widget):
     """A dropdown selector widget with expandable option list."""
 
+    expanded = _TrackedProperty(default=False)
+    selected_index = _TrackedProperty(default=0)
+
     def __init__(self, rect, label, options, style=None, onchange=None, invert=False):
         super().__init__(rect, style)
         self.invert = invert
@@ -462,7 +499,6 @@ class Dropdown(Widget):
 
     def unfocus(self):
         self.expanded = False
-        self.invalidate()
 
     def on_mouse_press(self, x, y, button, modifiers):
         menu_height = 0
@@ -477,7 +513,6 @@ class Dropdown(Widget):
         if x_matches and y_matches:
             if not self.options:
                 self.expanded = False
-                self.invalidate()
                 return True
             old_index = self.selected_index
             # Dropdown button clicked
@@ -491,7 +526,6 @@ class Dropdown(Widget):
                         self.selected_index = i
                         self.expanded = False
                         break
-            self.invalidate()
             if old_index != self.selected_index and self.onchange:
                 self.onchange()
             return True
@@ -760,6 +794,8 @@ class Separator(Widget):
 class Checkbox(Widget):
     """A toggle checkbox with an optional label."""
 
+    checked = _TrackedProperty(default=False)
+
     def __init__(self, rect, label="", checked=False, style=None, onchange=None):
         super().__init__(rect, style)
         self.label = label
@@ -836,7 +872,6 @@ class Checkbox(Widget):
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
             self.checked = not self.checked
-            self.invalidate()
             if self.onchange:
                 self.onchange(self.checked)
             return True
@@ -844,6 +879,8 @@ class Checkbox(Widget):
 
 class Toggle(Widget):
     """An on/off sliding toggle switch."""
+
+    toggled = _TrackedProperty(default=False)
 
     def __init__(self, rect, label="", toggled=False, style=None, onchange=None):
         super().__init__(rect, style)
@@ -937,7 +974,6 @@ class Toggle(Widget):
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
             self.toggled = not self.toggled
-            self.invalidate()
             if self.onchange:
                 self.onchange(self.toggled)
             return True
@@ -1013,6 +1049,8 @@ class ProgressBar(Widget):
 
 class RadioGroup(Widget):
     """A group of mutually exclusive radio buttons."""
+
+    selected_index = _TrackedProperty(default=0)
 
     def __init__(self, rect, options, selected_index=0, style=None, onchange=None, orientation="vertical"):
         super().__init__(rect, style)
@@ -1094,7 +1132,6 @@ class RadioGroup(Widget):
             if item_rect.contains(x, y):
                 if i != self.selected_index:
                     self.selected_index = i
-                    self.invalidate()
                     if self.onchange:
                         self.onchange(i)
                 return True
@@ -1102,6 +1139,9 @@ class RadioGroup(Widget):
 
 class Slider(Widget):
     """A horizontal value slider with a draggable handle."""
+
+    value = _TrackedProperty(default=50)
+    _dragging = _TrackedProperty(default=False)
 
     def __init__(self, rect, min_val=0, max_val=100, value=50, style=None, onchange=None):
         super().__init__(rect, style)
@@ -1130,7 +1170,6 @@ class Slider(Widget):
     def set_value(self, v):
         """Set the slider value, clamped to [min_val, max_val]."""
         self.value = max(self.min_val, min(v, self.max_val))
-        self.invalidate()
 
     def _value_to_x(self, value=None):
         """Convert a value to an x pixel position."""
@@ -1190,7 +1229,6 @@ class Slider(Widget):
         if self.rect.contains(x, y):
             self._dragging = True
             self.value = self._x_to_value(x)
-            self.invalidate()
             if self.onchange:
                 self.onchange(self.value)
             return True
@@ -1198,7 +1236,6 @@ class Slider(Widget):
     def on_mouse_drag(self, x, y, dx, dy):
         if self._dragging:
             self.value = self._x_to_value(x)
-            self.invalidate()
             if self.onchange:
                 self.onchange(self.value)
             return True
@@ -1206,7 +1243,6 @@ class Slider(Widget):
     def on_mouse_release(self, x, y):
         if self._dragging:
             self._dragging = False
-            self.invalidate()
             return True
 
 
@@ -1285,6 +1321,9 @@ _KEY_ESCAPE = 65307
 class TextInput(Widget):
     """A single-line text input field (minimal placeholder implementation)."""
 
+    text = _TrackedProperty(default="")
+    focused = _TrackedProperty(default=False)
+
     def __init__(self, rect, placeholder="", text="", style=None, onsubmit=None):
         super().__init__(rect, style)
         self.placeholder = placeholder
@@ -1302,17 +1341,14 @@ class TextInput(Widget):
     def set_text(self, t):
         """Set the text content."""
         self.text = t
-        self.invalidate()
 
     def focus(self):
         """Accept focus -- TextInput is keyboard-interactive."""
         self.focused = True
-        self.invalidate()
 
     def unfocus(self):
         """Release focus."""
         self.focused = False
-        self.invalidate()
 
     def draw(self, cursor):
         is_hovered = self.rect.contains(*cursor)
@@ -1377,7 +1413,6 @@ class TextInput(Widget):
             return
         if symbol == _KEY_BACKSPACE:
             self.text = self.text[:-1]
-            self.invalidate()
             return True
         if symbol == _KEY_RETURN:
             if self.onsubmit:
@@ -1393,5 +1428,4 @@ class TextInput(Widget):
         # Filter out control characters
         if text and ord(text[0]) >= 32:
             self.text += text
-            self.invalidate()
             return True
