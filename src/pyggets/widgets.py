@@ -3,12 +3,13 @@
 import time
 
 from pyglet.gl import GL_BLEND, GL_ONE_MINUS_SRC_ALPHA, GL_SCISSOR_TEST, GL_SRC_ALPHA, glBlendFunc, glDisable, glEnable, glScissor
-from pyglet.shapes import Triangle
+from pyglet.shapes import Circle, Rectangle, Triangle
+from pyglet.text import Label as PygletLabel
 
 from .color import brighten
 from .geometry import Rect
 from .primitives import makeCircle, makeLabel, makeRectangle, makeSprite
-from .shapes import makeRoundedRectangle
+from .shapes import RoundedRectangle, makeRoundedRectangle
 from .theme import get_default_theme
 
 
@@ -768,6 +769,20 @@ class Checkbox(Widget):
         # Animation state
         self._check_t = 1.0 if checked else 0.0
 
+        # Owned pyglet primitives for the animated check indicator
+        self._check_shape = Rectangle(0, 0, 1, 1, color=self.style.highlight)
+        self._label_shape = None
+        if self.label:
+            self._label_shape = PygletLabel(
+                self.label,
+                x=0,
+                y=0,
+                anchor_x="left",
+                anchor_y="center",
+                color=self.style.text_color,
+                font_name=get_default_theme().font_name,
+            )
+
     def __repr__(self):
         return f"<Checkbox {self.label!r} checked={self.checked}>"
 
@@ -798,26 +813,25 @@ class Checkbox(Widget):
             full_margin = max(3, self._box_size // 5)
             # Invert t: margin shrinks from center as t grows
             margin = int(full_margin + (1.0 - self._check_t) * (self._box_size // 2 - full_margin))
-            inner = Rect(
-                box.x + margin,
-                box.y + margin,
-                box.width - 2 * margin,
-                box.height - 2 * margin,
-            )
-            if inner.width > 0 and inner.height > 0:
-                makeRectangle(inner.x, inner.y, inner.width, inner.height, color=self.style.highlight).draw()
+            ix = box.x + margin
+            iy = box.y + margin
+            iw = box.width - 2 * margin
+            ih = box.height - 2 * margin
+            if iw > 0 and ih > 0:
+                self._check_shape.x = ix
+                self._check_shape.y = iy
+                self._check_shape.width = iw
+                self._check_shape.height = ih
+                self._check_shape.color = self.style.highlight
+                self._check_shape.draw()
 
         # Draw label
-        if self.label:
-            makeLabel(
-                self.label,
-                x=box.x + self._box_size + 6,
-                y=self.rect.y + self.rect.height // 2,
-                anchor_x="left",
-                anchor_y="center",
-                color=self.style.text_color,
-                font_name=get_default_theme().font_name,
-            ).draw()
+        if self._label_shape is not None:
+            self._label_shape.x = box.x + self._box_size + 6
+            self._label_shape.y = self.rect.y + self.rect.height // 2
+            self._label_shape.color = self.style.text_color
+            self._label_shape.font_name = get_default_theme().font_name
+            self._label_shape.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
@@ -845,6 +859,26 @@ class Toggle(Widget):
         self._track_color = tuple(float(c) for c in (self.style.highlight if toggled else self.style.color))
         self._knob_color_anim = tuple(float(c) for c in (self.style.knob_color if toggled else (160, 160, 160)))
 
+        # Owned pyglet primitives — created once, updated in-place each frame
+        r = self._knob_radius
+        init_color = tuple(int(c) for c in self._track_color)
+        self._track_left = Circle(0, 0, r, color=init_color)
+        self._track_right = Circle(0, 0, r, color=init_color)
+        self._track_fill = Rectangle(0, 0, max(1, self._track_width - 2 * r), self._track_height, color=init_color)
+        knob_init = tuple(int(c) for c in self._knob_color_anim)
+        self._knob_shape = Circle(0, 0, max(1, r - 2), color=knob_init)
+        self._label_shape = None
+        if self.label:
+            self._label_shape = PygletLabel(
+                self.label,
+                x=0,
+                y=0,
+                anchor_x="left",
+                anchor_y="center",
+                color=self.style.text_color,
+                font_name=get_default_theme().font_name,
+            )
+
     def __repr__(self):
         return f"<Toggle {self.label!r} toggled={self.toggled}>"
 
@@ -863,32 +897,42 @@ class Toggle(Widget):
         if is_hovered:
             track_color = brighten(track_color)
 
-        # Draw track (pill shape: two circles + rectangle)
+        # Update track shapes in place
         r = self._knob_radius
-        makeCircle(self.rect.x + r, track_y + r, r, color=track_color).draw()
-        makeCircle(self.rect.x + self._track_width - r, track_y + r, r, color=track_color).draw()
-        makeRectangle(self.rect.x + r, track_y, self._track_width - 2 * r, self._track_height, color=track_color).draw()
+        self._track_left.x = self.rect.x + r
+        self._track_left.y = track_y + r
+        self._track_left.color = track_color
+        self._track_left.draw()
 
-        # Draw knob — interpolate x between off and on positions
+        self._track_right.x = self.rect.x + self._track_width - r
+        self._track_right.y = track_y + r
+        self._track_right.color = track_color
+        self._track_right.draw()
+
+        self._track_fill.x = self.rect.x + r
+        self._track_fill.y = track_y
+        self._track_fill.color = track_color
+        self._track_fill.draw()
+
+        # Knob — interpolate x between off and on positions
         target_knob = self.style.knob_color if self.toggled else (160, 160, 160)
         self._knob_color_anim = self._lerp_color(self._knob_color_anim, target_knob)
         knob_color = tuple(int(c) for c in self._knob_color_anim)
         off_x = self.rect.x + r
         on_x = self.rect.x + self._track_width - r
         knob_x = int(off_x + self._knob_t * (on_x - off_x))
-        makeCircle(knob_x, track_y + r, r - 2, color=knob_color).draw()
+        self._knob_shape.x = knob_x
+        self._knob_shape.y = track_y + r
+        self._knob_shape.color = knob_color
+        self._knob_shape.draw()
 
-        # Draw label
-        if self.label:
-            makeLabel(
-                self.label,
-                x=self.rect.x + self._track_width + 6,
-                y=self.rect.y + self.rect.height // 2,
-                anchor_x="left",
-                anchor_y="center",
-                color=self.style.text_color,
-                font_name=get_default_theme().font_name,
-            ).draw()
+        # Label
+        if self._label_shape is not None:
+            self._label_shape.x = self.rect.x + self._track_width + 6
+            self._label_shape.y = self.rect.y + self.rect.height // 2
+            self._label_shape.color = self.style.text_color
+            self._label_shape.font_name = get_default_theme().font_name
+            self._label_shape.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
@@ -911,6 +955,21 @@ class ProgressBar(Widget):
         # Animation state
         self._display_ratio = value / max_value if max_value else 0.0
 
+        # Owned primitives for the animated fill bar (avoids cache thrash)
+        self._fill_rect = Rect(rect.x, rect.y, 1, rect.height)
+        self._fill_shape = RoundedRectangle(self._fill_rect, self.radius, self.style.highlight)
+        self._pct_label = None
+        if self.show_text:
+            self._pct_label = PygletLabel(
+                "0%",
+                x=0,
+                y=0,
+                anchor_x="center",
+                anchor_y="center",
+                color=self.style.on_accent,
+                font_name=get_default_theme().font_name,
+            )
+
     def __repr__(self):
         return f"<ProgressBar {self.value}/{self.max_value}>"
 
@@ -931,24 +990,25 @@ class ProgressBar(Widget):
         target_ratio = min(self.value / self.max_value, 1.0) if self.max_value > 0 else 0.0
         self._display_ratio = self._lerp(self._display_ratio, target_ratio)
 
-        # Filled portion
+        # Filled portion — update owned shape in place
         if self._display_ratio > 0.005:
             fill_width = max(int(self.rect.width * self._display_ratio), self.radius * 2)
-            fill_rect = Rect(self.rect.x, self.rect.y, fill_width, self.rect.height)
-            makeRoundedRectangle(fill_rect, self.radius, self.style.highlight).draw()
+            self._fill_rect.x = self.rect.x
+            self._fill_rect.y = self.rect.y
+            self._fill_rect.width = fill_width
+            self._fill_rect.height = self.rect.height
+            self._fill_shape.color = tuple(self.style.highlight)
+            self._fill_shape.draw()
 
         # Percentage text
-        if self.show_text and self.max_value > 0:
+        if self._pct_label is not None and self.max_value > 0:
             pct = int(100 * self.value / self.max_value)
-            makeLabel(
-                f"{pct}%",
-                x=self.rect.x + self.rect.width // 2,
-                y=self.rect.y + self.rect.height // 2,
-                anchor_x="center",
-                anchor_y="center",
-                color=self.style.on_accent,
-                font_name=get_default_theme().font_name,
-            ).draw()
+            self._pct_label.text = f"{pct}%"
+            self._pct_label.x = self.rect.x + self.rect.width // 2
+            self._pct_label.y = self.rect.y + self.rect.height // 2
+            self._pct_label.color = self.style.on_accent
+            self._pct_label.font_name = get_default_theme().font_name
+            self._pct_label.draw()
 
 
 class RadioGroup(Widget):
@@ -1055,6 +1115,11 @@ class Slider(Widget):
         # Animation state
         self._display_value = float(value)
 
+        # Owned pyglet primitives
+        self._track_bg = Rectangle(0, 0, max(1, rect.width), self._track_height, color=self.style.color)
+        self._track_fill_shape = Rectangle(0, 0, 1, self._track_height, color=self.style.highlight)
+        self._handle_shape = Circle(0, 0, self._handle_radius, color=self.style.knob_color)
+
     def __repr__(self):
         return f"<Slider {self.value} [{self.min_val}-{self.max_val}]>"
 
@@ -1099,16 +1164,27 @@ class Slider(Widget):
         handle_x = self._value_to_x(self._display_value)
 
         # Background track
-        makeRectangle(self.rect.x, track_y, self.rect.width, self._track_height, color=self.style.color).draw()
+        self._track_bg.x = self.rect.x
+        self._track_bg.y = track_y
+        self._track_bg.width = self.rect.width
+        self._track_bg.color = self.style.color
+        self._track_bg.draw()
 
         # Filled portion (from left to handle)
         fill_w = handle_x - self.rect.x
         if fill_w > 0:
-            makeRectangle(self.rect.x, track_y, fill_w, self._track_height, color=self.style.highlight).draw()
+            self._track_fill_shape.x = self.rect.x
+            self._track_fill_shape.y = track_y
+            self._track_fill_shape.width = fill_w
+            self._track_fill_shape.color = self.style.highlight
+            self._track_fill_shape.draw()
 
         # Handle
         handle_color = brighten(self.style.highlight) if self._dragging else self.style.knob_color
-        makeCircle(handle_x, handle_y, self._handle_radius, color=handle_color).draw()
+        self._handle_shape.x = handle_x
+        self._handle_shape.y = handle_y
+        self._handle_shape.color = handle_color
+        self._handle_shape.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
