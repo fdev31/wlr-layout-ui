@@ -14,6 +14,76 @@ from .widgets import Widget
 _DEPTH_THRESHOLD = 2
 
 
+# -- Shared layout computation functions --
+# These are used by HBox, VBox, and Panel to avoid duplicating layout logic.
+
+
+def _layout_horizontal(widgets, container_rect, padding, totalpadding):
+    """Compute horizontal (left-to-right) layout for *widgets* inside *container_rect*.
+
+    Handles main-axis fill (width), cross-axis fill (height), and
+    vertical alignment per child.
+    """
+    # Main-axis fill (width)
+    fill_children = [w for w in widgets if w.fill in ("both", "width")]
+    if fill_children:
+        fixed_width = sum(w.rect.width for w in widgets if w not in fill_children)
+        gap_space = padding * (len(widgets) - 1) if len(widgets) > 1 else 0
+        remaining = container_rect.width - totalpadding - fixed_width - gap_space
+        per_child = max(0, remaining // len(fill_children))
+        for w in fill_children:
+            w.rect.width = per_child
+
+    x_off = padding
+    for w in widgets:
+        # Cross-axis fill (height)
+        if w.fill in ("both", "height"):
+            w.rect.height = container_rect.height - totalpadding
+
+        child_align = getattr(w, "valign", None)
+        if child_align == "top":
+            w.rect.y = container_rect.y + container_rect.height - padding - w.rect.height
+        elif child_align == "center":
+            w.rect.y = container_rect.y + (container_rect.height - w.rect.height) // 2
+        else:  # bottom (default)
+            w.rect.y = container_rect.y + padding
+        w.rect.x = container_rect.x + x_off
+        x_off += w.rect.width + padding
+
+
+def _layout_vertical(widgets, container_rect, padding, totalpadding):
+    """Compute vertical (bottom-to-top) layout for *widgets* inside *container_rect*.
+
+    Handles main-axis fill (height), cross-axis fill (width), and
+    horizontal alignment per child.
+    """
+    # Main-axis fill (height)
+    fill_children = [w for w in widgets if w.fill in ("both", "height")]
+    if fill_children:
+        fixed_height = sum(w.rect.height for w in widgets if w not in fill_children)
+        gap_space = padding * (len(widgets) - 1) if len(widgets) > 1 else 0
+        remaining = container_rect.height - totalpadding - fixed_height - gap_space
+        per_child = max(0, remaining // len(fill_children))
+        for w in fill_children:
+            w.rect.height = per_child
+
+    y_off = padding
+    for w in reversed(widgets):
+        # Cross-axis fill (width)
+        if w.fill in ("both", "width"):
+            w.rect.width = container_rect.width - totalpadding
+
+        child_align = getattr(w, "halign", None)
+        if child_align == "right":
+            w.rect.x = container_rect.x + container_rect.width - padding - w.rect.width
+        elif child_align == "center":
+            w.rect.x = container_rect.x + (container_rect.width - w.rect.width) // 2
+        else:  # left (default)
+            w.rect.x = container_rect.x + padding
+        w.rect.y = container_rect.y + y_off
+        y_off += w.rect.height + padding
+
+
 class _Box(Widget):
     """Abstract base class for box layout containers."""
 
@@ -24,6 +94,7 @@ class _Box(Widget):
         self.padding = padding
         self.align = align
         self._depth = 0
+        self._needs_layout = True
         self.rect.width = self.totalpadding
         self.rect.height = self.totalpadding
         self.widgets = []
@@ -45,6 +116,7 @@ class _Box(Widget):
             return
         self.widgets.remove(widget)
         widget._parent = None
+        self._needs_layout = True
         self.invalidate()
 
     def __repr__(self):
@@ -54,6 +126,11 @@ class _Box(Widget):
     def totalpadding(self):
         """Return double the padding (for both sides)."""
         return self.padding * 2
+
+    def invalidate(self):
+        """Mark as dirty and needing re-layout."""
+        self._needs_layout = True
+        super().invalidate()
 
     def unfocus(self):
         for w in self.widgets:
@@ -89,8 +166,14 @@ class _Box(Widget):
             if w.focused and w.on_text(text):
                 return True
 
+    def layout(self):
+        """Compute child positions.  Subclasses must override."""
+        self._needs_layout = False
+
     def draw(self, cursor):
         self.draw_shadow(0, 0, radius=0)
+        if self._needs_layout:
+            self.layout()
 
     def _register_child(self, widget):
         """Track nesting depth and parent reference for child widgets."""
@@ -124,35 +207,25 @@ class HBox(_Box):
             self.rect.width += self.padding
         self.rect.width += widget.rect.width
         self.rect.height = max(widget.rect.height + self.totalpadding, self.rect.height)
+        self._needs_layout = True
+
+    def layout(self):
+        """Position children left-to-right with fill and alignment."""
+        # Temporarily patch valign: child.valign takes priority, but fall back
+        # to the container's align setting.
+        saved_valigns = []
+        for w in self.widgets:
+            saved_valigns.append(w.valign)
+            if w.valign is None and self.align is not None:
+                w.valign = self.align
+        _layout_horizontal(self.widgets, self.rect, self.padding, self.totalpadding)
+        for w, saved in zip(self.widgets, saved_valigns, strict=True):
+            w.valign = saved
+        self._needs_layout = False
 
     def draw(self, cursor):
         super().draw(cursor)
-
-        # -- Fill logic (main axis = width, cross axis = height) --
-        fill_children = [w for w in self.widgets if w.fill in ("both", "width")]
-        if fill_children:
-            fixed_width = sum(w.rect.width for w in self.widgets if w not in fill_children)
-            gap_space = self.padding * (len(self.widgets) - 1) if len(self.widgets) > 1 else 0
-            remaining = self.rect.width - self.totalpadding - fixed_width - gap_space
-            per_child = max(0, remaining // len(fill_children))
-            for w in fill_children:
-                w.rect.width = per_child
-
-        x_off = self.padding
-        for _i, w in enumerate(self.widgets):
-            # Cross-axis fill (height)
-            if w.fill in ("both", "height"):
-                w.rect.height = self.rect.height - self.totalpadding
-
-            child_align = getattr(w, "valign", None) or self.align
-            if child_align == "top":
-                w.rect.y = self.rect.y + self.rect.height - self.padding - w.rect.height
-            elif child_align == "center":
-                w.rect.y = self.rect.y + (self.rect.height - w.rect.height) // 2
-            else:  # bottom (default)
-                w.rect.y = self.rect.y + self.padding
-            w.rect.x = self.rect.x + x_off
-            x_off += w.rect.width + self.padding
+        for w in self.widgets:
             self._draw_child(w, cursor)
 
 
@@ -167,35 +240,23 @@ class VBox(_Box):
             self.rect.height += self.padding
         self.rect.height += widget.rect.height
         self.rect.width = max(widget.rect.width + self.totalpadding, self.rect.width)
+        self._needs_layout = True
+
+    def layout(self):
+        """Position children bottom-to-top with fill and alignment."""
+        saved_haligns = []
+        for w in self.widgets:
+            saved_haligns.append(w.halign)
+            if w.halign is None and self.align is not None:
+                w.halign = self.align
+        _layout_vertical(self.widgets, self.rect, self.padding, self.totalpadding)
+        for w, saved in zip(self.widgets, saved_haligns, strict=True):
+            w.halign = saved
+        self._needs_layout = False
 
     def draw(self, cursor):
         super().draw(cursor)
-
-        # -- Fill logic (main axis = height, cross axis = width) --
-        fill_children = [w for w in self.widgets if w.fill in ("both", "height")]
-        if fill_children:
-            fixed_height = sum(w.rect.height for w in self.widgets if w not in fill_children)
-            gap_space = self.padding * (len(self.widgets) - 1) if len(self.widgets) > 1 else 0
-            remaining = self.rect.height - self.totalpadding - fixed_height - gap_space
-            per_child = max(0, remaining // len(fill_children))
-            for w in fill_children:
-                w.rect.height = per_child
-
-        y_off = self.padding
-        for w in reversed(self.widgets):
-            # Cross-axis fill (width)
-            if w.fill in ("both", "width"):
-                w.rect.width = self.rect.width - self.totalpadding
-
-            child_align = getattr(w, "halign", None) or self.align
-            if child_align == "right":
-                w.rect.x = self.rect.x + self.rect.width - self.padding - w.rect.width
-            elif child_align == "center":
-                w.rect.x = self.rect.x + (self.rect.width - w.rect.width) // 2
-            else:  # left (default)
-                w.rect.x = self.rect.x + self.padding
-            w.rect.y = self.rect.y + y_off
-            y_off += w.rect.height + self.padding
+        for w in self.widgets:
             self._draw_child(w, cursor)
 
 
@@ -233,6 +294,27 @@ class Panel(_Box):
                 self.rect.width += self.padding
             self.rect.width += widget.rect.width
             self.rect.height = max(widget.rect.height + self.totalpadding, self.rect.height)
+        self._needs_layout = True
+
+    def _inner_layout_rect(self):
+        """Return the Rect available for laying out children (inside borders)."""
+        return Rect(
+            self.rect.x,
+            self.rect.y,
+            self.rect.width,
+            self.rect.height,
+        )
+
+    def layout(self):
+        """Position children using the appropriate axis layout."""
+        layout_rect = self._inner_layout_rect()
+        if self._orientation == "vertical":
+            # Panel vertical uses padding*2 for cross-axis (width) totalpadding,
+            # but the full totalpadding (including title) for main-axis (height).
+            _layout_vertical(self.widgets, layout_rect, self.padding, self.totalpadding)
+        else:
+            _layout_horizontal(self.widgets, layout_rect, self.padding, self.totalpadding)
+        self._needs_layout = False
 
     def draw(self, cursor):
         # Bordered background
@@ -263,47 +345,11 @@ class Panel(_Box):
                 font_name=font_name,
             ).draw()
 
-        # Children (same logic as VBox/HBox depending on orientation)
-        if self._orientation == "vertical":
-            # Fill logic (main axis = height, cross axis = width)
-            fill_children = [w for w in self.widgets if w.fill in ("both", "height")]
-            if fill_children:
-                fixed_height = sum(w.rect.height for w in self.widgets if w not in fill_children)
-                gap_space = self.padding * (len(self.widgets) - 1) if len(self.widgets) > 1 else 0
-                remaining = self.rect.height - self.totalpadding - fixed_height - gap_space
-                per_child = max(0, remaining // len(fill_children))
-                for w in fill_children:
-                    w.rect.height = per_child
-
-            y_off = self.padding
-            for w in reversed(self.widgets):
-                # Cross-axis fill (width)
-                if w.fill in ("both", "width"):
-                    w.rect.width = self.rect.width - self.padding * 2
-                w.rect.x = self.rect.x + self.padding
-                w.rect.y = self.rect.y + y_off
-                y_off += w.rect.height + self.padding
-                self._draw_child(w, cursor)
-        else:
-            # Fill logic (main axis = width, cross axis = height)
-            fill_children = [w for w in self.widgets if w.fill in ("both", "width")]
-            if fill_children:
-                fixed_width = sum(w.rect.width for w in self.widgets if w not in fill_children)
-                gap_space = self.padding * (len(self.widgets) - 1) if len(self.widgets) > 1 else 0
-                remaining = self.rect.width - self.padding * 2 - fixed_width - gap_space
-                per_child = max(0, remaining // len(fill_children))
-                for w in fill_children:
-                    w.rect.width = per_child
-
-            x_off = self.padding
-            for w in self.widgets:
-                # Cross-axis fill (height)
-                if w.fill in ("both", "height"):
-                    w.rect.height = self.rect.height - self.totalpadding
-                w.rect.y = self.rect.y + self.padding
-                w.rect.x = self.rect.x + x_off
-                x_off += w.rect.width + self.padding
-                self._draw_child(w, cursor)
+        # Layout if needed, then draw children
+        if self._needs_layout:
+            self.layout()
+        for w in self.widgets:
+            self._draw_child(w, cursor)
 
 
 class ScrollBox(Widget):
