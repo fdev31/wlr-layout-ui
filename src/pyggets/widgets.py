@@ -26,6 +26,9 @@ class Widget:
               "width" = stretch horizontally; "height" = stretch vertically.
         margin: Margin used by update_alignment() for window-level positioning.
         focused: Whether the widget currently has keyboard focus.
+        _dirty: Whether the widget needs to be re-rendered.
+        _parent: The parent container widget, if any.
+        _hovered: Whether the mouse cursor is currently over this widget.
     """
 
     ANIMATION_SPEED = 8  # frames to approach target (higher = slower)
@@ -39,6 +42,9 @@ class Widget:
         self.fill: bool | str = False  # False, "both", "width", or "height"
         self.margin = 0
         self.focused = False
+        self._dirty = True
+        self._parent = None
+        self._hovered = False
 
     @property
     def style(self):
@@ -54,6 +60,29 @@ class Widget:
     def style(self, value):
         """Set an explicit custom style, or ``None`` to follow the theme."""
         self._custom_style = value
+        self.invalidate()
+
+    def invalidate(self):
+        """Mark this widget as needing a re-render.
+
+        Also notifies the parent container so it can propagate the dirty
+        flag up the widget tree.
+        """
+        self._dirty = True
+        if self._parent is not None:
+            self._parent.invalidate()
+
+    def _update_hover(self, cursor):
+        """Track hover state and auto-invalidate on change.
+
+        Call this at the start of ``draw()`` to keep ``_hovered`` up to date.
+        Returns the current hover state for convenience.
+        """
+        was = self._hovered
+        self._hovered = self.rect.contains(*cursor)
+        if was != self._hovered:
+            self.invalidate()
+        return self._hovered
 
     def set_alignment(self, vert="center", horiz="center"):
         """Set the widget's alignment within its parent."""
@@ -432,6 +461,7 @@ class Dropdown(Widget):
 
     def unfocus(self):
         self.expanded = False
+        self.invalidate()
 
     def on_mouse_press(self, x, y, button, modifiers):
         menu_height = 0
@@ -446,6 +476,7 @@ class Dropdown(Widget):
         if x_matches and y_matches:
             if not self.options:
                 self.expanded = False
+                self.invalidate()
                 return True
             old_index = self.selected_index
             # Dropdown button clicked
@@ -459,6 +490,7 @@ class Dropdown(Widget):
                         self.selected_index = i
                         self.expanded = False
                         break
+            self.invalidate()
             if old_index != self.selected_index and self.onchange:
                 self.onchange()
             return True
@@ -646,6 +678,7 @@ class Button(Widget):
     def on_mouse_press(self, x, y, button, modifiers):
         if self.action and self.rect.contains(x, y):
             self.toggled = not self.toggled
+            self.invalidate()
             self.action()
             return True
 
@@ -789,6 +822,7 @@ class Checkbox(Widget):
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
             self.checked = not self.checked
+            self.invalidate()
             if self.onchange:
                 self.onchange(self.checked)
             return True
@@ -859,6 +893,7 @@ class Toggle(Widget):
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
             self.toggled = not self.toggled
+            self.invalidate()
             if self.onchange:
                 self.onchange(self.toggled)
             return True
@@ -882,6 +917,7 @@ class ProgressBar(Widget):
     def set_value(self, v):
         """Set the current progress value."""
         self.value = max(0, min(v, self.max_value))
+        self.invalidate()
 
     def get_value(self):
         """Return the current progress value."""
@@ -998,6 +1034,7 @@ class RadioGroup(Widget):
             if item_rect.contains(x, y):
                 if i != self.selected_index:
                     self.selected_index = i
+                    self.invalidate()
                     if self.onchange:
                         self.onchange(i)
                 return True
@@ -1028,6 +1065,7 @@ class Slider(Widget):
     def set_value(self, v):
         """Set the slider value, clamped to [min_val, max_val]."""
         self.value = max(self.min_val, min(v, self.max_val))
+        self.invalidate()
 
     def _value_to_x(self, value=None):
         """Convert a value to an x pixel position."""
@@ -1076,6 +1114,7 @@ class Slider(Widget):
         if self.rect.contains(x, y):
             self._dragging = True
             self.value = self._x_to_value(x)
+            self.invalidate()
             if self.onchange:
                 self.onchange(self.value)
             return True
@@ -1083,6 +1122,7 @@ class Slider(Widget):
     def on_mouse_drag(self, x, y, dx, dy):
         if self._dragging:
             self.value = self._x_to_value(x)
+            self.invalidate()
             if self.onchange:
                 self.onchange(self.value)
             return True
@@ -1090,6 +1130,7 @@ class Slider(Widget):
     def on_mouse_release(self, x, y):
         if self._dragging:
             self._dragging = False
+            self.invalidate()
             return True
 
 
@@ -1185,14 +1226,17 @@ class TextInput(Widget):
     def set_text(self, t):
         """Set the text content."""
         self.text = t
+        self.invalidate()
 
     def focus(self):
         """Accept focus -- TextInput is keyboard-interactive."""
         self.focused = True
+        self.invalidate()
 
     def unfocus(self):
         """Release focus."""
         self.focused = False
+        self.invalidate()
 
     def draw(self, cursor):
         is_hovered = self.rect.contains(*cursor)
@@ -1257,6 +1301,7 @@ class TextInput(Widget):
             return
         if symbol == _KEY_BACKSPACE:
             self.text = self.text[:-1]
+            self.invalidate()
             return True
         if symbol == _KEY_RETURN:
             if self.onsubmit:
@@ -1272,4 +1317,5 @@ class TextInput(Widget):
         # Filter out control characters
         if text and ord(text[0]) >= 32:
             self.text += text
+            self.invalidate()
             return True

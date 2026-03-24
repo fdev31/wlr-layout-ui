@@ -35,6 +35,18 @@ class _Box(Widget):
         msg = "Subclasses must implement add()"
         raise NotImplementedError(msg)
 
+    def remove(self, widget):
+        """Remove a widget from the container.
+
+        Clears the widget's parent reference and marks the container
+        as needing re-layout.  Does nothing if the widget is not a child.
+        """
+        if widget not in self.widgets:
+            return
+        self.widgets.remove(widget)
+        widget._parent = None
+        self.invalidate()
+
     def __repr__(self):
         return f"<Box = {self.widgets}>"
 
@@ -81,7 +93,8 @@ class _Box(Widget):
         self.draw_shadow(0, 0, radius=0)
 
     def _register_child(self, widget):
-        """Track nesting depth for child boxes."""
+        """Track nesting depth and parent reference for child widgets."""
+        widget._parent = self
         if isinstance(widget, _Box):
             widget._depth = self._depth + 1
 
@@ -303,6 +316,8 @@ class ScrollBox(Widget):
     def __init__(self, rect, content=None, style=None):
         super().__init__(rect, style)
         self.content = content
+        if content is not None:
+            content._parent = self
         self.scroll_offset = 0
         self._scroll_speed = 20
         self._scrollbar_width = 6
@@ -354,6 +369,7 @@ class ScrollBox(Widget):
     def on_mouse_scroll(self, x, y, dx, dy):
         if self.rect.contains(x, y) and self._max_scroll > 0:
             self.scroll_offset = max(0, min(self.scroll_offset - int(dy * self._scroll_speed), self._max_scroll))
+            self.invalidate()
             return True
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -383,6 +399,8 @@ class Modal(Widget):
         super().__init__(rect, style)
         self.title = title
         self.content = content
+        if content is not None:
+            content._parent = self
         self.on_close = on_close
         self._visible = False
         self.radius = get_default_theme().widget_radius
@@ -395,10 +413,12 @@ class Modal(Widget):
     def show(self):
         """Make the modal visible."""
         self._visible = True
+        self.invalidate()
 
     def hide(self):
         """Hide the modal."""
         self._visible = False
+        self.invalidate()
         if self.content:
             self.content.unfocus()
 
