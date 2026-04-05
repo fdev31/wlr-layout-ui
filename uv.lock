@@ -694,7 +694,7 @@ wheels = [
 
 [[package]]
 name = "wlr-layout-ui"
-version = "1.6.16"
+version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "jeepney" },

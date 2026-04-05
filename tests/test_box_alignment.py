@@ -4,12 +4,14 @@ import sys
 
 sys.path.insert(0, "src")
 
-import pyglet  # noqa: E402
+import pyglet
 
 pyglet.options["headless"] = True
 
 from pyggets import HBox, Rect, VBox  # noqa: E402
 from pyggets.widgets import Widget  # noqa: E402
+from wlr_layout_ui.types import Mode  # noqa: E402
+from wlr_layout_ui.utils import find_matching_mode  # noqa: E402
 
 
 class DummyWidget(Widget):
@@ -192,9 +194,6 @@ def test_animate_to():
 
 def test_find_matching_mode_exact():
     """find_matching_mode returns exact match when available."""
-    from wlr_layout_ui.types import Mode
-    from wlr_layout_ui.utils import find_matching_mode
-
     modes = [Mode(1920, 1080, 60.0), Mode(1920, 1080, 120.0), Mode(2560, 1440, 60.0)]
     assert find_matching_mode(modes, (1920, 1080), 60.0) == modes[0]
     assert find_matching_mode(modes, (1920, 1080), 120.0) == modes[1]
@@ -203,9 +202,6 @@ def test_find_matching_mode_exact():
 
 def test_find_matching_mode_fallback_closest_freq():
     """find_matching_mode falls back to closest frequency at same resolution."""
-    from wlr_layout_ui.types import Mode
-    from wlr_layout_ui.utils import find_matching_mode
-
     modes = [Mode(1920, 1080, 119.88), Mode(1920, 1080, 144.0)]
     result = find_matching_mode(modes, (1920, 1080), 60.0)
     # 119.88 is closer to 60.0 than 144.0
@@ -214,8 +210,5 @@ def test_find_matching_mode_fallback_closest_freq():
 
 def test_find_matching_mode_no_match():
     """find_matching_mode returns None when no resolution matches."""
-    from wlr_layout_ui.types import Mode
-    from wlr_layout_ui.utils import find_matching_mode
-
     modes = [Mode(1920, 1080, 60.0)]
     assert find_matching_mode(modes, (2560, 1440), 60.0) is None

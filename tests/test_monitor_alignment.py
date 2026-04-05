@@ -10,10 +10,10 @@ import sys
 
 sys.path.insert(0, "src")
 
-from pyggets import Rect  # noqa: E402
-from wlr_layout_ui.settings import UI_RATIO  # noqa: E402
-from wlr_layout_ui.types import Mode, Screen  # noqa: E402
-from wlr_layout_ui.utils import make_command_hyprland, make_command_legacy, trim_rects_flip_y  # noqa: E402
+from pyggets import Rect
+from wlr_layout_ui.settings import UI_RATIO
+from wlr_layout_ui.types import Mode, Screen
+from wlr_layout_ui.utils import make_command_hyprland, make_command_legacy, trim_rects_flip_y
 
 
 def _parse_hyprland_positions(cmd: str) -> dict[str, tuple[int, int]]:

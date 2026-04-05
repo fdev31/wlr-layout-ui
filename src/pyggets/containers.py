@@ -336,11 +336,23 @@ class _Box(Widget):
         """Return double the padding (for both sides)."""
         return self.padding * 2
 
+    def update_alignment(self, x, y, width, height):
+        """Update position and re-layout children to match."""
+        super().update_alignment(x, y, width, height)
+        self.invalidate()
+
     def invalidate(self):
-        """Mark as dirty and needing re-layout."""
+        """Mark as dirty and needing re-layout.
+
+        Also cascades downward to any child ``_Box`` containers so they
+        re-compute their children's absolute positions on the next draw.
+        """
         self._needs_layout = True
         if self._fbo_cache is not None:
             self._fbo_cache.invalidate()
+        for w in self.widgets:
+            if isinstance(w, _Box) and not w._needs_layout:
+                w.invalidate()
         super().invalidate()
 
     def unfocus(self):
@@ -476,6 +488,9 @@ class HBox(_Box):
         _layout_horizontal(self.widgets, self.rect, self.padding, self.totalpadding)
         for w, saved in zip(self.widgets, saved_valigns, strict=True):
             w.valign = saved
+        for w in self.widgets:
+            if isinstance(w, _Box):
+                w._needs_layout = True
         self._needs_layout = False
 
 
@@ -502,6 +517,9 @@ class VBox(_Box):
         _layout_vertical(self.widgets, self.rect, self.padding, self.totalpadding)
         for w, saved in zip(self.widgets, saved_haligns, strict=True):
             w.halign = saved
+        for w in self.widgets:
+            if isinstance(w, _Box):
+                w._needs_layout = True
         self._needs_layout = False
 
 
@@ -559,6 +577,9 @@ class Panel(_Box):
             _layout_vertical(self.widgets, layout_rect, self.padding, self.totalpadding)
         else:
             _layout_horizontal(self.widgets, layout_rect, self.padding, self.totalpadding)
+        for w in self.widgets:
+            if isinstance(w, _Box):
+                w._needs_layout = True
         self._needs_layout = False
 
     def _draw_contents(self, cursor):

@@ -358,15 +358,49 @@ class UI(pyglet.window.Window):
     # Layout operations & snapping code {{{
 
     # Attraction weight multipliers for snap distance sorting.
-    # Same-type reference-point pairs (e.g. left/left, center/center) get a
-    # reduced effective distance so they "attract" more strongly.
-    #  - Both axes match (e.g. topleft↔topleft): strongest attraction
-    #  - One axis matches (e.g. topleft↔bottomleft, both "left"): moderate
-    #  - No match: no bonus (weight = 1.0)
-    #  - Corner↔corner with no shared axis (point-touch only): penalty
+    # Lower weight = stronger attraction (weight is multiplied with distance).
+    #
+    # Opposite edges (right↔left, top↔bottom) are "adjacency" snaps —
+    # placing screens edge-to-edge.  Same edges (left↔left) are "alignment"
+    # snaps — lining up shared edges across monitors.
+    #
+    # Priority (strongest → weakest):
+    #  - Both axes match (adjacency or alignment on both axes): strongest
+    #  - One axis matches: moderate
+    #  - No axis match, but at least one midpoint involved: neutral
+    #  - Corner↔corner with no shared axis (point-touch): weak but possible
     SNAP_WEIGHT_BOTH = 0.25
     SNAP_WEIGHT_SINGLE = 0.5
-    SNAP_PENALTY_CORNER = 2.0
+    SNAP_PENALTY_CORNER = 1.5
+
+    # Per-axis priority tiers used in _collect_snap_axes.
+    # Lower tier = higher priority.  When combining the best X and Y
+    # translations, candidates are sorted by (tier, abs_delta) — tier wins
+    # over distance, so centre alignment always beats edge alignment within
+    # reasonable reach.
+    #  - TIER_CENTER (0): center_x↔center_x, center_y↔center_y — "middle"
+    #    alignment.  Highest priority so centering screens is easy to reach.
+    #  - TIER_OPPOSITE (1): opposite edges (right↔left, top↔bottom) —
+    #    adjacency (placing screens edge-to-edge).
+    #  - TIER_SAME (2): same edges (left↔left, top↔top) — alignment.
+    TIER_CENTER = 0
+    TIER_OPPOSITE = 1
+    TIER_SAME = 2
+    TIER_NONE = 3  # no axis match — fallback only
+
+    # Opposite-edge pairs that represent adjacency on each axis.
+    _OPPOSITE_EDGES = frozenset({
+        ("left", "right"),
+        ("right", "left"),
+        ("top", "bottom"),
+        ("bottom", "top"),
+    })
+
+    # Maximum raw distance (in UI pixels) for attraction snapping.
+    # Pairs beyond this distance are ignored during attract_screens() so that
+    # distant monitors don't pull the active screen unexpectedly.
+    # Set to 0 or None to disable the radius check.
+    SNAP_RADIUS = 300
 
     def center_layout(self, immediate=False):
         """Center the layout in the window."""
@@ -386,10 +420,9 @@ class UI(pyglet.window.Window):
         """Snap the active screen to the closest screen if it collides."""
         active_screen = self.gui_screens[-1]
 
-        for wid in self.gui_screens[:-1]:
-            if wid.rect.collide(active_screen.rect):
-                self._snap_to_best_non_overlapping(active_screen, [wid])
-                return
+        colliding = [wid for wid in self.gui_screens[:-1] if wid.rect.collide(active_screen.rect)]
+        if colliding:
+            self._snap_to_best_non_overlapping(active_screen, colliding)
 
     @staticmethod
     def _ref_points(rect) -> list[tuple]:
@@ -413,64 +446,233 @@ class UI(pyglet.window.Window):
             ((rect.x + rect.width, cy), ("right", "center_y")),
         ]
 
-    def _snap_to_best_non_overlapping(self, active, candidates):
-        """Find the closest anchor-point pair that doesn't cause overlap, and apply it.
+    def _axes_match(self, a, b):
+        """Return True if two axis labels are a valid snap pair.
 
-        Collects all (weighted_distance, translation) pairs between the active
-        screen's reference points and those of every candidate neighbor, sorted
-        by weighted distance.  Same-type reference points (e.g. left↔left,
-        center↔center) receive a lower effective distance so they attract more
-        strongly than cross-type pairs.  The first translation that does not
-        cause the active screen to overlap *any* other screen is applied.
+        Valid pairs are same-label (e.g. left/left for alignment) *or*
+        opposite-label (e.g. right/left for adjacency).
+        """
+        return a == b or (a, b) in self._OPPOSITE_EDGES
+
+    def _axis_tier(self, label_a, label_b):
+        """Return the priority tier for a single-axis snap pair.
+
+        Lower tier = higher priority.  Used in _collect_snap_axes to produce
+        ``(tier, abs_delta)`` scores that sort lexicographically so that
+        center alignment always beats edge alignment within reach.
+        """
+        if label_a == label_b:
+            if label_a in ("center_x", "center_y"):
+                return self.TIER_CENTER
+            return self.TIER_SAME
+        if (label_a, label_b) in self._OPPOSITE_EDGES:
+            return self.TIER_OPPOSITE
+        return self.TIER_NONE
+
+    def _snap_weight(self, ac_types, oc_types):
+        """Return the attraction weight for a pair of reference-point types.
+
+        Lower weight = stronger attraction.  The weight is multiplied with the
+        raw distance to produce a *weighted* distance used for sorting.
+        """
+        matches = self._axes_match(ac_types[0], oc_types[0]) + self._axes_match(ac_types[1], oc_types[1])
+        if matches == 2:
+            return self.SNAP_WEIGHT_BOTH
+        if matches == 1:
+            return self.SNAP_WEIGHT_SINGLE
+        # Both points are corners (no centre component) with 0 shared axes →
+        # point-touch only, possible but weak.
+        if ac_types[0] != "center_x" and ac_types[1] != "center_y" and oc_types[0] != "center_x" and oc_types[1] != "center_y":
+            return self.SNAP_PENALTY_CORNER
+        return 1.0
+
+    def _collect_snap_axes(self, active_coords, other_coords, max_dist=0, active_rect=None, other_rect=None):
+        """Collect per-axis snap candidates between two sets of reference points.
+
+        Returns ``(x_snaps, y_snaps)`` where each list contains
+        ``((tier, abs_delta), raw_delta)`` entries.  Sorting these tuples
+        lexicographically gives priority to the best tier first, then to
+        the smallest distance within that tier.
+
+        Pairs are collected when the axis labels are compatible — either
+        the same (alignment, e.g. left/left) or opposite (adjacency, e.g.
+        right/left).
+
+        Center-to-center pairs (tier 0) are subject to a reach limit:
+        they are only included when ``abs(delta) <= max(active_dim, other_dim)``
+        on that axis, so that center snaps don't pull screens unreasonably far.
+
+        Args:
+            active_coords: reference points of the active screen.
+            other_coords: reference points of a candidate screen.
+            max_dist: if >0, ignore pairs whose raw single-axis distance
+                exceeds this value.
+            active_rect: Rect of the active screen (for center reach limit).
+            other_rect: Rect of the candidate screen (for center reach limit).
+        """
+        # Center reach limits (100% of the larger screen's dimension).
+        center_reach_x = 0.0
+        center_reach_y = 0.0
+        if active_rect is not None and other_rect is not None:
+            center_reach_x = max(active_rect.width, other_rect.width)
+            center_reach_y = max(active_rect.height, other_rect.height)
+
+        x_snaps: list[tuple[tuple[int, float], float]] = []
+        y_snaps: list[tuple[tuple[int, float], float]] = []
+        for ac_coord, ac_types in active_coords:
+            for oc_coord, oc_types in other_coords:
+                dx = ac_coord[0] - oc_coord[0]
+                dy = ac_coord[1] - oc_coord[1]
+
+                # X-axis: consider pairs whose X-labels are compatible
+                # (same edge for alignment, opposite edges for adjacency).
+                if self._axes_match(ac_types[0], oc_types[0]):
+                    abs_dx = abs(dx)
+                    if max_dist and abs_dx > max_dist:
+                        pass  # beyond attraction radius
+                    else:
+                        tier = self._axis_tier(ac_types[0], oc_types[0])
+                        # Center reach limit: skip center pairs that are too far.
+                        if tier == self.TIER_CENTER and center_reach_x and abs_dx > center_reach_x:
+                            pass
+                        else:
+                            x_snaps.append(((tier, abs_dx), dx))
+                # Y-axis: same logic for Y.
+                if self._axes_match(ac_types[1], oc_types[1]):
+                    abs_dy = abs(dy)
+                    if max_dist and abs_dy > max_dist:
+                        pass  # beyond attraction radius
+                    else:
+                        tier = self._axis_tier(ac_types[1], oc_types[1])
+                        if tier == self.TIER_CENTER and center_reach_y and abs_dy > center_reach_y:
+                            pass
+                        else:
+                            y_snaps.append(((tier, abs_dy), dy))
+        return x_snaps, y_snaps
+
+    def _test_no_overlap(self, ar, dx, dy):
+        """Return True if moving *ar* by (-dx, -dy) causes no overlap."""
+        test = PRect(ar.x - dx, ar.y - dy, ar.width, ar.height)
+        return all(not test.collide(other.target_rect) for other in self.gui_screens[:-1])
+
+    def _snap_to_best_non_overlapping(self, active, candidates, max_dist=0):
+        """Find the best non-overlapping snap and apply it.
+
+        The algorithm has two stages:
+
+        1. **Per-axis independent snap** -- the best X-translation and the
+           best Y-translation are chosen independently across *all*
+           candidates, then combined.  This allows the active screen to
+           align its left edge with monitor A while aligning its top edge
+           with monitor B.
+        2. **Point-pair fallback** -- if no valid per-axis combination is
+           found, fall back to the original approach: pick the single
+           reference-point pair with the smallest weighted distance.
+
+        Per-axis candidates are scored as ``(tier, abs_delta)`` tuples that
+        sort lexicographically — tier wins over distance.  This ensures that
+        center alignment (tier 0) always beats edge alignment (tier 1/2)
+        within reach, regardless of the distance involved.
 
         Args:
             active: the GuiScreen being moved.
             candidates: list of GuiScreens to match reference points against.
+            max_dist: if >0, ignore pairs whose raw distance exceeds this
+                value (used by attract_screens to limit snap radius).
         """
         ar = active.target_rect
         active_coords = self._ref_points(ar)
 
-        # Collect all candidate pairs: (weighted_distance, dx, dy)
+        # ------------------------------------------------------------------
+        # Collect per-axis snap candidates and point-pair candidates
+        # ------------------------------------------------------------------
+        # Each entry in all_x / all_y is ((tier, abs_delta), raw_delta).
+        all_x: list[tuple[tuple[int, float], float]] = []
+        all_y: list[tuple[tuple[int, float], float]] = []
         pairs: list[tuple[float, float, float]] = []
+
         for other in candidates:
-            orect = other.target_rect
-            other_coords = self._ref_points(orect)
+            otr = other.target_rect
+            other_coords = self._ref_points(otr)
+
+            xs, ys = self._collect_snap_axes(
+                active_coords,
+                other_coords,
+                max_dist,
+                active_rect=ar,
+                other_rect=otr,
+            )
+            all_x.extend(xs)
+            all_y.extend(ys)
+
+            # Also build the classic point-pair list as fallback
             for ac_coord, ac_types in active_coords:
                 for oc_coord, oc_types in other_coords:
                     dx = ac_coord[0] - oc_coord[0]
                     dy = ac_coord[1] - oc_coord[1]
                     dist = math.sqrt(dx**2 + dy**2)
-
-                    # Count matching axis types for priority weighting
-                    matches = (ac_types[0] == oc_types[0]) + (ac_types[1] == oc_types[1])
-                    if matches == 2:
-                        weight = self.SNAP_WEIGHT_BOTH
-                    elif matches == 1:
-                        weight = self.SNAP_WEIGHT_SINGLE
-                    elif (
-                        ac_types[0] != "center_x" and ac_types[1] != "center_y" and oc_types[0] != "center_x" and oc_types[1] != "center_y"
-                    ):
-                        # Both points are corners with zero shared axis:
-                        # the snap would place screens touching at a single
-                        # point with no shared border -- penalise it.
-                        weight = self.SNAP_PENALTY_CORNER
-                    else:
-                        weight = 1.0
-
+                    if max_dist and dist > max_dist:
+                        continue
+                    weight = self._snap_weight(ac_types, oc_types)
                     pairs.append((dist * weight, dx, dy))
 
-        # Sort by weighted distance (closest / most attractive first)
+        # ------------------------------------------------------------------
+        # Stage 1: per-axis independent snap
+        # ------------------------------------------------------------------
+        all_x.sort()
+        all_y.sort()
+
+        # Try combinations of the best X and Y snaps.  We also include
+        # "no snap on this axis" (delta=0) so that a single-axis alignment
+        # can still win when the other axis has no good match.
+        best_x = [dx for _, dx in all_x[:6]]  # top-6 X candidates
+        best_y = [dy for _, dy in all_y[:6]]  # top-6 Y candidates
+        if 0 not in best_x:
+            best_x.append(0)
+        if 0 not in best_y:
+            best_y.append(0)
+
+        # Score each combination by the sum of per-axis (tier, abs_delta)
+        # scores.  Build a lookup from delta → best score (keep minimum).
+        x_scores: dict[float, tuple[int, float]] = {}
+        for score, dx in all_x:
+            if dx not in x_scores or score < x_scores[dx]:
+                x_scores[dx] = score
+        y_scores: dict[float, tuple[int, float]] = {}
+        for score, dy in all_y:
+            if dy not in y_scores or score < y_scores[dy]:
+                y_scores[dy] = score
+
+        # "No movement" on an axis should not beat actual snap targets.
+        # Give it a score worse than any real candidate (tier=999).
+        zero_score: tuple[int, float] = (999, 0.0)
+
+        # Build axis combo scores.  Each combo score is the element-wise sum
+        # of the two per-axis scores: (tier_x + tier_y, dist_x + dist_y).
+        axis_combos: list[tuple[tuple[int, float], float, float]] = []
+        for dx in best_x:
+            for dy in best_y:
+                sx = x_scores.get(dx, zero_score if dx == 0 else (self.TIER_NONE, abs(dx)))
+                sy = y_scores.get(dy, zero_score if dy == 0 else (self.TIER_NONE, abs(dy)))
+                combined = (sx[0] + sy[0], sx[1] + sy[1])
+                axis_combos.append((combined, dx, dy))
+        axis_combos.sort()
+
+        for _, dx, dy in axis_combos:
+            if dx == 0 and dy == 0:
+                continue  # no movement
+            if self._test_no_overlap(ar, dx, dy):
+                ar.x -= dx
+                ar.y -= dy
+                return
+
+        # ------------------------------------------------------------------
+        # Stage 2: point-pair fallback (original algorithm)
+        # ------------------------------------------------------------------
         pairs.sort(key=lambda p: p[0])
 
-        # Try each pair; accept the first one that doesn't cause any overlap
         for _, dx, dy in pairs:
-            test = PRect(ar.x - dx, ar.y - dy, ar.width, ar.height)
-            overlaps = False
-            for other in self.gui_screens[:-1]:
-                if test.collide(other.target_rect):
-                    overlaps = True
-                    break
-            if not overlaps:
+            if self._test_no_overlap(ar, dx, dy):
                 ar.x -= dx
                 ar.y -= dy
                 return
@@ -480,6 +682,7 @@ class UI(pyglet.window.Window):
 
         Uses 8-point matching (4 corners + 4 edge midpoints) and picks the
         closest anchor-point pair that does not cause overlap with any screen.
+        A maximum snap radius limits attraction to nearby monitors only.
         """
         active = self.gui_screens[-1]
         ar = active.target_rect
@@ -489,7 +692,7 @@ class UI(pyglet.window.Window):
             if ar.collide(other.target_rect):
                 return
 
-        self._snap_to_best_non_overlapping(active, self.gui_screens[:-1])
+        self._snap_to_best_non_overlapping(active, self.gui_screens[:-1], max_dist=self.SNAP_RADIUS)
 
     # }}}
     # Gui getters & properties  {{{
