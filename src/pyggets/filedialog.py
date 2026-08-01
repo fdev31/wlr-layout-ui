@@ -235,8 +235,8 @@ def _tk_open_file(
     filters: list | None,
 ) -> list[str]:
     """Open file via tkinter (last resort)."""
-    import tkinter as tk  # noqa: PLC0415
-    from tkinter import filedialog  # noqa: PLC0415
+    import tkinter as tk  # ruff: ignore[import-outside-top-level]
+    from tkinter import filedialog  # ruff: ignore[import-outside-top-level]
 
     root = tk.Tk()
     root.withdraw()
@@ -266,8 +266,8 @@ def _tk_save_file(
     filters: list | None,
 ) -> str | None:
     """Save file via tkinter (last resort)."""
-    import tkinter as tk  # noqa: PLC0415
-    from tkinter import filedialog  # noqa: PLC0415
+    import tkinter as tk  # ruff: ignore[import-outside-top-level]
+    from tkinter import filedialog  # ruff: ignore[import-outside-top-level]
 
     root = tk.Tk()
     root.withdraw()

@@ -106,10 +106,10 @@ def _capture_portal_full() -> str | None:
     Returns the local file path of the screenshot, or None on failure.
     """
     try:
-        import random  # noqa: PLC0415
+        import random  # ruff: ignore[import-outside-top-level]
 
-        from jeepney import DBusAddress, MatchRule, message_bus, new_method_call  # noqa: PLC0415
-        from jeepney.io.blocking import open_dbus_connection  # noqa: PLC0415
+        from jeepney import DBusAddress, MatchRule, message_bus, new_method_call  # ruff: ignore[import-outside-top-level]
+        from jeepney.io.blocking import open_dbus_connection  # ruff: ignore[import-outside-top-level]
     except ImportError:
         log.debug("jeepney not available, portal screenshot unavailable")
         return None
@@ -127,7 +127,7 @@ def _capture_portal_full() -> str | None:
         log.debug("Cannot open D-Bus session connection", exc_info=True)
         return None
 
-    try:
+    def _do_screenshot_request(conn, req_iface, addr):
         sender = conn.unique_name.lstrip(":").replace(".", "_")
         token = f"t{random.randint(0, 0xFFFFFF):x}"
         handle_path = f"/org/freedesktop/portal/desktop/request/{sender}/{token}"
@@ -151,14 +151,11 @@ def _capture_portal_full() -> str | None:
 
         with conn.filter(match_rule) as queue:
             response = conn.recv_until_filtered(queue, timeout=15)
+        return response
 
-        code = response.body[0]
-        results = response.body[1]
-        if code != 0:
-            log.debug("Portal screenshot denied (code=%d)", code)
-            return None
-
-        uri = results.get("uri", (None, ""))[1]
+    try:
+        response = _do_screenshot_request(conn, req_iface, addr)
+        uri = _process_screenshot_response(response)
         if not uri:
             log.debug("Portal screenshot returned no URI")
             return None
@@ -171,6 +168,16 @@ def _capture_portal_full() -> str | None:
         conn.close()
 
 
+def _process_screenshot_response(response) -> str | None:
+    """Extract the screenshot URI from a portal response."""
+    code = response.body[0]
+    results = response.body[1]
+    if code != 0:
+        log.debug("Portal screenshot denied (code=%d)", code)
+        return None
+    return results.get("uri", (None, ""))[1]
+
+
 def _crop_portal_screenshot(full_path: str, screens: list[Screen]) -> dict[str, str]:
     """Crop the full-desktop screenshot into per-monitor images using pyglet.
 
@@ -178,7 +185,7 @@ def _crop_portal_screenshot(full_path: str, screens: list[Screen]) -> dict[str, 
     pyglet's get_region uses Y-up (origin at bottom-left), so we convert.
     """
     try:
-        import pyglet  # noqa: PLC0415
+        import pyglet  # ruff: ignore[import-outside-top-level]
 
         full_img = pyglet.image.load(full_path)
     except Exception:

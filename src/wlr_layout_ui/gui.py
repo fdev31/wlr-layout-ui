@@ -1054,7 +1054,7 @@ class UI(pyglet.window.Window):
         res = sorted_resolutions(screen.screen.available)
         self.resolutions.options = [{"name": f"{r[0]} x {r[1]}", "value": r} for r in res]
         i = -1
-        for i, r in enumerate(res):  # noqa: B007
+        for i, r in enumerate(res):  # ruff: ignore[unused-loop-control-variable]
             if r[0] == cur_mode.width and r[1] == cur_mode.height:
                 break
         self.resolutions.selected_index = i

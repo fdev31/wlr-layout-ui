@@ -600,10 +600,10 @@ def run_ui(result: UIResult) -> None:
         result = load_ui("my_app.toml", controller)
         run_ui(result)
     """
-    import pyglet  # noqa: PLC0415
+    import pyglet  # ruff: ignore[import-outside-top-level]
 
-    from .primitives import makeRectangle  # noqa: PLC0415
-    from .theme import get_default_theme, set_default_theme  # noqa: PLC0415
+    from .primitives import makeRectangle  # ruff: ignore[import-outside-top-level]
+    from .theme import get_default_theme, set_default_theme  # ruff: ignore[import-outside-top-level]
 
     # Apply themes ---------------------------------------------------------
     if result.themes:

@@ -122,5 +122,5 @@ def get_default_theme() -> Theme:
 
 def set_default_theme(theme: Theme) -> None:
     """Set the default theme used by all widgets that don't specify one explicitly."""
-    global _default_theme  # noqa: PLW0603
+    global _default_theme  # ruff: ignore[global-statement]
     _default_theme = theme

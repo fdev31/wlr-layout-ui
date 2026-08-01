@@ -13,6 +13,15 @@ LEGACY = not os.environ.get("WAYLAND_DISPLAY")
 MODE_RE = re.compile(r"^(?P<width>\d+)x(?P<height>\d+)(?P<x>[+-]\d+)(?P<y>[+-]\d+)$")
 
 
+def _parse_hyprland_version(data: dict) -> bool:
+    """Parse Hyprland version from JSON and return whether it's a new version."""
+    version = data["tag"] or data["version"]
+    version = (version[1:] if version.startswith("v") else version).split(".")
+    major = int(version[0])
+    minor = int(version[1])
+    return (major == 0 and minor >= 37) or major > 0
+
+
 displayInfo: list[Screen] = []
 
 
@@ -51,11 +60,7 @@ def load():
 
     try:
         data = json.loads(subprocess.getoutput("hyprctl -j version"))
-        version = data["tag"] or data["version"]
-        version = (version[1:] if version.startswith("v") else version).split(".")
-        major = int(version[0])
-        minor = int(version[1])
-        new_hyprland = (major == 0 and minor >= 37) or major > 0
+        new_hyprland = _parse_hyprland_version(data)
     except (KeyError, json.JSONDecodeError, ValueError):
         new_hyprland = not LEGACY
 

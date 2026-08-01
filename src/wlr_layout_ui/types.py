@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Tuple
 
 # Re-export Rect and collidepoint from pyggets for backward compatibility
-from pyggets import Rect, collidepoint  # noqa: F401
+from pyggets import Rect, collidepoint  # ruff: ignore[unused-import]
 
 
 @dataclass

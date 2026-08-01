@@ -186,12 +186,14 @@ class _FBOCache:
         if window is None:
             return
 
-        self._fbo.unbind()
+        if self._fbo is not None:
+            self._fbo.unbind()
 
         # Restore window state
         window.projection = self._saved_proj
         vp = self._saved_viewport
-        glViewport(int(vp[0]), int(vp[1]), int(vp[2]), int(vp[3]))
+        if vp is not None:
+            glViewport(int(vp[0]), int(vp[1]), int(vp[2]), int(vp[3]))
 
         self._valid = True
 

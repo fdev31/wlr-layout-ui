@@ -1,6 +1,6 @@
 """Re-export widgets from pyggets for backward compatibility."""
 
-from pyggets import (  # noqa: F401
+from pyggets import (  # ruff: ignore[unused-import]
     Button,
     Checkbox,
     Dropdown,
@@ -26,4 +26,4 @@ from pyggets import (  # noqa: F401
 )
 
 # Expose _Box for any internal subclassing
-from pyggets.containers import _Box  # noqa: F401, PLC2701
+from pyggets.containers import _Box  # ruff: ignore[unused-import, import-private-name]

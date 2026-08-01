@@ -26,7 +26,7 @@ def makeRectangle(x, y, w, h, color):
 
 
 @lru_cache(maxsize=_LABEL_CACHE_SIZE)
-def makeLabel(text, x, y, color=None, **kw):  # noqa: ANN003
+def makeLabel(text, x, y, color=None, **kw):  # ruff: ignore[missing-type-kwargs]
     """Create a cached pyglet Label."""
     if color is None:
         color = (0, 0, 0)
