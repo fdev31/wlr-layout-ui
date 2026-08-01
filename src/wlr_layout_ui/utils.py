@@ -1,10 +1,27 @@
+import json
 import re
+import subprocess
+from functools import lru_cache
 
 from .types import Rect, Screen
 
 config = {"hyprland": False}
 
 hex_re = re.compile(r"^[0-9x]+$")
+
+
+@lru_cache(maxsize=1)
+def _supports_lua_syntax() -> bool:
+    """Check if Hyprland version supports Lua monitor syntax (>= 0.55.0)."""
+    try:
+        data = json.loads(subprocess.getoutput("hyprctl -j version"))
+        match = re.search(r"v?(\d+)\.(\d+)", data.get("version", ""))
+        if match:
+            major, minor = int(match.group(1)), int(match.group(2))
+            return (major, minor) >= (0, 55)
+    except Exception:
+        pass
+    return False
 
 
 def get_size(width: int, height: int, scale: float, transform: int, glob_scale: float = 1):
@@ -34,7 +51,30 @@ def make_command(screens: list[Screen], rects: list[Rect], wayland=True) -> str:
     return cmd
 
 
-def make_command_hyprland(screens: list[Screen], rects: list[Rect]) -> str:
+def _make_command_hyprland_lua(screens: list[Screen], rects: list[Rect]) -> str:
+    screens_rect = rects.copy()
+    trim_rects_flip_y(screens_rect)
+    commands = []
+
+    for screen, rect in zip(screens, screens_rect):
+        if not screen.active:
+            commands.append(f'hl.monitor({{output="{screen.uid}", disable=true}})')
+            continue
+        parts = [f'output="{screen.uid}"']
+        if screen.mode:
+            parts.append(f'mode="{screen.mode}"')
+        pos = f"{int(rect.x)}x{int(rect.y)}"
+        parts.append(f'position="{pos}"')
+        if abs(screen.scale - 1.0) > 0.001:
+            parts.append(f"scale={screen.scale:g}")
+        if screen.transform != 0:
+            parts.append(f"transform={screen.transform}")
+        commands.append("hl.monitor({" + ", ".join(parts) + "})")
+
+    return "hyprctl eval '" + " ; ".join(commands) + "'"
+
+
+def _make_command_hyprland_old(screens: list[Screen], rects: list[Rect]) -> str:
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     keywords = []
@@ -47,8 +87,13 @@ def make_command_hyprland(screens: list[Screen], rects: list[Rect]) -> str:
             f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale:.6f},transform,{screen.transform}"
         )
 
-    cmd = 'hyprctl --batch "' + " ; ".join(keywords) + '"'
-    return cmd
+    return 'hyprctl --batch "' + " ; ".join(keywords) + '"'
+
+
+def make_command_hyprland(screens: list[Screen], rects: list[Rect]) -> str:
+    if _supports_lua_syntax():
+        return _make_command_hyprland_lua(screens, rects)
+    return _make_command_hyprland_old(screens, rects)
 
 
 def make_command_legacy(screens: list[Screen], rects: list[Rect], wayland=False) -> str:

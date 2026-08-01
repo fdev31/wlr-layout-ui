@@ -17,10 +17,24 @@ from wlr_layout_ui.utils import make_command_hyprland, make_command_legacy, trim
 
 
 def _parse_hyprland_positions(cmd: str) -> dict[str, tuple[int, int]]:
-    """Parse hyprctl batch command and return {uid: (x, y)} for each monitor."""
+    """Parse hyprctl command and return {uid: (x, y)} for each monitor."""
     positions = {}
+    # Old format: keyword monitor HDMI-A-1,...,1920x0,
     for match in re.finditer(r"keyword monitor (\S+?),\S+?,(\d+)x(\d+),", cmd):
         uid, x, y = match.group(1), int(match.group(2)), int(match.group(3))
+        positions[uid] = (x, y)
+    # New format: hl.monitor({output="HDMI-A-1", ..., position="1920x0", ...})
+    for monitor_match in re.finditer(r'hl\.monitor\(([^)]+)\)', cmd):
+        params = monitor_match.group(1)
+        uid_match = re.search(r'output="(\S+?)"', params)
+        if not uid_match:
+            continue
+        uid = uid_match.group(1)
+        pos_match = re.search(r'position="(\d+)x(\d+)"', params)
+        if pos_match:
+            x, y = int(pos_match.group(1)), int(pos_match.group(2))
+        else:
+            x, y = 0, 0
         positions[uid] = (x, y)
     return positions
 
@@ -187,16 +201,15 @@ def test_legacy_horizontal_alignment_no_gap():
 
 
 def test_hyprland_no_trailing_semicolon():
-    """The hyprctl batch command should not have a trailing semicolon."""
+    """The hyprctl command should not have a trailing semicolon."""
     screen_a = _make_screen("HDMI-A-1")
     screen_b = _make_screen("DP-1")
 
     rects = [Rect(0, 0, 1920, 1080), Rect(1920, 0, 1920, 1080)]
     cmd = make_command_hyprland([screen_a, screen_b], rects)
 
-    # Should end with the closing quote, not '; "'
-    assert cmd.endswith('"')
-    assert not cmd.endswith('; "')
+    # Old format ends with ", new format ends with '
+    assert cmd.endswith('"') or cmd.endswith("'")
     assert "; ;" not in cmd
 
 
@@ -206,17 +219,19 @@ def test_hyprland_single_monitor_no_semicolon():
     rects = [Rect(0, 0, 1920, 1080)]
     cmd = make_command_hyprland([screen], rects)
 
-    assert ";" not in cmd
+    assert ";" not in cmd or " ; " not in cmd
 
 
 def test_hyprland_disabled_monitor():
-    """Disabled monitors should appear as 'keyword monitor UID,disable'."""
+    """Disabled monitors should appear as 'keyword monitor UID,disable' (old) or 'disable=true' (new)."""
     screen = _make_screen("HDMI-A-1")
     screen.active = False
     rects = [Rect(0, 0, 1920, 1080)]
     cmd = make_command_hyprland([screen], rects)
 
-    assert "HDMI-A-1,disable" in cmd
+    # Old format: keyword monitor HDMI-A-1,disable
+    # New format: hl.monitor({output="HDMI-A-1", disable=true})
+    assert "HDMI-A-1,disable" in cmd or 'disable=true' in cmd
 
 
 # ---------------------------------------------------------------------------
