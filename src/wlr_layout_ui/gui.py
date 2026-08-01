@@ -625,15 +625,30 @@ class UI(pyglet.window.Window):
         # Try combinations of the best X and Y snaps.  We also include
         # "no snap on this axis" (delta=0) so that a single-axis alignment
         # can still win when the other axis has no good match.
-        best_x = [dx for _, dx in all_x[:6]]  # top-6 X candidates
-        best_y = [dy for _, dy in all_y[:6]]  # top-6 Y candidates
+        # Additionally, include deltas from the nearest point-pairs so that
+        # corner-to-corner and edge-to-edge snaps are in the search space.
+        best_x = [dx for _, dx in all_x[:15]]  # top-15 X candidates
+        best_y = [dy for _, dy in all_y[:15]]  # top-15 Y candidates
+
+        # Add X/Y deltas from the nearest point-pairs (closest anchors first)
+        pairs_by_dist = sorted(pairs, key=lambda p: p[0])
+        for _, dx, dy in pairs_by_dist[:20]:
+            if dx not in best_x:
+                best_x.append(dx)
+            if dy not in best_y:
+                best_y.append(dy)
+
         if 0 not in best_x:
             best_x.append(0)
         if 0 not in best_y:
             best_y.append(0)
 
-        # Score each combination by the sum of per-axis (tier, abs_delta)
-        # scores.  Build a lookup from delta → best score (keep minimum).
+        # Build all candidate combos from the expanded best_x/best_y sets.
+        # Each combo is scored by raw distance (closest anchors win first),
+        # with tier as a secondary tiebreaker for equal distances.
+        real_pairs: set[tuple[float, float]] = {(p[1], p[2]) for p in pairs}
+
+        # Build per-axis score lookups (for non-point-pair deltas)
         x_scores: dict[float, tuple[int, float]] = {}
         for score, dx in all_x:
             if dx not in x_scores or score < x_scores[dx]:
@@ -643,22 +658,23 @@ class UI(pyglet.window.Window):
             if dy not in y_scores or score < y_scores[dy]:
                 y_scores[dy] = score
 
-        # "No movement" on an axis should not beat actual snap targets.
-        # Give it a score worse than any real candidate (tier=999).
         zero_score: tuple[int, float] = (999, 0.0)
 
-        # Build axis combo scores.  Each combo score is the element-wise sum
-        # of the two per-axis scores: (tier_x + tier_y, dist_x + dist_y).
-        axis_combos: list[tuple[tuple[int, float], float, float]] = []
+        # Collect all combos with their distance and tier info
+        all_combos: list[tuple[float, int, float, float, float]] = []
         for dx in best_x:
             for dy in best_y:
                 sx = x_scores.get(dx, zero_score if dx == 0 else (self.TIER_NONE, abs(dx)))
                 sy = y_scores.get(dy, zero_score if dy == 0 else (self.TIER_NONE, abs(dy)))
-                combined = (sx[0] + sy[0], sx[1] + sy[1])
-                axis_combos.append((combined, dx, dy))
-        axis_combos.sort()
+                dist = math.sqrt(dx**2 + dy**2)
+                tier = sx[0] + sy[0]
+                is_real = (dx, dy) in real_pairs
+                all_combos.append((dist, 0 if is_real else 1, tier, dx, dy))
 
-        for _, dx, dy in axis_combos:
+        # Sort: real combos first (col 1), then by distance (col 0), then tier (col 2)
+        all_combos.sort(key=lambda c: (c[1], c[0], c[2]))
+
+        for _, _, _, dx, dy in all_combos:
             if dx == 0 and dy == 0:
                 continue  # no movement
             if self._test_no_overlap(ar, dx, dy):
