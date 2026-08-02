@@ -4,6 +4,8 @@ An simple GUI to setup the screens layout.
 Works best on Hyprland but should support most systems in a slightly degraded way
 (Wayland and Xorg are supported via 3rd party applications)
 
+<img width="1060" height="583" alt="shot_window" src="https://github.com/user-attachments/assets/2c529b99-5606-4c92-a902-0861db7725fb" />
+
 ## Features
 
 - Load and save profiles
