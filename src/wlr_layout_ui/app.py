@@ -1,6 +1,5 @@
 """Application entry points for wlr-layout-ui."""
 
-import contextlib
 import os
 import sys
 import time
@@ -18,19 +17,20 @@ from .types import Mode
 from .utils import Rect, get_size, make_command
 
 
-def _safe_drag_drop(orig, self, ev):
-    """Call original drag-drop, ignoring any exceptions."""
-    try:
-        return orig(self, ev)
-    except Exception:
-        pass
-
-
 def _patch_x11_drag_drop():
-    with contextlib.suppress(Exception):
-        pyglet.window.xlib.XlibWindow._event_drag_drop = (  # type: ignore[method-assign]
-            lambda self, ev: _safe_drag_drop(pyglet.window.xlib.XlibWindow._event_drag_drop, self, ev)
-        )
+    """Wrap X11 drag-drop to ignore exceptions (pyglet bug workaround)."""
+    try:
+        original = pyglet.window.xlib.XlibWindow._event_drag_drop
+    except AttributeError:
+        return
+
+    def safe_drag_drop(self, ev):
+        try:
+            return original(self, ev)
+        except Exception:
+            pass
+
+    pyglet.window.xlib.XlibWindow._event_drag_drop = safe_drag_drop  # type: ignore[method-assign]
 
 
 _patch_x11_drag_drop()

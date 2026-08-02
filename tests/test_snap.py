@@ -46,10 +46,7 @@ class SnapHarness:
     # Bind UI's methods onto the harness.
     # _ref_points is a @staticmethod, so we reference it directly.
     _ref_points = staticmethod(UI._ref_points)
-    _axes_match = UI._axes_match
-    _axis_tier = UI._axis_tier
     _snap_weight = UI._snap_weight
-    _collect_snap_axes = UI._collect_snap_axes
     _test_no_overlap = UI._test_no_overlap
     _snap_to_best_non_overlapping = UI._snap_to_best_non_overlapping
 
@@ -57,11 +54,6 @@ class SnapHarness:
     SNAP_WEIGHT_BOTH = UI.SNAP_WEIGHT_BOTH
     SNAP_WEIGHT_SINGLE = UI.SNAP_WEIGHT_SINGLE
     SNAP_PENALTY_CORNER = UI.SNAP_PENALTY_CORNER
-    TIER_CENTER = UI.TIER_CENTER
-    TIER_OPPOSITE = UI.TIER_OPPOSITE
-    TIER_SAME = UI.TIER_SAME
-    TIER_NONE = UI.TIER_NONE
-    _OPPOSITE_EDGES = UI._OPPOSITE_EDGES
     SNAP_RADIUS = UI.SNAP_RADIUS
 
     def snap_active(self):
@@ -283,44 +275,6 @@ class TestCenterReachLimit:
         # B should snap close to A (within SNAP_RADIUS on both axes).
         assert b.target_rect.x == 100, f"Expected B.x=100, got {b.target_rect.x}"
         assert b.target_rect.y == 0, f"Expected closest B.y=0, got {b.target_rect.y}"
-
-
-# ---------------------------------------------------------------------------
-# Tier ordering correctness
-# ---------------------------------------------------------------------------
-
-
-class TestAxisTier:
-    """_axis_tier returns correct priority tiers."""
-
-    def setup_method(self):
-        self.h = SnapHarness([])
-
-    def test_center_x_tier(self):
-        assert self.h._axis_tier("center_x", "center_x") == UI.TIER_CENTER
-
-    def test_center_y_tier(self):
-        assert self.h._axis_tier("center_y", "center_y") == UI.TIER_CENTER
-
-    def test_opposite_edges_tier(self):
-        assert self.h._axis_tier("left", "right") == UI.TIER_OPPOSITE
-        assert self.h._axis_tier("right", "left") == UI.TIER_OPPOSITE
-        assert self.h._axis_tier("top", "bottom") == UI.TIER_OPPOSITE
-        assert self.h._axis_tier("bottom", "top") == UI.TIER_OPPOSITE
-
-    def test_same_edge_tier(self):
-        assert self.h._axis_tier("left", "left") == UI.TIER_SAME
-        assert self.h._axis_tier("right", "right") == UI.TIER_SAME
-        assert self.h._axis_tier("top", "top") == UI.TIER_SAME
-        assert self.h._axis_tier("bottom", "bottom") == UI.TIER_SAME
-
-    def test_no_match_tier(self):
-        assert self.h._axis_tier("left", "top") == UI.TIER_NONE
-        assert self.h._axis_tier("center_x", "left") == UI.TIER_NONE
-
-    def test_tier_ordering(self):
-        """Center < opposite < same < none (lower = higher priority)."""
-        assert UI.TIER_CENTER < UI.TIER_OPPOSITE < UI.TIER_SAME < UI.TIER_NONE
 
 
 # ---------------------------------------------------------------------------
