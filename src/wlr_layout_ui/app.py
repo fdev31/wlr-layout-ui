@@ -7,6 +7,20 @@ from typing import cast
 
 import pyglet
 
+# Patch pyglet X11 drag-drop to prevent crash on malformed events
+try:
+    _orig_drag_drop = pyglet.window.xlib.XlibWindow._event_drag_drop
+
+    def _patched_drag_drop(self, ev):
+        try:
+            return _orig_drag_drop(self, ev)
+        except Exception:
+            pass  # ignore malformed X11 drag-drop events
+
+    pyglet.window.xlib.XlibWindow._event_drag_drop = _patched_drag_drop
+except Exception:
+    pass
+
 from pyggets import Theme, set_default_theme
 
 from .gui import UI

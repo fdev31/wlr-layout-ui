@@ -420,7 +420,7 @@ class UI(pyglet.window.Window):
         """Snap the active screen to the closest screen if it collides."""
         active_screen = self.gui_screens[-1]
 
-        colliding = [wid for wid in self.gui_screens[:-1] if wid.rect.collide(active_screen.rect)]
+        colliding = [wid for wid in self.gui_screens[:-1] if wid.target_rect.collide(active_screen.target_rect)]
         if colliding:
             self._snap_to_best_non_overlapping(active_screen, colliding)
 
@@ -440,8 +440,8 @@ class UI(pyglet.window.Window):
             (rect.topright, ("right", "top")),
             (rect.bottomright, ("right", "bottom")),
             (rect.bottomleft, ("left", "bottom")),
-            ((cx, rect.y), ("center_x", "bottom")),
-            ((cx, rect.y + rect.height), ("center_x", "top")),
+            ((cx, rect.y), ("center_x", "top")),
+            ((cx, rect.y + rect.height), ("center_x", "bottom")),
             ((rect.x, cy), ("left", "center_y")),
             ((rect.x + rect.width, cy), ("right", "center_y")),
         ]
@@ -529,7 +529,7 @@ class UI(pyglet.window.Window):
                 if self._axes_match(ac_types[0], oc_types[0]):
                     abs_dx = abs(dx)
                     if max_dist and abs_dx > max_dist:
-                        pass  # beyond attraction radius
+                        pass  # beyond attraction radius (raw pixels)
                     else:
                         tier = self._axis_tier(ac_types[0], oc_types[0])
                         # Center reach limit: skip center pairs that are too far.
@@ -541,7 +541,7 @@ class UI(pyglet.window.Window):
                 if self._axes_match(ac_types[1], oc_types[1]):
                     abs_dy = abs(dy)
                     if max_dist and abs_dy > max_dist:
-                        pass  # beyond attraction radius
+                        pass  # beyond attraction radius (raw pixels)
                     else:
                         tier = self._axis_tier(ac_types[1], oc_types[1])
                         if tier == self.TIER_CENTER and center_reach_y and abs_dy > center_reach_y:
@@ -558,21 +558,9 @@ class UI(pyglet.window.Window):
     def _snap_to_best_non_overlapping(self, active, candidates, max_dist=0):
         """Find the best non-overlapping snap and apply it.
 
-        The algorithm has two stages:
-
-        1. **Per-axis independent snap** -- the best X-translation and the
-           best Y-translation are chosen independently across *all*
-           candidates, then combined.  This allows the active screen to
-           align its left edge with monitor A while aligning its top edge
-           with monitor B.
-        2. **Point-pair fallback** -- if no valid per-axis combination is
-           found, fall back to the original approach: pick the single
-           reference-point pair with the smallest weighted distance.
-
-        Per-axis candidates are scored as ``(tier, abs_delta)`` tuples that
-        sort lexicographically — tier wins over distance.  This ensures that
-        center alignment (tier 0) always beats edge alignment (tier 1/2)
-        within reach, regardless of the distance involved.
+        Uses 8-point matching (4 corners + 4 edge midpoints) and picks the
+        closest anchor-point pair that does not cause overlap with any screen.
+        A maximum snap radius limits attraction to nearby monitors only.
 
         Args:
             active: the GuiScreen being moved.
@@ -582,115 +570,54 @@ class UI(pyglet.window.Window):
         """
         ar = active.target_rect
         active_coords = self._ref_points(ar)
-
-        # ------------------------------------------------------------------
-        # Collect per-axis snap candidates and point-pair candidates
-        # ------------------------------------------------------------------
-        # Each entry in all_x / all_y is ((tier, abs_delta), raw_delta).
-        all_x: list[tuple[tuple[int, float], float]] = []
-        all_y: list[tuple[tuple[int, float], float]] = []
         pairs: list[tuple[float, float, float]] = []
 
         for other in candidates:
             otr = other.target_rect
             other_coords = self._ref_points(otr)
 
-            xs, ys = self._collect_snap_axes(
-                active_coords,
-                other_coords,
-                max_dist,
-                active_rect=ar,
-                other_rect=otr,
-            )
-            all_x.extend(xs)
-            all_y.extend(ys)
-
-            # Also build the classic point-pair list as fallback
             for ac_coord, ac_types in active_coords:
                 for oc_coord, oc_types in other_coords:
                     dx = ac_coord[0] - oc_coord[0]
                     dy = ac_coord[1] - oc_coord[1]
-                    dist = math.sqrt(dx**2 + dy**2)
-                    if max_dist and dist > max_dist:
+                    raw_dist = math.sqrt(dx**2 + dy**2)
+                    if max_dist and raw_dist > max_dist:
                         continue
                     weight = self._snap_weight(ac_types, oc_types)
-                    pairs.append((dist * weight, dx, dy))
+                    pairs.append((raw_dist * weight, dx, dy))
 
-        # ------------------------------------------------------------------
-        # Stage 1: per-axis independent snap
-        # ------------------------------------------------------------------
-        all_x.sort()
-        all_y.sort()
-
-        # Try combinations of the best X and Y snaps.  We also include
-        # "no snap on this axis" (delta=0) so that a single-axis alignment
-        # can still win when the other axis has no good match.
-        # Additionally, include deltas from the nearest point-pairs so that
-        # corner-to-corner and edge-to-edge snaps are in the search space.
-        best_x = [dx for _, dx in all_x[:15]]  # top-15 X candidates
-        best_y = [dy for _, dy in all_y[:15]]  # top-15 Y candidates
-
-        # Add X/Y deltas from the nearest point-pairs (closest anchors first)
-        pairs_by_dist = sorted(pairs, key=lambda p: p[0])
-        for _, dx, dy in pairs_by_dist[:20]:
-            if dx not in best_x:
-                best_x.append(dx)
-            if dy not in best_y:
-                best_y.append(dy)
-
-        if 0 not in best_x:
-            best_x.append(0)
-        if 0 not in best_y:
-            best_y.append(0)
-
-        # Build all candidate combos from the expanded best_x/best_y sets.
-        # Each combo is scored by raw distance (closest anchors win first),
-        # with tier as a secondary tiebreaker for equal distances.
-        real_pairs: set[tuple[float, float]] = {(p[1], p[2]) for p in pairs}
-
-        # Build per-axis score lookups (for non-point-pair deltas)
-        x_scores: dict[float, tuple[int, float]] = {}
-        for score, dx in all_x:
-            if dx not in x_scores or score < x_scores[dx]:
-                x_scores[dx] = score
-        y_scores: dict[float, tuple[int, float]] = {}
-        for score, dy in all_y:
-            if dy not in y_scores or score < y_scores[dy]:
-                y_scores[dy] = score
-
-        zero_score: tuple[int, float] = (999, 0.0)
-
-        # Collect all combos with their distance and tier info
-        all_combos: list[tuple[float, int, float, float, float]] = []
-        for dx in best_x:
-            for dy in best_y:
-                sx = x_scores.get(dx, zero_score if dx == 0 else (self.TIER_NONE, abs(dx)))
-                sy = y_scores.get(dy, zero_score if dy == 0 else (self.TIER_NONE, abs(dy)))
-                dist = math.sqrt(dx**2 + dy**2)
-                tier = sx[0] + sy[0]
-                is_real = (dx, dy) in real_pairs
-                all_combos.append((dist, 0 if is_real else 1, tier, dx, dy))
-
-        # Sort: real combos first (col 1), then by distance (col 0), then tier (col 2)
-        all_combos.sort(key=lambda c: (c[1], c[0], c[2]))
-
-        for _, _, _, dx, dy in all_combos:
-            if dx == 0 and dy == 0:
-                continue  # no movement
-            if self._test_no_overlap(ar, dx, dy):
-                ar.x -= dx
-                ar.y -= dy
-                return
-
-        # ------------------------------------------------------------------
-        # Stage 2: point-pair fallback (original algorithm)
-        # ------------------------------------------------------------------
         pairs.sort(key=lambda p: p[0])
 
         for _, dx, dy in pairs:
             if self._test_no_overlap(ar, dx, dy):
                 ar.x -= dx
                 ar.y -= dy
+                return
+
+        # Last resort: push away along the axis that preserves center alignment.
+        for other in candidates:
+            otr = other.target_rect
+            if not ar.collide(otr):
+                continue
+            acx = ar.x + ar.width / 2
+            acy = ar.y + ar.height / 2
+            ocx = otr.x + otr.width / 2
+            ocy = otr.y + otr.height / 2
+            center_dx = acx - ocx
+            center_dy = acy - ocy
+            if center_dx >= 0:
+                dx_push = ar.x + ar.width - otr.x
+            else:
+                dx_push = ar.x - (otr.x + otr.width)
+            if dx_push != 0 and self._test_no_overlap(ar, dx_push, 0):
+                ar.x -= dx_push
+                return
+            if center_dy >= 0:
+                dy_push = ar.y + ar.height - otr.y
+            else:
+                dy_push = ar.y - (otr.y + otr.height)
+            if dy_push != 0 and self._test_no_overlap(ar, 0, dy_push):
+                ar.y -= dy_push
                 return
 
     def attract_screens(self):

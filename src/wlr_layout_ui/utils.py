@@ -69,7 +69,7 @@ def _make_command_hyprland_lua(screens: list[Screen], rects: list[Rect]) -> str:
             parts.append(f"scale={screen.scale:g}")
         if screen.transform != 0:
             parts.append(f"transform={screen.transform}")
-        commands.append("hl.monitor({" + ", ".join(parts) + "})")
+        commands.append("hl.monitor({disabled=false," + ", ".join(parts) + "})")
 
     return "hyprctl eval '" + " ; ".join(commands) + "'"
 

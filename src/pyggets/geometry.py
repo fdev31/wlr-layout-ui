@@ -42,11 +42,11 @@ class Rect:
 
     @property
     def top(self):
-        return self.y + self.height
+        return self.y
 
     @property
     def bottom(self):
-        return self.y
+        return self.y + self.height
 
     @property
     def center(self):
@@ -62,9 +62,9 @@ class Rect:
             return False
         if rect.right <= self.left:
             return False
-        if rect.top <= self.bottom:
+        if rect.top >= self.bottom:
             return False
-        return not rect.bottom >= self.top
+        return not rect.bottom <= self.top
 
     def copy(self):
         """Return a copy of this rectangle."""
