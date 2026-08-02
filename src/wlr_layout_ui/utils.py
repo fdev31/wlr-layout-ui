@@ -58,7 +58,7 @@ def _make_command_hyprland_lua(screens: list[Screen], rects: list[Rect]) -> str:
 
     for screen, rect in zip(screens, screens_rect):
         if not screen.active:
-            commands.append(f'hl.monitor({{output="{screen.uid}", disable=true}})')
+            commands.append(f'hl.monitor({{output="{screen.uid}", disabled=true}})')
             continue
         parts = [f'output="{screen.uid}"']
         if screen.mode:
