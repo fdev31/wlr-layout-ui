@@ -14,7 +14,8 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm base-devel python python-build python-installer \
-            python-hatchling python-pyglet python-tomli python-tomli-w
+            python-hatchling python-tomli python-tomli-w
+          pip install pyglet
 
       - uses: actions/checkout@v4
 
@@ -73,7 +74,8 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm base-devel git python python-build python-installer \
-            python-hatchling python-pyglet python-tomli python-tomli-w
+            python-hatchling python-tomli python-tomli-w
+          pip install pyglet
 
       - uses: actions/checkout@v4
         with:
