@@ -28,8 +28,8 @@ def _safe_drag_drop(orig, self, ev):
 
 def _patch_x11_drag_drop():
     with contextlib.suppress(Exception):
-        pyglet.window.xlib.XlibWindow._event_drag_drop = lambda self, ev: _safe_drag_drop(
-            pyglet.window.xlib.XlibWindow._event_drag_drop, self, ev
+        pyglet.window.xlib.XlibWindow._event_drag_drop = (  # type: ignore[method-assign]
+            lambda self, ev: _safe_drag_drop(pyglet.window.xlib.XlibWindow._event_drag_drop, self, ev)
         )
 
 
