@@ -835,14 +835,15 @@ class UI(pyglet.window.Window):
 
     def action_save_layout(self):
         """Save the current layout."""
-        cmd = make_command(
+        cmds = make_command(
             [s.screen for s in self.gui_screens],
             [s.target_rect.scaled(UI_RATIO) for s in self.gui_screens],
             not LEGACY,
         )
-        if os.system(cmd):
-            self.set_error("Failed applying the layout")
-        print(cmd)
+        for cmd in cmds:
+            if os.system(cmd):
+                self.set_error("Failed applying the layout")
+        print("\n".join(cmds))
 
         self.confirmation_needed = time.time()
 

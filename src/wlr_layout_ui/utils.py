@@ -11,7 +11,7 @@ hex_re = re.compile(r"^[0-9x]+$")
 
 
 @lru_cache(maxsize=1)
-def _supports_lua_syntax() -> bool:
+def _using_lua_syntax() -> bool:
     """Check if Hyprland version supports Lua monitor syntax (>= 0.55.0)."""
     try:
         data = json.loads(subprocess.getoutput("hyprctl -j version"))
@@ -46,20 +46,23 @@ def simplify_model_name(name):
     return " ".join(words)
 
 
-def make_command(screens: list[Screen], rects: list[Rect], wayland=True) -> str:
-    cmd = make_command_hyprland(screens, rects) if wayland and config.get("hyprland") else make_command_legacy(screens, rects, wayland)
-    return cmd
+def make_command(screens: list[Screen], rects: list[Rect], wayland=True) -> list[str]:
+    return make_command_hyprland(screens, rects) if wayland and config.get("hyprland") else make_command_legacy(screens, rects, wayland)
 
 
-def _make_command_hyprland_lua(screens: list[Screen], rects: list[Rect]) -> str:
+def _make_command_hyprland_lua(screens: list[Screen], rects: list[Rect]) -> list[str]:
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     commands = []
 
+    on_off_commands = []
+
     for screen, rect in zip(screens, screens_rect):
         if not screen.active:
-            commands.append(f'hl.monitor({{output="{screen.uid}", disabled=true}})')
+            on_off_commands.append(f'hl.monitor({{output="{screen.uid}", disabled=true}})')
             continue
+        else:
+            on_off_commands.append(f'hl.monitor({{output="{screen.uid}", disabled=false}})')
         parts = [f'output="{screen.uid}"']
         if screen.mode:
             parts.append(f'mode="{screen.mode}"')
@@ -69,12 +72,12 @@ def _make_command_hyprland_lua(screens: list[Screen], rects: list[Rect]) -> str:
             parts.append(f"scale={screen.scale:g}")
         if screen.transform != 0:
             parts.append(f"transform={screen.transform}")
-        commands.append("hl.monitor({disabled=false," + ", ".join(parts) + "})")
+        commands.append("hl.monitor({" + ", ".join(parts) + "})")
 
-    return "hyprctl eval '" + " ; ".join(commands) + "'"
+    return ["hyprctl eval '" + " ; ".join(on_off_commands) + "'", "sleep 2", "hyprctl eval '" + " ; ".join(commands) + "'"]
 
 
-def _make_command_hyprland_old(screens: list[Screen], rects: list[Rect]) -> str:
+def _make_command_hyprland_old(screens: list[Screen], rects: list[Rect]) -> list[str]:
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     keywords = []
@@ -87,16 +90,16 @@ def _make_command_hyprland_old(screens: list[Screen], rects: list[Rect]) -> str:
             f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale:.6f},transform,{screen.transform}"
         )
 
-    return 'hyprctl --batch "' + " ; ".join(keywords) + '"'
+    return ['hyprctl --batch "' + " ; ".join(keywords) + '"']
 
 
-def make_command_hyprland(screens: list[Screen], rects: list[Rect]) -> str:
-    if _supports_lua_syntax():
+def make_command_hyprland(screens: list[Screen], rects: list[Rect]) -> list[str]:
+    if _using_lua_syntax():
         return _make_command_hyprland_lua(screens, rects)
     return _make_command_hyprland_old(screens, rects)
 
 
-def make_command_legacy(screens: list[Screen], rects: list[Rect], wayland=False) -> str:
+def make_command_legacy(screens: list[Screen], rects: list[Rect], wayland=False) -> list[str]:
     screens_rect = rects.copy()
     trim_rects_flip_y(screens_rect)
     command = ["wlr-randr" if wayland else "xrandr"]
@@ -111,7 +114,7 @@ def make_command_legacy(screens: list[Screen], rects: list[Rect], wayland=False)
         command.append(f"--output {screen.uid} --on --pos {int(rect.x)}{sep}{int(rect.y)} --mode {mode}")
 
     cmd = " ".join(command)
-    return cmd
+    return [cmd]
 
 
 def sorted_resolutions(modes):
