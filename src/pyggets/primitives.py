@@ -16,7 +16,8 @@ _LABEL_CACHE_SIZE = 256
 @lru_cache(maxsize=_SHAPE_CACHE_SIZE)
 def makeCircle(x, y, r, color):
     """Create a cached pyglet Circle."""
-    return Circle(x, y, r, color=color)
+    segments = max(24, int(r / 0.5))
+    return Circle(x, y, r, segments=segments, color=color)
 
 
 @lru_cache(maxsize=_SHAPE_CACHE_SIZE)
