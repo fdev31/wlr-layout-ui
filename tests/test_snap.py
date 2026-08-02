@@ -17,8 +17,8 @@ import pyglet
 
 pyglet.options["headless"] = True
 
-from pyggets import Rect as PRect  # noqa: E402
-from wlr_layout_ui.gui import UI  # noqa: E402
+from pyggets import Rect as PRect  # ruff: ignore[module-import-not-at-top-of-file]
+from wlr_layout_ui.gui import UI  # ruff: ignore[module-import-not-at-top-of-file]
 
 # ---------------------------------------------------------------------------
 # Lightweight helpers to exercise snap logic without a full UI window.
@@ -382,12 +382,10 @@ class TestPhantomComboValidation:
         harness = SnapHarness([a, b])
         active = FakeScreen(200, 200, 100, 100)
         harness.gui_screens.append(active)
+        # No crash when screens don't overlap (snap_active_screen skips)
         harness.snap_active()
-        # The algorithm should pick a VALID point-pair, not a phantom
-        # Either snap toward A (x aligned) or B (y aligned)
-        final_pos = _pos(active)
-        # Verify no crash and some snap occurred
-        assert final_pos != (200, 200) or True  # may not move if no overlap
+        # Active should not have moved (no overlap with candidates)
+        assert _pos(active) == (200, 200)
 
 
 # ---------------------------------------------------------------------------

@@ -605,17 +605,11 @@ class UI(pyglet.window.Window):
             ocy = otr.y + otr.height / 2
             center_dx = acx - ocx
             center_dy = acy - ocy
-            if center_dx >= 0:
-                dx_push = ar.x + ar.width - otr.x
-            else:
-                dx_push = ar.x - (otr.x + otr.width)
+            dx_push = ar.x + ar.width - otr.x if center_dx >= 0 else ar.x - (otr.x + otr.width)
             if dx_push != 0 and self._test_no_overlap(ar, dx_push, 0):
                 ar.x -= dx_push
                 return
-            if center_dy >= 0:
-                dy_push = ar.y + ar.height - otr.y
-            else:
-                dy_push = ar.y - (otr.y + otr.height)
+            dy_push = ar.y + ar.height - otr.y if center_dy >= 0 else ar.y - (otr.y + otr.height)
             if dy_push != 0 and self._test_no_overlap(ar, 0, dy_push):
                 ar.y -= dy_push
                 return

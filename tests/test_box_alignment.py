@@ -8,10 +8,10 @@ import pyglet
 
 pyglet.options["headless"] = True
 
-from pyggets import HBox, Rect, VBox  # noqa: E402
-from pyggets.widgets import Widget  # noqa: E402
-from wlr_layout_ui.types import Mode  # noqa: E402
-from wlr_layout_ui.utils import find_matching_mode  # noqa: E402
+from pyggets import HBox, Rect, VBox  # ruff: ignore[module-import-not-at-top-of-file]
+from pyggets.widgets import Widget  # ruff: ignore[module-import-not-at-top-of-file]
+from wlr_layout_ui.types import Mode  # ruff: ignore[module-import-not-at-top-of-file]
+from wlr_layout_ui.utils import find_matching_mode  # ruff: ignore[module-import-not-at-top-of-file]
 
 
 class DummyWidget(Widget):
