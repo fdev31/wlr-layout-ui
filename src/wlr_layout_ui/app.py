@@ -1,25 +1,12 @@
 """Application entry points for wlr-layout-ui."""
 
+import contextlib
 import os
 import sys
 import time
 from typing import cast
 
 import pyglet
-
-# Patch pyglet X11 drag-drop to prevent crash on malformed events
-try:
-    _orig_drag_drop = pyglet.window.xlib.XlibWindow._event_drag_drop
-
-    def _patched_drag_drop(self, ev):
-        try:
-            return _orig_drag_drop(self, ev)
-        except Exception:
-            pass  # ignore malformed X11 drag-drop events
-
-    pyglet.window.xlib.XlibWindow._event_drag_drop = _patched_drag_drop
-except Exception:
-    pass
 
 from pyggets import Theme, set_default_theme
 
@@ -29,6 +16,26 @@ from .screens import displayInfo, load
 from .settings import LEGACY, PROG_NAME, UI_RATIO, reload_pre_commands
 from .types import Mode
 from .utils import Rect, get_size, make_command
+
+
+def _safe_drag_drop(orig, self, ev):
+    """Call original drag-drop, ignoring any exceptions."""
+    try:
+        return orig(self, ev)
+    except Exception:
+        pass
+
+
+def _patch_x11_drag_drop():
+    with contextlib.suppress(Exception):
+        pyglet.window.xlib.XlibWindow._event_drag_drop = (
+            lambda self, ev: _safe_drag_drop(
+                pyglet.window.xlib.XlibWindow._event_drag_drop, self, ev
+            )
+        )
+
+
+_patch_x11_drag_drop()
 
 # Configure the default pyggets theme for this application
 _theme = Theme.dark()
