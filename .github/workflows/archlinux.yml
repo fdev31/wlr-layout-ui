@@ -15,7 +15,7 @@ jobs:
         run: |
           pacman -Syu --noconfirm base-devel python python-build python-installer \
             python-hatchling python-tomli python-tomli-w python-pip
-          pip install pyglet
+          pip install --break-system-packages pyglet
 
       - uses: actions/checkout@v4
 
@@ -75,7 +75,7 @@ jobs:
         run: |
           pacman -Syu --noconfirm base-devel git python python-build python-installer \
             python-hatchling python-tomli python-tomli-w python-pip
-          pip install pyglet
+          pip install --break-system-packages pyglet
 
       - uses: actions/checkout@v4
         with:
