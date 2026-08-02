@@ -15,7 +15,8 @@ jobs:
         run: |
           pacman -Syu --noconfirm base-devel python python-build python-installer \
             python-hatchling python-tomli python-tomli-w python-pip
-          pip install --break-system-packages pyglet
+          rm -f /usr/lib/python*/EXTERNALLY-MANAGED
+          pip install pyglet
 
       - uses: actions/checkout@v4
 
@@ -75,7 +76,8 @@ jobs:
         run: |
           pacman -Syu --noconfirm base-devel git python python-build python-installer \
             python-hatchling python-tomli python-tomli-w python-pip
-          pip install --break-system-packages pyglet
+          rm -f /usr/lib/python*/EXTERNALLY-MANAGED
+          pip install pyglet
 
       - uses: actions/checkout@v4
         with:
