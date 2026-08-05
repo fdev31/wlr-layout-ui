@@ -64,14 +64,11 @@ def _make_command_hyprland_lua(screens: list[Screen], rects: list[Rect]) -> list
         else:
             on_off_commands.append(f'hl.monitor({{output="{screen.uid}", disabled=false}})')
         parts = [f'output="{screen.uid}"']
-        if screen.mode:
-            parts.append(f'mode="{screen.mode}"')
+        parts.append(f'mode="{screen.mode}"')
         pos = f"{int(rect.x)}x{int(rect.y)}"
         parts.append(f'position="{pos}"')
-        if abs(screen.scale - 1.0) > 0.001:
-            parts.append(f"scale={screen.scale:g}")
-        if screen.transform != 0:
-            parts.append(f"transform={screen.transform}")
+        parts.append(f"scale={screen.scale:g}")
+        parts.append(f"transform={screen.transform}")
         commands.append("hl.monitor({" + ", ".join(parts) + "})")
 
     return ["hyprctl eval '" + " ; ".join(on_off_commands) + "'", "sleep 2", "hyprctl eval '" + " ; ".join(commands) + "'"]
