@@ -16,8 +16,10 @@ from wlr_layout_ui.types import Mode, Screen
 from wlr_layout_ui.utils import make_command_hyprland, make_command_legacy, trim_rects_flip_y
 
 
-def _parse_hyprland_positions(cmd: str) -> dict[str, tuple[int, int]]:
+def _parse_hyprland_positions(cmd: str | list[str]) -> dict[str, tuple[int, int]]:
     """Parse hyprctl command and return {uid: (x, y)} for each monitor."""
+    if isinstance(cmd, list):
+        cmd = "\n".join(cmd)
     positions = {}
     # Old format: keyword monitor HDMI-A-1,...,1920x0,
     for match in re.finditer(r"keyword monitor (\S+?),\S+?,(\d+)x(\d+),", cmd):
@@ -26,11 +28,11 @@ def _parse_hyprland_positions(cmd: str) -> dict[str, tuple[int, int]]:
     # New format: hl.monitor({output="HDMI-A-1", ..., position="1920x0", ...})
     for monitor_match in re.finditer(r'hl\.monitor\(([^)]+)\)', cmd):
         params = monitor_match.group(1)
-        uid_match = re.search(r'output="(\S+?)"', params)
+        uid_match = re.search(r'output\s*=\s*["\']([^"\']+)["\']', params)
         if not uid_match:
             continue
         uid = uid_match.group(1)
-        pos_match = re.search(r'position="(\d+)x(\d+)"', params)
+        pos_match = re.search(r'position\s*=\s*["\'](\d+)x(\d+)["\']', params)
         if pos_match:
             x, y = int(pos_match.group(1)), int(pos_match.group(2))
         else:
@@ -39,8 +41,10 @@ def _parse_hyprland_positions(cmd: str) -> dict[str, tuple[int, int]]:
     return positions
 
 
-def _parse_legacy_positions(cmd: str) -> dict[str, tuple[int, int]]:
+def _parse_legacy_positions(cmd: str | list[str]) -> dict[str, tuple[int, int]]:
     """Parse wlr-randr/xrandr command and return {uid: (x, y)} for each monitor."""
+    if isinstance(cmd, list):
+        cmd = "\n".join(cmd)
     positions = {}
     for match in re.finditer(r"--output (\S+) --on --pos (\d+)[,x](\d+)", cmd):
         uid, x, y = match.group(1), int(match.group(2)), int(match.group(3))
@@ -206,7 +210,7 @@ def test_hyprland_no_trailing_semicolon():
     screen_b = _make_screen("DP-1")
 
     rects = [Rect(0, 0, 1920, 1080), Rect(1920, 0, 1920, 1080)]
-    cmd = make_command_hyprland([screen_a, screen_b], rects)
+    cmd = " ".join(make_command_hyprland([screen_a, screen_b], rects))
 
     # Old format ends with ", new format ends with '
     assert cmd.endswith('"') or cmd.endswith("'")
@@ -217,9 +221,9 @@ def test_hyprland_single_monitor_no_semicolon():
     """A single monitor should produce no semicolons at all."""
     screen = _make_screen("HDMI-A-1")
     rects = [Rect(0, 0, 1920, 1080)]
-    cmd = make_command_hyprland([screen], rects)
+    cmd = " ".join(make_command_hyprland([screen], rects))
 
-    assert ";" not in cmd or " ; " not in cmd
+    assert " ; " not in cmd
 
 
 def test_hyprland_disabled_monitor():
@@ -227,11 +231,11 @@ def test_hyprland_disabled_monitor():
     screen = _make_screen("HDMI-A-1")
     screen.active = False
     rects = [Rect(0, 0, 1920, 1080)]
-    cmd = make_command_hyprland([screen], rects)
+    cmd = " ".join(make_command_hyprland([screen], rects))
 
     # Old format: keyword monitor HDMI-A-1,disable
     # New format: hl.monitor({output="HDMI-A-1", disable=true})
-    assert "HDMI-A-1,disable" in cmd or 'disable=true' in cmd
+    assert "HDMI-A-1,disable" in cmd or 'disable=true' in cmd or 'disabled=true' in cmd or 'disabled = true' in cmd
 
 
 # ---------------------------------------------------------------------------

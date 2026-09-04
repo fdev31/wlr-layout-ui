@@ -81,13 +81,16 @@ def _make_command_hyprland_old(screens: list[Screen], rects: list[Rect]) -> list
 
     for screen, rect in zip(screens, screens_rect):
         if not screen.active:
-            keywords.append(f"keyword monitor {screen.uid},disable")
+            keywords.append(f"hl.monitor({{output = '{screen.uid}', disabled = true}})")
             continue
+        assert screen.mode
+        pos = f"{int(rect.x)}x{int(rect.y)}"
         keywords.append(
-            f"keyword monitor {screen.uid},{screen.mode},{int(rect.x)}x{int(rect.y)},{screen.scale:.6f},transform,{screen.transform}"
+            f"hl.monitor({{output = '{screen.uid}', mode = '{screen.mode}',"
+            f" position = '{pos}', scale = {screen.scale:.6f}, transform = {screen.transform}}})"
         )
 
-    return ['hyprctl --batch "' + " ; ".join(keywords) + '"']
+    return ['hyprctl eval "' + " ; ".join(keywords) + '"']
 
 
 def make_command_hyprland(screens: list[Screen], rects: list[Rect]) -> list[str]:

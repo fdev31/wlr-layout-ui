@@ -1,7 +1,7 @@
 Tickets
 =======
 
-:total-count: 6
+:total-count: 8
 
 --------------------------------------------------------------------------------
 
@@ -41,4 +41,28 @@ Animate color changes
 
 :bugid: 6
 :created: 2025-02-25T23:53:47
+:priority: 0
+
+--------------------------------------------------------------------------------
+
+Lua adaptation
+==============
+
+:bugid: 7
+:created: 2026-07-29T22:46:45
+:priority: 0
+
+
+Use the updated syntax, such as:
+ hyprctl eval 'hl.monitor({output="DP-1", disabled=true})'
+
+Check reference: https://wiki.hypr.land/Configuring/Basics/Monitors/
+
+--------------------------------------------------------------------------------
+
+Profiles are broken
+===================
+
+:bugid: 8
+:created: 2026-09-03T21:21:57
 :priority: 0
