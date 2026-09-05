@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, "src")
 
 from pyggets import Rect
-from wlr_layout_ui.settings import UI_RATIO
+from wlr_layout_ui.settings import SCREEN_SCALE
 from wlr_layout_ui.types import Mode, Screen
 from wlr_layout_ui.utils import make_command_hyprland, make_command_legacy, trim_rects_flip_y
 
@@ -26,7 +26,7 @@ def _parse_hyprland_positions(cmd: str | list[str]) -> dict[str, tuple[int, int]
         uid, x, y = match.group(1), int(match.group(2)), int(match.group(3))
         positions[uid] = (x, y)
     # New format: hl.monitor({output="HDMI-A-1", ..., position="1920x0", ...})
-    for monitor_match in re.finditer(r'hl\.monitor\(([^)]+)\)', cmd):
+    for monitor_match in re.finditer(r"hl\.monitor\(([^)]+)\)", cmd):
         params = monitor_match.group(1)
         uid_match = re.search(r'output\s*=\s*["\']([^"\']+)["\']', params)
         if not uid_match:
@@ -108,14 +108,14 @@ def test_horizontal_alignment_no_gap():
     screen_a = _make_screen("HDMI-A-1", width=W, height=H)
     screen_b = _make_screen("DP-1", width=2560, height=H)
 
-    # UI coordinates: A at x=0, B at x=W/UI_RATIO (edge-to-edge, Y-up)
-    ui_w_a = W // UI_RATIO
-    ui_h = H // UI_RATIO
+    # UI coordinates: A at x=0, B at x=W/SCREEN_SCALE (edge-to-edge, Y-up)
+    ui_w_a = W // SCREEN_SCALE
+    ui_h = H // SCREEN_SCALE
     rect_a = Rect(0, 0, ui_w_a, ui_h)
-    rect_b = Rect(ui_w_a, 0, 2560 // UI_RATIO, ui_h)
+    rect_b = Rect(ui_w_a, 0, 2560 // SCREEN_SCALE, ui_h)
 
     # Scale back to real pixels
-    real_rects = [rect_a.scaled(UI_RATIO), rect_b.scaled(UI_RATIO)]
+    real_rects = [rect_a.scaled(SCREEN_SCALE), rect_b.scaled(SCREEN_SCALE)]
 
     cmd = make_command_hyprland([screen_a, screen_b], real_rects)
     positions = _parse_hyprland_positions(cmd)
@@ -135,14 +135,14 @@ def test_vertical_alignment_no_gap():
     screen_a = _make_screen("HDMI-A-1", width=2560, height=H)
     screen_b = _make_screen("DP-1", width=2560, height=H)
 
-    ui_h = H // UI_RATIO  # 180
-    ui_w = 2560 // UI_RATIO  # 320
+    ui_h = H // SCREEN_SCALE  # 180
+    ui_w = 2560 // SCREEN_SCALE  # 320
 
     # Y-up UI: A is on top (y=ui_h), B is on bottom (y=0)
     rect_a = Rect(0, ui_h, ui_w, ui_h)
     rect_b = Rect(0, 0, ui_w, ui_h)
 
-    real_rects = [rect_a.scaled(UI_RATIO), rect_b.scaled(UI_RATIO)]
+    real_rects = [rect_a.scaled(SCREEN_SCALE), rect_b.scaled(SCREEN_SCALE)]
 
     cmd = make_command_hyprland([screen_a, screen_b], real_rects)
     positions = _parse_hyprland_positions(cmd)
@@ -157,14 +157,14 @@ def test_vertical_alignment_with_8px_gap():
     screen_a = _make_screen("HDMI-A-1", width=2560, height=H)
     screen_b = _make_screen("DP-1", width=2560, height=H)
 
-    ui_h = H // UI_RATIO
-    ui_w = 2560 // UI_RATIO
-    gap_ui = 8.0 / UI_RATIO  # 1.0 UI pixels = 8 real pixels
+    ui_h = H // SCREEN_SCALE
+    ui_w = 2560 // SCREEN_SCALE
+    gap_ui = 8.0 / SCREEN_SCALE  # 1.0 UI pixels = 8 real pixels
 
     rect_a = Rect(0, ui_h + gap_ui, ui_w, ui_h)
     rect_b = Rect(0, 0, ui_w, ui_h)
 
-    real_rects = [rect_a.scaled(UI_RATIO), rect_b.scaled(UI_RATIO)]
+    real_rects = [rect_a.scaled(SCREEN_SCALE), rect_b.scaled(SCREEN_SCALE)]
 
     cmd = make_command_hyprland([screen_a, screen_b], real_rects)
     positions = _parse_hyprland_positions(cmd)
@@ -185,12 +185,12 @@ def test_legacy_horizontal_alignment_no_gap():
     screen_a = _make_screen("HDMI-A-1", width=W, height=H)
     screen_b = _make_screen("DP-1", width=2560, height=H)
 
-    ui_w_a = W // UI_RATIO
-    ui_h = H // UI_RATIO
+    ui_w_a = W // SCREEN_SCALE
+    ui_h = H // SCREEN_SCALE
     rect_a = Rect(0, 0, ui_w_a, ui_h)
-    rect_b = Rect(ui_w_a, 0, 2560 // UI_RATIO, ui_h)
+    rect_b = Rect(ui_w_a, 0, 2560 // SCREEN_SCALE, ui_h)
 
-    real_rects = [rect_a.scaled(UI_RATIO), rect_b.scaled(UI_RATIO)]
+    real_rects = [rect_a.scaled(SCREEN_SCALE), rect_b.scaled(SCREEN_SCALE)]
 
     cmd = make_command_legacy([screen_a, screen_b], real_rects, wayland=True)
     positions = _parse_legacy_positions(cmd)
@@ -235,7 +235,7 @@ def test_hyprland_disabled_monitor():
 
     # Old format: keyword monitor HDMI-A-1,disable
     # New format: hl.monitor({output="HDMI-A-1", disable=true})
-    assert "HDMI-A-1,disable" in cmd or 'disable=true' in cmd or 'disabled=true' in cmd or 'disabled = true' in cmd
+    assert "HDMI-A-1,disable" in cmd or "disable=true" in cmd or "disabled=true" in cmd or "disabled = true" in cmd
 
 
 # ---------------------------------------------------------------------------
@@ -244,9 +244,10 @@ def test_hyprland_disabled_monitor():
 
 
 def test_rect_scaled_preserves_integer_coords():
-    """Scaling integer UI coords by UI_RATIO gives exact integer results."""
+    """Scaling integer UI coords by a scale factor gives exact integer results."""
+    scale = 8
     r = Rect(240, 135, 320, 180)
-    scaled = r.scaled(UI_RATIO)
+    scaled = r.scaled(scale)
     assert scaled.x == 1920
     assert scaled.y == 1080
     assert scaled.width == 2560

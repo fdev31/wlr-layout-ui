@@ -2,7 +2,8 @@ import os
 
 PROG_NAME = "WLR Layout"
 WINDOW_MARGIN = 10
-UI_RATIO = 8
+SCREEN_SCALE = 8
+UI_SCALE = 1.0
 LEGACY = not os.environ.get("WAYLAND_DISPLAY")
 ALLOW_DESELECT = True
 

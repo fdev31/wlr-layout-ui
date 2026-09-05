@@ -226,6 +226,10 @@ def _layout_horizontal(widgets, container_rect, padding, totalpadding):
     Handles main-axis fill (width), cross-axis fill (height), and
     vertical alignment per child.
     """
+    scale = get_default_theme().scale
+    padding = int(padding * scale)
+    totalpadding = int(totalpadding * scale)
+
     # Main-axis fill (width)
     fill_children = [w for w in widgets if w.fill in ("both", "width")]
     if fill_children:
@@ -259,6 +263,10 @@ def _layout_vertical(widgets, container_rect, padding, totalpadding):
     Handles main-axis fill (height), cross-axis fill (width), and
     horizontal alignment per child.
     """
+    scale = get_default_theme().scale
+    padding = int(padding * scale)
+    totalpadding = int(totalpadding * scale)
+
     # Main-axis fill (height)
     fill_children = [w for w in widgets if w.fill in ("both", "height")]
     if fill_children:
@@ -611,6 +619,7 @@ class Panel(_Box):
                 anchor_y="center",
                 color=self.style.text_color,
                 font_name=font_name,
+                font_size=get_default_theme().scaled_font(12),
             ).draw()
 
         # Layout if needed, then draw children
@@ -777,6 +786,7 @@ class Modal(Widget):
                 anchor_y="center",
                 color=self.style.text_color,
                 font_name=font_name,
+                font_size=get_default_theme().scaled_font(12),
                 weight="bold",
             ).draw()
             # Separator line below title

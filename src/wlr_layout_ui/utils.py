@@ -35,7 +35,7 @@ def get_size(width: int, height: int, scale: float, transform: int, glob_scale: 
 
 
 def get_screen_size(screen: Screen, scale: float = 1):
-    """Get the size of the window based on the screen size and UI_RATIO."""
+    """Get the size of the window based on the screen size and SCREEN_SCALE."""
     assert screen.mode
     return get_size(screen.mode.width, screen.mode.height, screen.scale, screen.transform, scale)
 

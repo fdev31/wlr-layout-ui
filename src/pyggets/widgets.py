@@ -149,6 +149,7 @@ class Widget:
 
     def __init__(self, rect, style=None):
         self.rect = rect
+        self.base_rect = Rect(rect.x, rect.y, rect.width, rect.height)
         self.target_rect = None
         self._custom_style = style  # None means "use the active theme"
         self.valign = None
@@ -531,6 +532,7 @@ class Dropdown(Widget):
             anchor_x="left",
             anchor_y="center",
             color=self.style.text_color,
+            font_size=get_default_theme().scaled_font(12),
         ).draw()
         glDisable(GL_SCISSOR_TEST)
 
@@ -594,6 +596,7 @@ class Dropdown(Widget):
                     anchor_y="center",
                     weight="bold" if i == self.selected_index else "normal",
                     font_name=font_name,
+                    font_size=get_default_theme().scaled_font(12),
                 ).draw()
 
                 # Restore reveal scissor for next option background
@@ -675,6 +678,7 @@ class Spacer(Widget):
                 anchor_x="center",
                 anchor_y="center",
                 color=self.style.text_color,
+                font_size=get_default_theme().scaled_font(12),
             ).draw()
 
     def __repr__(self):
@@ -757,6 +761,8 @@ class Button(Widget):
         icon_sz = self.icon_size or (rect.height - 8)
         icon_gap = 6  # gap between icon and text
 
+        btn_font_size = get_default_theme().scaled_font(12)
+
         if self.icon and label_text:
             # Icon + text mode: icon on left, text on right, group centered
             icon_sprite = makeSprite(self.icon, 0, 0, width=icon_sz, height=icon_sz)
@@ -773,6 +779,7 @@ class Button(Widget):
                 color=text_color,
                 weight=style.weight,
                 font_name=font_name,
+                font_size=btn_font_size,
             )
             text_w = text_label.content_width
 
@@ -797,6 +804,7 @@ class Button(Widget):
                 color=text_color,
                 weight=style.weight,
                 font_name=font_name,
+                font_size=btn_font_size,
             )
             self.text.draw()
 
@@ -823,6 +831,7 @@ class Button(Widget):
                 color=text_color,
                 weight=style.weight,
                 font_name=font_name,
+                font_size=btn_font_size,
             )
             self.text.draw()
 
@@ -868,7 +877,7 @@ class Label(Widget):
 
         kw = {}
         if self.font_size is not None:
-            kw["font_size"] = self.font_size
+            kw["font_size"] = get_default_theme().scaled_font(self.font_size)
         if "\n" in self.text:
             kw["multiline"] = True
             kw["width"] = int(self.rect.width)
@@ -1088,6 +1097,7 @@ class Toggle(Widget):
             self._label_shape.y = self.rect.y + self.rect.height // 2
             self._label_shape.color = self.style.text_color
             self._label_shape.font_name = get_default_theme().font_name
+            self._label_shape.font_size = get_default_theme().scaled_font(12)
             self._label_shape.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -1243,6 +1253,7 @@ class RadioGroup(Widget):
                 anchor_y="center",
                 color=self.style.text_color,
                 font_name=font_name,
+                font_size=get_default_theme().scaled_font(12),
             ).draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -1263,10 +1274,11 @@ class Slider(Widget):
     value = _TrackedProperty(default=50)
     _dragging = _TrackedProperty(default=False)
 
-    def __init__(self, rect, min_val=0, max_val=100, value=50, style=None, onchange=None):
+    def __init__(self, rect, min_val=0, max_val=100, value=50, style=None, onchange=None, step=None):
         super().__init__(rect, style)
         self.min_val = min_val
         self.max_val = max_val
+        self.step = step
         self.value = value
         self.onchange = onchange
         self._dragging = False
@@ -1289,6 +1301,8 @@ class Slider(Widget):
 
     def set_value(self, v):
         """Set the slider value, clamped to [min_val, max_val]."""
+        if self.step:
+            v = round((v - self.min_val) / self.step) * self.step + self.min_val
         self.value = max(self.min_val, min(v, self.max_val))
 
     def _value_to_x(self, value=None):
@@ -1308,7 +1322,10 @@ class Slider(Widget):
             return self.min_val
         clamped_x = max(self.rect.x + self._handle_radius, min(x, self.rect.x + self.rect.width - self._handle_radius))
         ratio = (clamped_x - self.rect.x - self._handle_radius) / usable
-        return self.min_val + ratio * (self.max_val - self.min_val)
+        val = self.min_val + ratio * (self.max_val - self.min_val)
+        if self.step:
+            val = round((val - self.min_val) / self.step) * self.step + self.min_val
+        return max(self.min_val, min(val, self.max_val))
 
     def draw(self, cursor):
         track_y = self.rect.y + (self.rect.height - self._track_height) // 2
@@ -1428,6 +1445,7 @@ class Tooltip(Widget):
             anchor_y="center",
             color=tip_text_color,
             font_name=font_name,
+            font_size=get_default_theme().scaled_font(12),
             multiline=True,
             width=est_width,
         ).draw()
@@ -1511,6 +1529,7 @@ class TextInput(Widget):
                 anchor_y="center",
                 color=self.style.surface_text,
                 font_name=font_name,
+                font_size=get_default_theme().scaled_font(12),
             ).draw()
         elif self.placeholder:
             # Dimmed placeholder
@@ -1522,6 +1541,7 @@ class TextInput(Widget):
                 anchor_y="center",
                 color=self.style.placeholder_text,
                 font_name=font_name,
+                font_size=get_default_theme().scaled_font(12),
             ).draw()
 
     def on_mouse_press(self, x, y, button, modifiers):

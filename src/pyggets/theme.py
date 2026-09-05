@@ -17,7 +17,12 @@ class Theme:
 
     font_name: str = "Free Sans"
     widget_radius: int = 3
+    scale: float = 1.0
     default_style: Style = field(default_factory=Style)
+
+    def scaled_font(self, base: int) -> int:
+        """Return the scaled font size for the given base size."""
+        return int(base * self.scale)
 
     @classmethod
     def dark(cls) -> Theme:
@@ -112,15 +117,14 @@ class Theme:
         )
 
 
-_default_theme = Theme()
+_theme_holder: list[Theme] = [Theme()]
 
 
 def get_default_theme() -> Theme:
     """Return the current default theme."""
-    return _default_theme
+    return _theme_holder[0]
 
 
 def set_default_theme(theme: Theme) -> None:
     """Set the default theme used by all widgets that don't specify one explicitly."""
-    global _default_theme  # ruff: ignore[global-statement]
-    _default_theme = theme
+    _theme_holder[0] = theme

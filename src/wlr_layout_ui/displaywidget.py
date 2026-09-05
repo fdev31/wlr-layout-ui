@@ -10,7 +10,7 @@ from pyglet.text import Label
 
 from .screens import Screen
 from .utils import simplify_model_name
-from .widgets import Rect, Widget, brighten
+from .widgets import Rect, Widget, brighten, get_default_theme
 
 ANIMATION_LENGTH = 8
 
@@ -180,7 +180,7 @@ class GuiScreen(Widget):
             anchor_y="center",
             x=tx,
             y=ty,
-            font_size=16,
+            font_size=get_default_theme().scaled_font(16),
             color=(240, 240, 240, 255),
         ).draw()
 
@@ -193,7 +193,7 @@ class GuiScreen(Widget):
                 anchor_x="center",
                 anchor_y="center",
                 x=tx,
-                y=ty + 20,
+                y=ty + get_default_theme().scaled_font(20),
                 color=txt_color,
                 weight="bold" if self.screen.active else "normal",
             ).draw()
@@ -202,7 +202,7 @@ class GuiScreen(Widget):
                 anchor_x="center",
                 anchor_y="center",
                 x=tx,
-                y=ty - 20,
+                y=ty - get_default_theme().scaled_font(20),
                 color=txt_color,
                 weight="bold" if self.screen.active else "normal",
             ).draw()

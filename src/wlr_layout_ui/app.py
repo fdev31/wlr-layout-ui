@@ -9,10 +9,11 @@ import pyglet
 
 from pyggets import Theme, set_default_theme
 
+from . import settings
 from .gui import UI
-from .profiles import load_profiles
+from .profiles import load_profiles, load_settings
 from .screens import displayInfo, load
-from .settings import LEGACY, PROG_NAME, UI_RATIO, reload_pre_commands
+from .settings import LEGACY, PROG_NAME, reload_pre_commands
 from .types import Mode
 from .utils import Rect, get_size, make_command
 
@@ -41,6 +42,9 @@ _theme.default_style.highlight = (100, 200, 150)
 _theme.widget_radius = 3
 
 set_default_theme(_theme)
+
+# Load persisted settings (applies scale to the active theme)
+load_settings()
 
 try:
     import setproctitle
@@ -116,13 +120,15 @@ Options:
             apply_profile(profile)
         return
     load()
-    max_width = int(sum(max(screen.available, key=lambda mode: mode.width).width for screen in displayInfo) // UI_RATIO)
-    max_height = int(sum(max(screen.available, key=lambda mode: mode.height).height for screen in displayInfo) // UI_RATIO)
+    max_width = int(sum(max(screen.available, key=lambda mode: mode.width).width for screen in displayInfo) // settings.SCREEN_SCALE)
+    max_height = int(sum(max(screen.available, key=lambda mode: mode.height).height for screen in displayInfo) // settings.SCREEN_SCALE)
     average_width = int(
-        sum(max(screen.available, key=lambda mode: mode.width).width for screen in displayInfo) / len(displayInfo) // UI_RATIO
+        sum(max(screen.available, key=lambda mode: mode.width).width for screen in displayInfo) / len(displayInfo) // settings.SCREEN_SCALE
     )
     average_height = int(
-        sum(max(screen.available, key=lambda mode: mode.height).height for screen in displayInfo) / len(displayInfo) // UI_RATIO
+        sum(max(screen.available, key=lambda mode: mode.height).height for screen in displayInfo)
+        / len(displayInfo)
+        // settings.SCREEN_SCALE
     )
 
     width = max_width + average_width * 2

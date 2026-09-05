@@ -10,12 +10,13 @@ import pyglet
 from pyggets import Rect as PRect
 from pyggets import makeLabel, makeRectangle
 
+from . import settings
 from .displaywidget import GuiScreen
 from .icons import icon_path
-from .profiles import delete_profile, load_profiles, save_profile
+from .profiles import delete_profile, load_profiles, save_profile, save_settings
 from .screens import displayInfo, load
 from .screenshots import capture_screenshots
-from .settings import ALLOW_DESELECT, LEGACY, PROG_NAME, UI_RATIO, WINDOW_MARGIN, reload_pre_commands
+from .settings import ALLOW_DESELECT, LEGACY, PROG_NAME, WINDOW_MARGIN, reload_pre_commands
 from .utils import (
     Rect,
     compute_bounding_box,
@@ -32,7 +33,9 @@ from .widgets import (
     Button,
     Dropdown,
     HBox,
+    Label,
     Modal,
+    Slider,
     Spacer,
     Style,
     TextInput,
@@ -133,8 +136,39 @@ class UI(pyglet.window.Window):
             ),
         )
 
+        self._ui_scale_label = Label(
+            ref_rect.copy(),
+            text=f"UI Scale: {get_default_theme().scale:.1f}x",
+            font_size=12,
+            style=Style(text_color=(200, 200, 200)),
+        )
+        self._screen_scale_label = Label(
+            ref_rect.copy(),
+            text=f"Screen ratio: {settings.SCREEN_SCALE}",
+            font_size=12,
+            style=Style(text_color=(200, 200, 200)),
+        )
+
         self.sidepanel = VBox(
             widgets=[
+                self._ui_scale_label,
+                Slider(
+                    ref_rect.copy(),
+                    min_val=1.0,
+                    max_val=3.0,
+                    value=get_default_theme().scale,
+                    step=0.5,
+                    onchange=self._on_ui_scale_change,
+                ),
+                self._screen_scale_label,
+                Slider(
+                    ref_rect.copy(),
+                    min_val=2,
+                    max_val=16,
+                    value=settings.SCREEN_SCALE,
+                    step=1,
+                    onchange=self._on_screen_scale_change,
+                ),
                 Button(
                     ref_rect.copy(),
                     label="Apply",
@@ -248,6 +282,7 @@ class UI(pyglet.window.Window):
         self.sidepanel.set_alignment("top", "left")
 
         self.gui_screens: list[GuiScreen] = []
+        self._anchors: dict = {}
         self.load_screens()
         # NOTE: disabled
         # Refresh screenshots every 10 seconds in the background
@@ -255,12 +290,14 @@ class UI(pyglet.window.Window):
         # Ensure correct positioning
         self.on_resize(width, height)
         self.set_current_modes_as_ref()
+        self._capture_base_sizes()
+        self.apply_theme_scale()
 
     def set_current_modes_as_ref(self):
         """Set original cmd to allow reverting the selected mode."""
         self.original_cmd = make_command(
             [s.screen for s in self.gui_screens],
-            [s.rect.scaled(UI_RATIO) for s in self.gui_screens],
+            [s.rect.scaled(settings.SCREEN_SCALE) for s in self.gui_screens],
             not LEGACY,
         )
 
@@ -278,6 +315,62 @@ class UI(pyglet.window.Window):
         """Load profiles and update the profile list."""
         self.profiles = load_profiles()
         self.profile_list.options = [{"name": k, "value": v} for k, v in self.profiles.items()]
+
+    def _on_ui_scale_change(self, value):
+        """Handle UI scale slider change: scale all widget rects and re-layout."""
+        old_scale = get_default_theme().scale
+        if old_scale == value:
+            return
+        get_default_theme().scale = value
+        self._ui_scale_label.text = f"UI Scale: {value:.1f}x"
+        self.apply_theme_scale()
+        save_settings()
+
+    def _capture_base_sizes(self):
+        """Capture current rects as base_rect for all widgets (after tree is built)."""
+        self._base_screen_scale = settings.SCREEN_SCALE
+        for w in self._widgets:
+            self._capture_base_recursive(w)
+
+    def _capture_base_recursive(self, widget):
+        """Recursively set base_rect from current rect."""
+        widget.base_rect = Rect(widget.rect.x, widget.rect.y, widget.rect.width, widget.rect.height)
+        if hasattr(widget, "widgets"):
+            for child in widget.widgets:
+                self._capture_base_recursive(child)
+
+    def apply_theme_scale(self):
+        """Apply theme.scale to every widget rect from its base (idempotent)."""
+        scale = get_default_theme().scale
+        for w in self._widgets:
+            self._rescale_from_base(w, scale)
+        self.on_resize(self.width, self.height)
+
+    def _rescale_from_base(self, widget, scale):
+        """Recursively set widget rect from base_rect * scale."""
+        b = widget.base_rect
+        widget.rect.width = max(1, int(b.width * scale))
+        widget.rect.height = max(1, int(b.height * scale))
+        if isinstance(widget, Slider):
+            widget._handle_radius = min(widget.rect.height // 2, 8)
+            widget._track_height = max(widget.rect.height // 4, 2)
+        if hasattr(widget, "widgets"):
+            for child in widget.widgets:
+                self._rescale_from_base(child, scale)
+
+    def _on_screen_scale_change(self, value):
+        """Handle screen scale slider change: scale gui_screen rects and update constant."""
+        if value == settings.SCREEN_SCALE:
+            return
+        ratio = self._base_screen_scale / value
+        settings.SCREEN_SCALE = value
+        self._screen_scale_label.text = f"Screen ratio: {value}"
+        for screen in self.gui_screens:
+            b = screen.base_rect
+            screen.rect = Rect(int(b.x * ratio), int(b.y * ratio), int(b.width * ratio), int(b.height * ratio))
+            screen.target_rect = Rect(int(b.x * ratio), int(b.y * ratio), int(b.width * ratio), int(b.height * ratio))
+        self.on_resize(self.width, self.height)
+        save_settings()
 
     def set_text_input(self, action):
         """Show the text input modal to be validated by the given action."""
@@ -311,19 +404,19 @@ class UI(pyglet.window.Window):
             max_height = max(m.height for m in screen.available)
 
             if screen.mode:
-                w, h = get_screen_size(screen, scale=UI_RATIO)
+                w, h = get_screen_size(screen, scale=settings.SCREEN_SCALE)
                 rect = Rect(
-                    int(x / UI_RATIO),
-                    -int(y / UI_RATIO) - h,
+                    int(x / settings.SCREEN_SCALE),
+                    -int(y / settings.SCREEN_SCALE) - h,
                     w,
                     h,
                 )
             else:
                 rect = Rect(
-                    int(x / UI_RATIO),
-                    int(y / UI_RATIO),
-                    int((max_width / UI_RATIO) / screen.scale),
-                    int((max_height / UI_RATIO) / screen.scale),
+                    int(x / settings.SCREEN_SCALE),
+                    int(y / settings.SCREEN_SCALE),
+                    int((max_width / settings.SCREEN_SCALE) / screen.scale),
+                    int((max_height / settings.SCREEN_SCALE) / screen.scale),
                 )
 
             gs = GuiScreen(screen, rect)
@@ -332,6 +425,7 @@ class UI(pyglet.window.Window):
 
         self._start_screenshot_worker()
         self.center_layout(immediate=True)
+        self._detect_anchors()
         # }}}
 
     def _start_screenshot_worker(self):
@@ -430,8 +524,10 @@ class UI(pyglet.window.Window):
         raw distance to produce a *weighted* distance used for sorting.
         """
         opposite_edges = frozenset({
-            ("left", "right"), ("right", "left"),
-            ("top", "bottom"), ("bottom", "top"),
+            ("left", "right"),
+            ("right", "left"),
+            ("top", "bottom"),
+            ("bottom", "top"),
         })
 
         def axes_match(a, b):
@@ -609,6 +705,10 @@ class UI(pyglet.window.Window):
         if self.selected_item and self.selected_item.dragging:
             self.selected_item.set_position(self.selected_item.rect.x + dx, self.selected_item.rect.y + dy)
 
+        for wid in self.widgets:
+            if wid.on_mouse_drag(x, y, dx, dy):
+                return
+
     def on_resize(self, width, height):
         """Handle window resizing."""
         pyglet.window.Window.on_resize(self, width, height)
@@ -629,6 +729,12 @@ class UI(pyglet.window.Window):
                 self.attract_screens()
             self.selected_item.dragging = False
             self.center_layout()
+            self._detect_anchors()
+
+        for wid in self.widgets:
+            if wid.on_mouse_release(x, y):
+                return
+
         if self.selected_item:
             self.on_off_but.toggled = not self.selected_item.screen.active
 
@@ -654,7 +760,7 @@ class UI(pyglet.window.Window):
                 "Press ENTER",
                 x=WINDOW_MARGIN,
                 y=h // 2 + 40,
-                font_size=40,
+                font_size=get_default_theme().scaled_font(40),
                 color=text_color,
                 font_name=font_name,
                 weight="bold",
@@ -663,7 +769,7 @@ class UI(pyglet.window.Window):
                 "to confirm (or ESCAPE to abort)",
                 x=WINDOW_MARGIN,
                 y=h // 2,
-                font_size=20,
+                font_size=get_default_theme().scaled_font(20),
                 color=text_color,
                 font_name=font_name,
             ).draw()
@@ -719,6 +825,7 @@ class UI(pyglet.window.Window):
             x=WINDOW_MARGIN,
             y=WINDOW_MARGIN,
             font_name=get_default_theme().font_name,
+            font_size=get_default_theme().scaled_font(12),
             color=color,
         ).draw()
 
@@ -741,7 +848,7 @@ class UI(pyglet.window.Window):
 
     def get_profile_data(self):
         """Return the data for the current profile."""
-        screens_rect = [screen.target_rect.scaled(UI_RATIO) for screen in self.gui_screens]
+        screens_rect = [screen.target_rect.scaled(settings.SCREEN_SCALE) for screen in self.gui_screens]
         trim_rects_flip_y(screens_rect)
         ret = []
         for rect, gs in zip(screens_rect, self.gui_screens):
@@ -813,7 +920,7 @@ class UI(pyglet.window.Window):
                     self.set_error(f"No matching mode for {found.screen.uid}")
                 w, h = get_screen_size(found.screen, scale=1)
                 rect = Rect(info["x"], -info["y"] - h, w, h)
-                found.target_rect = rect.scaled(1 / UI_RATIO)
+                found.target_rect = rect.scaled(1 / settings.SCREEN_SCALE)
         self.center_layout()
 
     def action_update_scale(self):
@@ -821,7 +928,7 @@ class UI(pyglet.window.Window):
         monitor = self.selected_item
         assert monitor
         monitor.screen.scale = self.scale_ratio.get_value()
-        monitor.target_rect.width, monitor.target_rect.height = get_screen_size(monitor.screen, scale=UI_RATIO)
+        monitor.target_rect.width, monitor.target_rect.height = get_screen_size(monitor.screen, scale=settings.SCREEN_SCALE)
 
     def action_update_frequencies(self, screen, mode=None):
         """Update the frequencies of the selected screen."""
@@ -837,7 +944,7 @@ class UI(pyglet.window.Window):
         """Save the current layout."""
         cmds = make_command(
             [s.screen for s in self.gui_screens],
-            [s.target_rect.scaled(UI_RATIO) for s in self.gui_screens],
+            [s.target_rect.scaled(settings.SCREEN_SCALE) for s in self.gui_screens],
             not LEGACY,
         )
         for cmd in cmds:
@@ -852,14 +959,6 @@ class UI(pyglet.window.Window):
         if self.selected_item:
             self.selected_item.screen.active = not self.selected_item.screen.active
 
-    def action_update_rotation(self):
-        """Update the rotation of the selected screen."""
-        assert self.selected_item
-        self.selected_item.screen.transform = self.rotation.get_value()
-        self.selected_item.target_rect.width, self.selected_item.target_rect.height = get_screen_size(
-            self.selected_item.screen, scale=UI_RATIO
-        )
-
     def action_update_screen_spec(self):
         """Update the screen specifications."""
         self.action_update_frequencies(self.selected_item, self.resolutions.get_value())
@@ -871,8 +970,104 @@ class UI(pyglet.window.Window):
         assert self.selected_item
         screen = self.selected_item.screen
         screen.mode = find_matching_mode(screen.available, self.resolutions.get_value(), self.freqs.get_value())
-        self.selected_item.target_rect.width = screen.mode.width // UI_RATIO
-        self.selected_item.target_rect.height = screen.mode.height // UI_RATIO
+        self._resize_screen(screen.mode.width // settings.SCREEN_SCALE, screen.mode.height // settings.SCREEN_SCALE)
+
+    def action_update_rotation(self):
+        """Update the rotation of the selected screen."""
+        assert self.selected_item
+        self.selected_item.screen.transform = self.rotation.get_value()
+        w, h = get_screen_size(self.selected_item.screen, scale=settings.SCREEN_SCALE)
+        self._resize_screen(w, h)
+
+    @staticmethod
+    def _ref_point_offset(ref_types, width, height) -> tuple:
+        """Return (dx, dy) offset from top-left to the reference point."""
+        x_type, y_type = ref_types
+        dx = {"left": 0, "right": width, "center_x": width / 2}[x_type]
+        dy = {"top": 0, "bottom": height, "center_y": height / 2}[y_type]
+        return dx, dy
+
+    @staticmethod
+    def _ref_point_pos(rect, ref_types) -> tuple:
+        """Return (x, y) position of a reference point on a rect."""
+        dx, dy = UI._ref_point_offset(ref_types, rect.width, rect.height)
+        return rect.x + dx, rect.y + dy
+
+    def _detect_anchors(self):
+        """Detect all 8-point anchor relationships between screens."""
+        self._anchors = {s: {} for s in self.gui_screens}
+        tol = 2
+        for i, A in enumerate(self.gui_screens):
+            for j, B in enumerate(self.gui_screens):
+                if i >= j:
+                    continue
+                a_refs = UI._ref_points(A.target_rect)
+                b_refs = UI._ref_points(B.target_rect)
+                matches = []
+                for a_pos, a_types in a_refs:
+                    for b_pos, b_types in b_refs:
+                        if abs(a_pos[0] - b_pos[0]) <= tol and abs(a_pos[1] - b_pos[1]) <= tol:
+                            matches.append((a_types, b_types))
+                if matches:
+                    self._anchors[A][B] = matches
+                    self._anchors[B][A] = [(b_types, a_types) for a_types, b_types in matches]
+
+    def _find_connected(self, start):
+        """Find all screens connected to *start* via anchor relationships (BFS)."""
+        visited = {start}
+        queue = [start]
+        while queue:
+            s = queue.pop(0)
+            for neighbor in self._anchors.get(s, {}):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+        return visited
+
+    def _propagate_anchors(self, changed, old_w=None, old_h=None):
+        """Reposition screens to maintain anchor relationships after a resize.
+
+        The largest screen (by original area) in the connected group is the
+        "root" and stays fixed. All other screens are repositioned in
+        top-left to bottom-right order so their reference points match those
+        of already-positioned anchor partners.
+        """
+        affected = UI._find_connected(self, changed)
+
+        def _area(s):
+            if s is changed and old_w is not None and old_h is not None:
+                return old_w * old_h
+            return s.target_rect.width * s.target_rect.height
+
+        root = max(affected, key=lambda s: (_area(s), -s.target_rect.y, -s.target_rect.x))
+        ordered = sorted(affected - {root}, key=lambda s: (s.target_rect.y, s.target_rect.x))
+        positioned = {root}
+        for s in ordered:
+            x_val = None
+            y_val = None
+            for neighbor, matches in self._anchors.get(s, {}).items():
+                if neighbor not in positioned:
+                    continue
+                for s_types, n_types in matches:
+                    n_pos = UI._ref_point_pos(neighbor.target_rect, n_types)
+                    s_dx, s_dy = UI._ref_point_offset(s_types, s.target_rect.width, s.target_rect.height)
+                    if x_val is None:
+                        x_val = n_pos[0] - s_dx
+                    if y_val is None:
+                        y_val = n_pos[1] - s_dy
+            if x_val is not None:
+                s.target_rect.x = int(x_val)
+            if y_val is not None:
+                s.target_rect.y = int(y_val)
+            positioned.add(s)
+
+    def _resize_screen(self, w, h):
+        """Resize the selected screen and preserve anchor relationships."""
+        item = self.selected_item
+        old_w, old_h = item.target_rect.width, item.target_rect.height
+        item.target_rect.width = w
+        item.target_rect.height = h
+        UI._propagate_anchors(self, item, old_w, old_h)
 
     def action_select_screen(self, screen):
         """Select a screen."""
@@ -889,10 +1084,7 @@ class UI(pyglet.window.Window):
         # update resolution dropdown
         res = sorted_resolutions(screen.screen.available)
         self.resolutions.options = [{"name": f"{r[0]} x {r[1]}", "value": r} for r in res]
-        i = -1
-        for i, r in enumerate(res):  # ruff: ignore[unused-loop-control-variable]
-            if r[0] == cur_mode.width and r[1] == cur_mode.height:
-                break
+        i = next((idx for idx, r in enumerate(res) if r[0] == cur_mode.width and r[1] == cur_mode.height), -1)
         self.resolutions.selected_index = i
         # update rotation / transform
         self.rotation.selected_index = screen.screen.transform
