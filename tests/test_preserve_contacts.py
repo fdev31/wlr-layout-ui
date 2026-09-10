@@ -247,3 +247,65 @@ def test_chain_of_monitors_horizontal():
 
     assert b.target_rect.x == 150, f"B should follow A, got x={b.target_rect.x}"
     assert c.target_rect.x == 250, f"C should follow B, got x={c.target_rect.x}"
+
+
+# ---------------------------------------------------------------------------
+# Screen scale: edge alignment must be preserved
+# ---------------------------------------------------------------------------
+
+
+def test_scale_preserves_horizontal_alignment():
+    """Two edge-aligned screens stay aligned after scale change."""
+    a = _make_screen(0, 0, 100, 80)
+    b = _make_screen(100, 0, 100, 80)  # b.left == a.right
+
+    rects = [a.target_rect, b.target_rect]
+    new_rects = UI._scale_layout(rects, 8 / 3)  # non-integer ratio
+
+    assert new_rects[1].x == new_rects[0].x + new_rects[0].width, (
+        f"Edges should stay aligned: A.right={new_rects[0].x + new_rects[0].width}, B.x={new_rects[1].x}"
+    )
+
+
+def test_scale_preserves_vertical_alignment():
+    """Two edge-aligned screens (top/bottom) stay aligned after scale change."""
+    a = _make_screen(0, 0, 100, 80)
+    b = _make_screen(0, 80, 100, 80)  # b.top == a.bottom
+
+    rects = [a.target_rect, b.target_rect]
+    new_rects = UI._scale_layout(rects, 8 / 3)
+
+    assert new_rects[1].y == new_rects[0].y + new_rects[0].height, (
+        f"Edges should stay aligned: A.bottom={new_rects[0].y + new_rects[0].height}, B.y={new_rects[1].y}"
+    )
+
+
+def test_scale_preserves_corner_alignment():
+    """Screen at bottom-right corner stays aligned after scale change."""
+    a = _make_screen(0, 0, 100, 80)
+    b = _make_screen(100, 80, 100, 80)  # b.left == a.right and b.top == a.bottom
+
+    rects = [a.target_rect, b.target_rect]
+    new_rects = UI._scale_layout(rects, 8 / 3)
+
+    assert new_rects[1].x == new_rects[0].x + new_rects[0].width, (
+        f"X edges should stay aligned: A.right={new_rects[0].x + new_rects[0].width}, B.x={new_rects[1].x}"
+    )
+    assert new_rects[1].y == new_rects[0].y + new_rects[0].height, (
+        f"Y edges should stay aligned: A.bottom={new_rects[0].y + new_rects[0].height}, B.y={new_rects[1].y}"
+    )
+
+
+def test_scale_repeated_changes_no_gap_accumulation():
+    """Repeated scale changes should not introduce gaps between aligned screens."""
+    a = _make_screen(0, 0, 100, 80)
+    b = _make_screen(100, 0, 100, 80)
+
+    rects = [a.target_rect, b.target_rect]
+    ratios = [8 / 4, 4 / 3, 3 / 16, 16 / 2, 2 / 8]
+    for ratio in ratios:
+        rects = UI._scale_layout(rects, ratio)
+
+    assert rects[1].x == rects[0].x + rects[0].width, (
+        f"Edges should stay aligned after repeated scale changes: A.right={rects[0].x + rects[0].width}, B.x={rects[1].x}"
+    )

@@ -357,6 +357,14 @@ class UI(pyglet.window.Window):
             for child in widget.widgets:
                 self._rescale_from_base(child, scale)
 
+    @staticmethod
+    def _scale_layout(rects: list[Rect], ratio: float) -> list[Rect]:
+        """Scale a list of rects, rounding each distinct edge coordinate once
+        so that aligned edges stay aligned."""
+        nx = {x: round(x * ratio) for x in {r.left for r in rects} | {r.right for r in rects}}
+        ny = {y: round(y * ratio) for y in {r.top for r in rects} | {r.bottom for r in rects}}
+        return [Rect(nx[r.left], ny[r.top], nx[r.right] - nx[r.left], ny[r.bottom] - ny[r.top]) for r in rects]
+
     def _on_screen_scale_change(self, value):
         """Handle screen scale slider change: scale the current layout and update constant."""
         if value == settings.SCREEN_SCALE:
@@ -364,10 +372,10 @@ class UI(pyglet.window.Window):
         ratio = settings.SCREEN_SCALE / value
         settings.SCREEN_SCALE = value
         self._screen_scale_label.text = f"Screen ratio: {value}"
-        for screen in self.gui_screens:
-            r = screen.target_rect
-            screen.rect = Rect(int(r.x * ratio), int(r.y * ratio), int(r.width * ratio), int(r.height * ratio))
-            screen.target_rect = Rect(int(r.x * ratio), int(r.y * ratio), int(r.width * ratio), int(r.height * ratio))
+        new_rects = self._scale_layout([s.target_rect for s in self.gui_screens], ratio)
+        for screen, new_rect in zip(self.gui_screens, new_rects):
+            screen.rect = new_rect
+            screen.target_rect = new_rect
         self.on_resize(self.width, self.height)
         save_settings()
 
