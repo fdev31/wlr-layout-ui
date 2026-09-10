@@ -328,7 +328,6 @@ class UI(pyglet.window.Window):
 
     def _capture_base_sizes(self):
         """Capture current rects as base_rect for all widgets (after tree is built)."""
-        self._base_screen_scale = settings.SCREEN_SCALE
         for w in self._widgets:
             self._capture_base_recursive(w)
 
@@ -359,16 +358,16 @@ class UI(pyglet.window.Window):
                 self._rescale_from_base(child, scale)
 
     def _on_screen_scale_change(self, value):
-        """Handle screen scale slider change: scale gui_screen rects and update constant."""
+        """Handle screen scale slider change: scale the current layout and update constant."""
         if value == settings.SCREEN_SCALE:
             return
-        ratio = self._base_screen_scale / value
+        ratio = settings.SCREEN_SCALE / value
         settings.SCREEN_SCALE = value
         self._screen_scale_label.text = f"Screen ratio: {value}"
         for screen in self.gui_screens:
-            b = screen.base_rect
-            screen.rect = Rect(int(b.x * ratio), int(b.y * ratio), int(b.width * ratio), int(b.height * ratio))
-            screen.target_rect = Rect(int(b.x * ratio), int(b.y * ratio), int(b.width * ratio), int(b.height * ratio))
+            r = screen.target_rect
+            screen.rect = Rect(int(r.x * ratio), int(r.y * ratio), int(r.width * ratio), int(r.height * ratio))
+            screen.target_rect = Rect(int(r.x * ratio), int(r.y * ratio), int(r.width * ratio), int(r.height * ratio))
         self.on_resize(self.width, self.height)
         save_settings()
 
