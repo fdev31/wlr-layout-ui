@@ -929,6 +929,8 @@ class UI(pyglet.window.Window):
                 rect = Rect(info["x"], -info["y"] - h, w, h)
                 found.target_rect = rect.scaled(1 / settings.SCREEN_SCALE)
         self.center_layout()
+        if self.selected_item:
+            self.update_screen_panel(self.selected_item)
 
     def action_update_scale(self):
         """Update the scale of the selected screen."""
@@ -1076,14 +1078,8 @@ class UI(pyglet.window.Window):
         item.target_rect.height = h
         UI._propagate_anchors(self, item, old_w, old_h)
 
-    def action_select_screen(self, screen):
-        """Select a screen."""
-        self.selected_item = screen
-        self.selected_item.dragging = True
-        # make it last displayed + easy to find
-        self.gui_screens.remove(screen)
-        self.gui_screens.append(screen)
-
+    def update_screen_panel(self, screen):
+        """Refresh the top panel widgets to reflect the given screen's current settings."""
         cur_mode = screen.screen.mode
         # update scale
         values = [o["value"] for o in self.scale_ratio.options]
@@ -1097,5 +1093,14 @@ class UI(pyglet.window.Window):
         self.rotation.selected_index = screen.screen.transform
         # update frequency
         self.action_update_frequencies(screen)
+
+    def action_select_screen(self, screen):
+        """Select a screen."""
+        self.selected_item = screen
+        self.selected_item.dragging = True
+        # make it last displayed + easy to find
+        self.gui_screens.remove(screen)
+        self.gui_screens.append(screen)
+        self.update_screen_panel(screen)
 
     # }}}
