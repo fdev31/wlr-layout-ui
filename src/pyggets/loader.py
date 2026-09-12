@@ -30,12 +30,15 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+import pyglet
 import tomli
 
 from .containers import HBox, Modal, Panel, ScrollBox, VBox
+from .focus import FocusManager
 from .geometry import Rect
+from .primitives import makeRectangle
 from .style import Style
-from .theme import Theme
+from .theme import Theme, get_default_theme, set_default_theme
 from .widgets import (
     Button,
     Checkbox,
@@ -600,11 +603,6 @@ def run_ui(result: UIResult) -> None:
         result = load_ui("my_app.toml", controller)
         run_ui(result)
     """
-    import pyglet  # ruff: ignore[import-outside-top-level]
-
-    from .primitives import makeRectangle  # ruff: ignore[import-outside-top-level]
-    from .theme import get_default_theme, set_default_theme  # ruff: ignore[import-outside-top-level]
-
     # Apply themes ---------------------------------------------------------
     if result.themes:
         set_default_theme(next(iter(result.themes.values())))
@@ -615,6 +613,8 @@ def run_ui(result: UIResult) -> None:
 
     # The root widget is the first (and usually only) top-level widget.
     ui = result.widgets[0]
+    fm = FocusManager(result.widgets)
+    fm.focus_first()
     cursor = [0, 0]
 
     # Event handlers -------------------------------------------------------
@@ -650,7 +650,7 @@ def run_ui(result: UIResult) -> None:
 
     @window.event
     def on_key_press(symbol, modifiers):
-        ui.on_key_press(symbol, modifiers)
+        fm.handle_key(symbol, modifiers)
 
     @window.event
     def on_text(text):

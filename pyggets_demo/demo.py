@@ -12,6 +12,7 @@ from pyggets import (
     Button,
     Checkbox,
     Dropdown,
+    FocusManager,
     HBox,
     Image,
     Label,
@@ -966,6 +967,8 @@ class DemoApp(pyglet.window.Window):
         """Load the current page's widgets."""
         _name, builder = PAGES[self.page_index]
         self.page_widgets = builder()
+        self.fm = FocusManager(self.page_widgets)
+        self.fm.focus_first()
 
     def prev_page(self):
         if self.page_index > 0:
@@ -1128,12 +1131,15 @@ class DemoApp(pyglet.window.Window):
         if self._handle_modal("on_key_press", symbol, modifiers):
             return
 
-        # Left/Right arrow keys for page navigation
-        if symbol == pyglet.window.key.LEFT:
+        # PageUp/PageDown for page navigation
+        if symbol == pyglet.window.key.PAGEUP:
             self.prev_page()
             return
-        if symbol == pyglet.window.key.RIGHT:
+        if symbol == pyglet.window.key.PAGEDOWN:
             self.next_page()
+            return
+
+        if self.fm.handle_key(symbol, modifiers):
             return
 
         if not self._dispatch("on_key_press", symbol, modifiers):

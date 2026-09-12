@@ -21,6 +21,9 @@ from .containers import HBox, Modal, Panel, ScrollBox, VBox
 # File dialogs
 from .filedialog import open_file, pick_directory, save_file
 
+# Focus management
+from .focus import FocusManager
+
 # Geometry
 from .geometry import Rect, collidepoint
 
@@ -59,6 +62,7 @@ __all__ = [
     "Button",
     "Checkbox",
     "Dropdown",
+    "FocusManager",
     "HBox",
     "Image",
     "Label",

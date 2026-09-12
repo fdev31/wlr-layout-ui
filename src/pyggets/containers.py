@@ -369,6 +369,9 @@ class _Box(Widget):
         for w in self.widgets:
             w.unfocus()
 
+    def focusable_children(self):
+        return iter(self.widgets)
+
     def on_mouse_press(self, x, y, button, modifiers):
         for w in self.widgets:
             if w.contains(x, y) and w.on_mouse_press(x, y, button, modifiers):
@@ -658,6 +661,9 @@ class ScrollBox(Widget):
         if self.content:
             self.content.unfocus()
 
+    def focusable_children(self):
+        return iter([self.content]) if self.content else iter(())
+
     def draw(self, cursor):
         if not self.content:
             return
@@ -837,3 +843,6 @@ class Modal(Widget):
     def unfocus(self):
         if self.content:
             self.content.unfocus()
+
+    def focusable_children(self):
+        return iter([self.content]) if self.content else iter(())

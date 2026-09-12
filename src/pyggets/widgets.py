@@ -12,6 +12,17 @@ from .primitives import makeCircle, makeLabel, makeRectangle, makeSprite
 from .shapes import RoundedRectangle, makeRoundedRectangle
 from .theme import get_default_theme
 
+# Key constants (verified against pyglet.window.key)
+_KEY_BACKSPACE = 65288
+_KEY_RETURN = 65293
+_KEY_ESCAPE = 65307
+_KEY_LEFT = 65361
+_KEY_UP = 65362
+_KEY_RIGHT = 65363
+_KEY_DOWN = 65364
+_KEY_TAB = 65289
+_MOD_SHIFT = 1
+
 
 class _TrackedProperty:
     """Descriptor that auto-calls ``invalidate()`` when a value changes.
@@ -146,6 +157,7 @@ class Widget:
     """
 
     ANIMATION_SPEED = 8  # frames to approach target (higher = slower)
+    focusable = False
 
     def __init__(self, rect, style=None):
         self.rect = rect
@@ -334,11 +346,27 @@ class Widget:
 
     def focus(self):
         """Called when the widget gains focus."""
-        self.focused = False  # base class does not accept focus
+        self.focused = self.focusable
 
     def unfocus(self):
         """Called when the widget loses focus."""
         self.focused = False
+
+    def focusable_children(self):
+        """Return an iterator over direct children that take part in focus order."""
+        return iter(())
+
+    def draw_focus_ring(self):
+        """Draw a subtle 2px highlight ring around the widget when focused."""
+        if not self.focused:
+            return
+        x, y, w, h = self.rect.x, self.rect.y, self.rect.width, self.rect.height
+        t = 2
+        color = self.style.highlight
+        makeRectangle(x, y + h - t, w, t, color=color).draw()
+        makeRectangle(x, y, w, t, color=color).draw()
+        makeRectangle(x, y, t, h, color=color).draw()
+        makeRectangle(x + w - t, y, t, h, color=color).draw()
 
     def draw(self, cursor):
         """Draw the widget. Must be overridden by subclasses."""
@@ -422,6 +450,7 @@ class Widget:
 class Dropdown(Widget):
     """A dropdown selector widget with expandable option list."""
 
+    focusable = True
     expanded = _TrackedProperty(default=False)
     selected_index = _TrackedProperty(default=0)
 
@@ -431,6 +460,7 @@ class Dropdown(Widget):
         self.options = options
         self.selected_index = 0
         self.expanded = False
+        self._expanded_from = None
         self._expand = self._anim("expand", 0.0)
         self.label = label
         self.onchange = onchange
@@ -583,11 +613,12 @@ class Dropdown(Widget):
                 option_y = self.rect.y + (i + 1) * self.rect.height if self.invert else self.rect.y - (i + 1) * self.rect.height
                 option_height = self.rect.height
                 hovered = self.expanded and x_match and option_y < cursor[1] < option_y + option_height
-                opt_color = self.style.highlight if hovered else self.style.dropdown_bg
+                selected = self.expanded and i == self.selected_index
+                opt_color = self.style.highlight if (hovered or selected) else self.style.dropdown_bg
                 makeRectangle(option_x, option_y, self.rect.width, option_height, color=opt_color).draw()
 
                 label = option["name"]
-                text_color = self.style.on_accent if hovered else self.style.text_color
+                text_color = self.style.on_accent if (hovered or selected) else self.style.text_color
 
                 # Intersect per-option text scissor with reveal scissor
                 opt_sy = int(option_y)
@@ -625,6 +656,8 @@ class Dropdown(Widget):
 
             glDisable(GL_SCISSOR_TEST)
 
+        self.draw_focus_ring()
+
     def unfocus(self):
         self.expanded = False
 
@@ -646,6 +679,8 @@ class Dropdown(Widget):
             # Dropdown button clicked
             if self.rect.y < y < self.rect.y + self.rect.height:
                 self.expanded = not self.expanded
+                if self.expanded:
+                    self._expanded_from = self.selected_index
             else:
                 # Check which option is clicked
                 for i, _option in enumerate(self.options):
@@ -656,6 +691,31 @@ class Dropdown(Widget):
                         break
             if old_index != self.selected_index and self.onchange:
                 self.onchange()
+            return True
+
+    def on_key_press(self, symbol, modifiers):
+        if not self.options:
+            return
+        if not self.expanded:
+            if symbol == _KEY_RETURN:
+                self.expanded = True
+                self._expanded_from = self.selected_index
+                return True
+            return
+        if symbol == _KEY_UP:
+            self.selected_index = max(0, self.selected_index - 1)
+            return True
+        if symbol == _KEY_DOWN:
+            self.selected_index = min(len(self.options) - 1, self.selected_index + 1)
+            return True
+        if symbol == _KEY_RETURN:
+            changed = self.selected_index != self._expanded_from
+            self.expanded = False
+            if changed and self.onchange:
+                self.onchange()
+            return True
+        if symbol == _KEY_ESCAPE:
+            self.expanded = False
             return True
 
     def get_value(self):
@@ -726,6 +786,8 @@ class Image(Widget):
 
 class Button(Widget):
     """A clickable button widget with optional toggle behavior and icon."""
+
+    focusable = True
 
     def __init__(
         self,
@@ -844,11 +906,23 @@ class Button(Widget):
             )
             self.text.draw()
 
+        self.draw_focus_ring()
+
+    def _activate(self):
+        if not self.action:
+            return
+        self.toggled = not self.toggled
+        self.invalidate()
+        self.action()
+
     def on_mouse_press(self, x, y, button, modifiers):
         if self.action and self.rect.contains(x, y):
-            self.toggled = not self.toggled
-            self.invalidate()
-            self.action()
+            self._activate()
+            return True
+
+    def on_key_press(self, symbol, modifiers):
+        if symbol == _KEY_RETURN:
+            self._activate()
             return True
 
 
@@ -928,6 +1002,7 @@ class Separator(Widget):
 class Checkbox(Widget):
     """A toggle checkbox with an optional label."""
 
+    focusable = True
     checked = _TrackedProperty(default=False)
 
     def __init__(self, rect, label="", checked=False, style=None, onchange=None):
@@ -1010,17 +1085,28 @@ class Checkbox(Widget):
             self._label_shape.font_name = get_default_theme().font_name
             self._label_shape.draw()
 
+        self.draw_focus_ring()
+
+    def _toggle(self):
+        self.checked = not self.checked
+        if self.onchange:
+            self.onchange(self.checked)
+
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
-            self.checked = not self.checked
-            if self.onchange:
-                self.onchange(self.checked)
+            self._toggle()
+            return True
+
+    def on_key_press(self, symbol, modifiers):
+        if symbol == _KEY_RETURN:
+            self._toggle()
             return True
 
 
 class Toggle(Widget):
     """An on/off sliding toggle switch."""
 
+    focusable = True
     toggled = _TrackedProperty(default=False)
 
     def __init__(self, rect, label="", toggled=False, style=None, onchange=None):
@@ -1128,11 +1214,21 @@ class Toggle(Widget):
             self._label_shape.font_size = get_default_theme().scaled_font(12)
             self._label_shape.draw()
 
+        self.draw_focus_ring()
+
+    def _toggle(self):
+        self.toggled = not self.toggled
+        if self.onchange:
+            self.onchange(self.toggled)
+
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
-            self.toggled = not self.toggled
-            if self.onchange:
-                self.onchange(self.toggled)
+            self._toggle()
+            return True
+
+    def on_key_press(self, symbol, modifiers):
+        if symbol == _KEY_RETURN:
+            self._toggle()
             return True
 
 
@@ -1207,6 +1303,7 @@ class ProgressBar(Widget):
 class RadioGroup(Widget):
     """A group of mutually exclusive radio buttons."""
 
+    focusable = True
     selected_index = _TrackedProperty(default=0)
 
     def __init__(self, rect, options, selected_index=0, style=None, onchange=None, orientation="vertical"):
@@ -1215,6 +1312,7 @@ class RadioGroup(Widget):
         self.selected_index = selected_index
         self.onchange = onchange
         self.orientation = orientation
+        self.editing = False
         self._radio_radius = 1
         # Animation state: per-option dot scale (0.0 = hidden, 1.0 = full)
         self._dots = [self._anim(f"dot_{i}", 1.0 if i == selected_index else 0.0) for i in range(len(self.options))]
@@ -1291,6 +1389,8 @@ class RadioGroup(Widget):
                 font_size=get_default_theme().scaled_font(12),
             ).draw()
 
+        self.draw_focus_ring()
+
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.rect.contains(x, y):
             return
@@ -1302,10 +1402,37 @@ class RadioGroup(Widget):
                         self.onchange(i)
                 return True
 
+    def on_key_press(self, symbol, modifiers):
+        if not self.options:
+            return
+        if not self.editing:
+            if symbol == _KEY_RETURN:
+                self.editing = True
+                return True
+            return
+        if symbol in (_KEY_UP, _KEY_LEFT):
+            new_index = max(0, self.selected_index - 1)
+            if new_index != self.selected_index:
+                self.selected_index = new_index
+                if self.onchange:
+                    self.onchange(self.selected_index)
+            return True
+        if symbol in (_KEY_DOWN, _KEY_RIGHT):
+            new_index = min(len(self.options) - 1, self.selected_index + 1)
+            if new_index != self.selected_index:
+                self.selected_index = new_index
+                if self.onchange:
+                    self.onchange(self.selected_index)
+            return True
+        if symbol in (_KEY_RETURN, _KEY_ESCAPE):
+            self.editing = False
+            return True
+
 
 class Slider(Widget):
     """A horizontal value slider with a draggable handle."""
 
+    focusable = True
     value = _TrackedProperty(default=50)
     _dragging = _TrackedProperty(default=False)
 
@@ -1316,6 +1443,7 @@ class Slider(Widget):
         self.step = step
         self.value = value
         self.onchange = onchange
+        self.editing = False
         self._dragging = False
         self._handle_radius = 1
         self._track_height = 1
@@ -1409,6 +1537,8 @@ class Slider(Widget):
         self._handle_shape.color = handle_color
         self._handle_shape.draw()
 
+        self.draw_focus_ring()
+
     def on_mouse_press(self, x, y, button, modifiers):
         if self.rect.contains(x, y):
             self._dragging = True
@@ -1427,6 +1557,29 @@ class Slider(Widget):
     def on_mouse_release(self, x, y):
         if self._dragging:
             self._dragging = False
+            return True
+
+    def on_key_press(self, symbol, modifiers):
+        if not self.editing:
+            if symbol == _KEY_RETURN:
+                self.editing = True
+                return True
+            return
+        step = self.step or 1
+        if symbol in (_KEY_LEFT, _KEY_UP):
+            old = self.value
+            self.set_value(self.value - step)
+            if self.value != old and self.onchange:
+                self.onchange(self.value)
+            return True
+        if symbol in (_KEY_RIGHT, _KEY_DOWN):
+            old = self.value
+            self.set_value(self.value + step)
+            if self.value != old and self.onchange:
+                self.onchange(self.value)
+            return True
+        if symbol in (_KEY_RETURN, _KEY_ESCAPE):
+            self.editing = False
             return True
 
 
@@ -1497,15 +1650,10 @@ class Tooltip(Widget):
         ).draw()
 
 
-# Key constants used by TextInput
-_KEY_BACKSPACE = 65288
-_KEY_RETURN = 65293
-_KEY_ESCAPE = 65307
-
-
 class TextInput(Widget):
     """A single-line text input field (minimal placeholder implementation)."""
 
+    focusable = True
     text = _TrackedProperty(default="")
     focused = _TrackedProperty(default=False)
 
@@ -1526,14 +1674,6 @@ class TextInput(Widget):
     def set_text(self, t):
         """Set the text content."""
         self.text = t
-
-    def focus(self):
-        """Accept focus -- TextInput is keyboard-interactive."""
-        self.focused = True
-
-    def unfocus(self):
-        """Release focus."""
-        self.focused = False
 
     def draw(self, cursor):
         is_hovered = self.rect.contains(*cursor)
