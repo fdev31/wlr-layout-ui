@@ -188,6 +188,15 @@ class Widget:
         if self._parent is not None:
             self._parent.invalidate()
 
+    def resize(self):
+        """Called after ``rect`` changes so derived metrics can be recomputed.
+
+        Widgets that cache pixel metrics (track thickness, knob radius, ...)
+        derived from their size must override this to recompute those values
+        and update any owned drawing primitives.  The base implementation is a
+        no-op for widgets that read ``rect`` directly in ``draw()``.
+        """
+
     def _update_hover(self, cursor):
         """Track hover state and auto-invalidate on change.
 
@@ -926,7 +935,7 @@ class Checkbox(Widget):
         self.label = label
         self.checked = checked
         self.onchange = onchange
-        self._box_size = min(rect.height, rect.width, 20)
+        self._box_size = 1
         # Animation state
         self._check = self._anim("check", 1.0 if checked else 0.0)
 
@@ -943,6 +952,12 @@ class Checkbox(Widget):
                 color=self.style.text_color,
                 font_name=get_default_theme().font_name,
             )
+        self.resize()
+
+    def resize(self):
+        """Recompute the checkbox square size from the current rect."""
+        scale = get_default_theme().scale
+        self._box_size = min(self.rect.height, self.rect.width, int(20 * scale))
 
     def __repr__(self):
         return f"<Checkbox {self.label!r} checked={self.checked}>"
@@ -958,6 +973,7 @@ class Checkbox(Widget):
         )
 
     def draw(self, cursor):
+        self.resize()
         box = self._box_rect
         is_hovered = self.rect.contains(*cursor)
 
@@ -1012,10 +1028,9 @@ class Toggle(Widget):
         self.label = label
         self.toggled = toggled
         self.onchange = onchange
-        # Track dimensions derived from rect height
-        self._track_height = max(rect.height * 2 // 3, 8)
-        self._track_width = rect.height  # pill width matches height
-        self._knob_radius = self._track_height // 2
+        self._track_height = 1
+        self._track_width = 1
+        self._knob_radius = 1
         # Animation state
         self._knob = self._anim("knob", 1.0 if toggled else 0.0)
         self._track_col = self._anim_color(
@@ -1027,14 +1042,13 @@ class Toggle(Widget):
             self.style.knob_color if toggled else (160, 160, 160),
         )
 
-        # Owned pyglet primitives — created once, updated in-place each frame
-        r = self._knob_radius
+        # Owned pyglet primitives — created once, dimensions set by resize()
         init_color = self._track_col.ints
-        self._track_left = Circle(0, 0, r, color=init_color)
-        self._track_right = Circle(0, 0, r, color=init_color)
-        self._track_fill = Rectangle(0, 0, max(1, self._track_width - 2 * r), self._track_height, color=init_color)
+        self._track_left = Circle(0, 0, 1, color=init_color)
+        self._track_right = Circle(0, 0, 1, color=init_color)
+        self._track_fill = Rectangle(0, 0, 1, 1, color=init_color)
         knob_init = self._knob_col.ints
-        self._knob_shape = Circle(0, 0, max(1, r - 2), color=knob_init)
+        self._knob_shape = Circle(0, 0, 1, color=knob_init)
         self._label_shape = None
         if self.label:
             self._label_shape = PygletLabel(
@@ -1046,11 +1060,25 @@ class Toggle(Widget):
                 color=self.style.text_color,
                 font_name=get_default_theme().font_name,
             )
+        self.resize()
+
+    def resize(self):
+        """Recompute track/knob metrics and owned-shape sizes from the current rect."""
+        self._track_height = max(self.rect.height * 2 // 3, 8)
+        self._track_width = self.rect.height  # pill width matches height
+        self._knob_radius = self._track_height // 2
+        r = self._knob_radius
+        self._track_left.radius = r
+        self._track_right.radius = r
+        self._track_fill.width = max(1, self._track_width - 2 * r)
+        self._track_fill.height = self._track_height
+        self._knob_shape.radius = max(1, r - 2)
 
     def __repr__(self):
         return f"<Toggle {self.label!r} toggled={self.toggled}>"
 
     def draw(self, cursor):
+        self.resize()
         is_hovered = self.rect.contains(*cursor)
         track_y = self.rect.y + (self.rect.height - self._track_height) // 2
 
@@ -1187,13 +1215,19 @@ class RadioGroup(Widget):
         self.selected_index = selected_index
         self.onchange = onchange
         self.orientation = orientation
-        if self.options:
-            divisor = len(self.options) * 2 if orientation == "vertical" else 2
-            self._radio_radius = min(rect.height // divisor, 8)
-        else:
-            self._radio_radius = 8
+        self._radio_radius = 1
         # Animation state: per-option dot scale (0.0 = hidden, 1.0 = full)
         self._dots = [self._anim(f"dot_{i}", 1.0 if i == selected_index else 0.0) for i in range(len(self.options))]
+        self.resize()
+
+    def resize(self):
+        """Recompute the radio button radius from the current rect."""
+        scale = get_default_theme().scale
+        if self.options:
+            divisor = len(self.options) * 2 if self.orientation == "vertical" else 2
+            self._radio_radius = min(self.rect.height // divisor, int(8 * scale))
+        else:
+            self._radio_radius = int(8 * scale)
 
     def __repr__(self):
         sel = self.options[self.selected_index] if self.options else None
@@ -1224,6 +1258,7 @@ class RadioGroup(Widget):
                 yield i, Rect(x, self.rect.y, item_w, self.rect.height)
 
     def draw(self, cursor):
+        self.resize()
         r = self._radio_radius
         font_name = get_default_theme().font_name
 
@@ -1282,15 +1317,25 @@ class Slider(Widget):
         self.value = value
         self.onchange = onchange
         self._dragging = False
-        self._handle_radius = min(rect.height // 2, 8)
-        self._track_height = max(rect.height // 4, 2)
+        self._handle_radius = 1
+        self._track_height = 1
         # Animation state
         self._display = self._anim("display", float(value), snap=0.5)
 
-        # Owned pyglet primitives
-        self._track_bg = Rectangle(0, 0, max(1, rect.width), self._track_height, color=self.style.color)
-        self._track_fill_shape = Rectangle(0, 0, 1, self._track_height, color=self.style.highlight)
-        self._handle_shape = Circle(0, 0, self._handle_radius, color=self.style.knob_color)
+        # Owned pyglet primitives (dimensions are set by resize())
+        self._track_bg = Rectangle(0, 0, max(1, rect.width), 1, color=self.style.color)
+        self._track_fill_shape = Rectangle(0, 0, 1, 1, color=self.style.highlight)
+        self._handle_shape = Circle(0, 0, 1, color=self.style.knob_color)
+        self.resize()
+
+    def resize(self):
+        """Recompute track/handle metrics and owned-shape sizes from the current rect."""
+        scale = get_default_theme().scale
+        self._handle_radius = max(1, min(self.rect.height // 2, int(8 * scale)))
+        self._track_height = max(self.rect.height // 4, 2)
+        self._track_bg.height = self._track_height
+        self._track_fill_shape.height = self._track_height
+        self._handle_shape.radius = self._handle_radius
 
     def __repr__(self):
         return f"<Slider {self.value} [{self.min_val}-{self.max_val}]>"
@@ -1328,6 +1373,7 @@ class Slider(Widget):
         return max(self.min_val, min(val, self.max_val))
 
     def draw(self, cursor):
+        self.resize()
         track_y = self.rect.y + (self.rect.height - self._track_height) // 2
         handle_y = self.rect.y + self.rect.height // 2
 

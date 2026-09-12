@@ -350,9 +350,7 @@ class UI(pyglet.window.Window):
         b = widget.base_rect
         widget.rect.width = max(1, int(b.width * scale))
         widget.rect.height = max(1, int(b.height * scale))
-        if isinstance(widget, Slider):
-            widget._handle_radius = min(widget.rect.height // 2, 8)
-            widget._track_height = max(widget.rect.height // 4, 2)
+        widget.resize()
         if hasattr(widget, "widgets"):
             for child in widget.widgets:
                 self._rescale_from_base(child, scale)
