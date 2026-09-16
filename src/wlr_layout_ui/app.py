@@ -1,6 +1,7 @@
 """Application entry points for wlr-layout-ui."""
 
 import os
+import pathlib
 import sys
 import time
 from typing import cast
@@ -86,6 +87,65 @@ def main():
             print("")
             for p in profiles:
                 print(f" - {p}")
+        elif sys.argv[1] == "export":
+            load()
+            hyprlayout_dir = pathlib.Path("~/.config/hyprlayout/").expanduser()
+            hyprlayout_profiles_dir = pathlib.Path(os.path.join(hyprlayout_dir, "profiles")).expanduser()
+            pathlib.Path(hyprlayout_profiles_dir).mkdir(parents=True, exist_ok=True)
+            with pathlib.Path(os.path.join(hyprlayout_dir, "settings.lua")).open(encoding="utf-8", mode="w") as f:
+                f.write(
+                    f"""return {{
+      canvas_scale = {settings.SCREEN_SCALE},
+      ui_scale = {settings.UI_SCALE},
+      shot_interval = 5,
+    }}
+"""
+                )
+            for p in profiles:
+                with pathlib.Path(os.path.join(hyprlayout_profiles_dir, f"{p}.lua")).open(encoding="utf-8", mode="w") as f:
+                    f.write(
+                        f"""return {{
+    name = "{p}",
+    screens = {{
+                    """
+                    )
+                    screens = profiles[p]
+                    for screen in screens:
+                        f.write(
+                            """
+    {
+        mode = {
+            height = %d,
+            freq = %f,
+            width = %d,
+        },
+        transform = %d,
+        position = {
+            x = %d,
+            y = %d,
+        },
+        uid = "%s",
+        active = %s,
+        scale = %d,
+        hdr_enabled = false,
+        cm = "auto",
+        sdrbrightness = 1,
+        sdrsaturation = 1
+    },
+"""
+                            % (
+                                screen["height"],
+                                screen["freq"],
+                                screen["width"],
+                                screen["transform"],
+                                screen["x"],
+                                screen["y"],
+                                screen["uid"],
+                                str(screen["active"]).lower(),
+                                screen["scale"],
+                            )
+                        )
+                    f.write("\n    }\n}\n")
         elif sys.argv[1] == "-m":
             load()
             current_uids = set(di.uid for di in displayInfo)
