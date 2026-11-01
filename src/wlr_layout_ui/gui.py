@@ -748,7 +748,8 @@ class UI(pyglet.window.Window):
         """Draw the countdown for the confirmation."""
         delay = time.time() - self.confirmation_needed
         if delay >= CONFIRM_DELAY:
-            os.system(self.original_cmd)
+            for cmd in self.original_cmd:
+                os.system(cmd)
             self.confirmation_needed = 0.0
         else:
             w, h = self.get_size()

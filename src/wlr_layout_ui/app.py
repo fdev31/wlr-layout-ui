@@ -73,11 +73,12 @@ def apply_profile(profile: list[dict[str, float | bool | str]]):
         else:
             rects.append(Rect(0, 0, 0, 0))  # width & height not used
 
-    cmd = make_command(displayInfo, rects, not LEGACY)
+    commands = make_command(displayInfo, rects, not LEGACY)
     time.sleep(0.5)
-    if os.system(cmd):
-        print("Failed applying the layout")
-    print(cmd)
+    for cmd in commands:
+        if os.system(cmd):
+            print("Failed applying the layout")
+        print(cmd)
 
 
 def main():
