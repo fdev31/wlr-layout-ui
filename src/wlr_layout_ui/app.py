@@ -91,9 +91,9 @@ def main():
         elif sys.argv[1] == "export":
             load()
             hyprlayout_dir = pathlib.Path("~/.config/hyprlayout/").expanduser()
-            hyprlayout_profiles_dir = pathlib.Path(os.path.join(hyprlayout_dir, "profiles")).expanduser()
-            pathlib.Path(hyprlayout_profiles_dir).mkdir(parents=True, exist_ok=True)
-            with pathlib.Path(os.path.join(hyprlayout_dir, "settings.lua")).open(encoding="utf-8", mode="w") as f:
+            hyprlayout_profiles_dir = hyprlayout_dir / "profiles"
+            hyprlayout_profiles_dir.mkdir(parents=True, exist_ok=True)
+            with (hyprlayout_dir / "settings.lua").open(encoding="utf-8", mode="w") as f:
                 f.write(
                     f"""return {{
       canvas_scale = {settings.SCREEN_SCALE},
@@ -103,7 +103,7 @@ def main():
 """
                 )
             for p in profiles:
-                with pathlib.Path(os.path.join(hyprlayout_profiles_dir, f"{p}.lua")).open(encoding="utf-8", mode="w") as f:
+                with (hyprlayout_profiles_dir / f"{p}.lua").open(encoding="utf-8", mode="w") as f:
                     f.write(
                         f"""return {{
     name = "{p}",
@@ -113,6 +113,8 @@ def main():
                     screens = profiles[p]
                     for screen in screens:
                         f.write(
+                            # Lua table literal: keep %-formatting, the braces
+                            # would have to be escaped with .format()/f-strings
                             """
     {
         mode = {
@@ -133,7 +135,7 @@ def main():
         sdrbrightness = 1,
         sdrsaturation = 1
     },
-"""
+"""  # ruff: ignore[printf-string-formatting]
                             % (
                                 screen["height"],
                                 screen["freq"],

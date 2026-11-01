@@ -61,6 +61,7 @@ def load():
         result = subprocess.run(
             ["hyprctl", "-j", "version"],
             capture_output=True,
+            check=False,
             text=True,
         )
     except FileNotFoundError:

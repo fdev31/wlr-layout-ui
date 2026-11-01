@@ -140,13 +140,13 @@ class UI(pyglet.window.Window):
             ref_rect.copy(),
             text=f"UI Scale: {get_default_theme().scale:.1f}x",
             font_size=12,
-            style=Style(text_color=(200, 200, 200)),
+            style=Style(text_color=(200, 200, 200, 255)),
         )
         self._screen_scale_label = Label(
             ref_rect.copy(),
             text=f"Screen ratio: {settings.SCREEN_SCALE}",
             font_size=12,
-            style=Style(text_color=(200, 200, 200)),
+            style=Style(text_color=(200, 200, 200, 255)),
         )
 
         self.sidepanel = VBox(
@@ -1073,6 +1073,8 @@ class UI(pyglet.window.Window):
     def _resize_screen(self, w, h):
         """Resize the selected screen and preserve anchor relationships."""
         item = self.selected_item
+        if item is None:
+            return
         old_w, old_h = item.target_rect.width, item.target_rect.height
         item.target_rect.width = w
         item.target_rect.height = h
