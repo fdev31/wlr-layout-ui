@@ -55,7 +55,8 @@ aur version="":
 
     workdir=$(mktemp -d)
     trap 'rm -rf "$workdir"' EXIT
-    git clone -q https://aur.archlinux.org/wlr-layout-ui.git "$workdir/aur"
+    # ssh, not https: the AUR https endpoint is read-only
+    git clone -q ssh://aur@aur.archlinux.org/wlr-layout-ui.git "$workdir/aur"
     cd "$workdir/aur"
 
     # The tarball must exist upstream before the checksum can be computed
