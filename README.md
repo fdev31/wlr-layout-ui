@@ -6,6 +6,8 @@ Works best on Hyprland but should support most systems in a slightly degraded wa
 
 <img width="1060" height="583" alt="shot_window" src="https://github.com/user-attachments/assets/2c529b99-5606-4c92-a902-0861db7725fb" />
 
+Improved, lighter version available at https://github.com/fdev31/hyprlayout
+
 ## Features
 
 - Load and save profiles
