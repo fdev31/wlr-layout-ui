@@ -15,6 +15,28 @@ jobs:
       - name: Install base dependencies
         run: pacman -Syu --noconfirm base-devel git python python-build python-installer python-hatchling
 
+      - name: Install X server
+        run: sudo pacman -S --noconfirm libxrender xorg-server-xvfb
+
+      - name: Start Xvfb
+        run: |
+          Xvfb :99 -screen 0 1280x1024x24 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
+      - name: Install AUR dependecies
+        run: |
+          useradd -m aur-builder
+          mkdir -p /tmp/aur
+          chown -R aur-builder:aur-builder /tmp/aur
+          echo "aur-builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          su aur-builder -c "git config --global --add safe.directory '${GITHUB_WORKSPACE}'"
+          cd /tmp/aur
+          git clone "https://aur.archlinux.org/pyglet.git"
+          chown -R aur-builder:aur-builder /tmp/aur
+          cd pyglet
+          su aur-builder -c "makepkg -si --noconfirm"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
