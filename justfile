@@ -42,6 +42,49 @@ build:
 clean:
     rm -rf dist/ build/ *.egg-info src/*.egg-info
 
+# Update the AUR wlr-layout-ui package to a released version (default: pyproject version)
+aur version="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "$(git rev-parse --show-toplevel)"
+
+    version="{{ version }}"
+    if [ -z "$version" ]; then
+        version=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -n 1)
+    fi
+
+    workdir=$(mktemp -d)
+    trap 'rm -rf "$workdir"' EXIT
+    git clone -q https://aur.archlinux.org/wlr-layout-ui.git "$workdir/aur"
+    cd "$workdir/aur"
+
+    # The tarball must exist upstream before the checksum can be computed
+    url="https://github.com/fdev31/wlr-layout-ui/archive/refs/tags/${version}.tar.gz"
+    if ! curl -fsL "$url" -o src.tar.gz; then
+        echo "ERROR: no release tarball for ${version} at ${url}"
+        exit 1
+    fi
+    sum=$(sha256sum src.tar.gz | cut -d' ' -f1)
+    rm -f src.tar.gz
+
+    sed -i -E \
+        -e "s|^pkgver=.*|pkgver=${version}|" \
+        -e "s|^pkgrel=.*|pkgrel=1|" \
+        -e "s|^sha256sums=.*|sha256sums=('${sum}')|" \
+        PKGBUILD
+    makepkg --printsrcinfo > .SRCINFO
+
+    if [ -z "$(git status --porcelain)" ]; then
+        echo "AUR already up to date for ${version}"
+        exit 0
+    fi
+
+    git diff --stat
+    git add PKGBUILD .SRCINFO
+    git commit -q -m "Update to ${version}"
+    git push -q
+    echo "AUR wlr-layout-ui updated to ${version}"
+
 # Release: run all checks, bump version, tag, publish to PyPI, create GitHub release
 release:
     #!/usr/bin/env bash
@@ -107,3 +150,6 @@ release:
 
     echo ""
     echo "Released ${version}"
+
+    # Keep the AUR package in sync
+    just aur "${version}"

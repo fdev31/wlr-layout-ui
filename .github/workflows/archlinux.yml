@@ -13,7 +13,10 @@ jobs:
       image: archlinux:latest
     steps:
       - name: Install base dependencies
-        run: pacman -Syu --noconfirm base-devel git python python-build python-installer python-hatchling
+        # NOTE: build dependencies (python-build, python-installer, python-hatchling)
+        # are deliberately NOT installed here: makepkg must pull them from the
+        # PKGBUILD's makedepends, so a missing entry fails the job.
+        run: pacman -Syu --noconfirm base-devel git python
 
       - name: Install X server
         run: sudo pacman -S --noconfirm libxrender xorg-server-xvfb
@@ -49,7 +52,8 @@ jobs:
 
       - name: Patch PKGBUILD to use local source
         run: |
-          sed -i "s|source=(git+https://aur.archlinux.org/wlr-layout-ui-git.git)|source=(\"git+file://${GITHUB_WORKSPACE}\")|" /tmp/build/PKGBUILD
+          sed -i -E "s|^source=\(.*\)$|source=(\"wlr-layout-ui::git+file://${GITHUB_WORKSPACE}\")|" /tmp/build/PKGBUILD
+          grep -q "file://" /tmp/build/PKGBUILD || { echo "PKGBUILD patch failed: source= line not matched"; exit 1; }
           cat /tmp/build/PKGBUILD
 
       - name: Build and install with makepkg
