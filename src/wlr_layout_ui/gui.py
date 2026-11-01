@@ -658,7 +658,8 @@ class UI(pyglet.window.Window):
             else:
                 self.action_save_layout()
         elif symbol == KEY_ESCAPE and self.confirmation_needed:
-            os.system(self.original_cmd)
+            for cmd in self.original_cmd:
+                os.system(cmd)
             self.confirmation_needed = 0.0
             self.reset_sel()
         elif symbol == KEY_TAB:
